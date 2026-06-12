@@ -1,0 +1,578 @@
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import { FILTERS, GROUPS, flagOf, flagImgOf } from "@/lib/constants";
+import { vnDateKey, vnDateHeader, vnNowKey, vnTime } from "@/lib/time";
+import { calculateGroupStandings, getTeamGroup } from "@/lib/standings";
+import MatchCard from "../MatchCard";
+import SkeletonCard from "../SkeletonCard";
+
+const renderStandingsFlag = (team) => {
+  const imgUrl = flagImgOf(team.name);
+  if (imgUrl) {
+    return (
+      <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-slate-900/50">
+        <img
+          src={imgUrl}
+          alt={team.name}
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-slate-900/50 text-[13px] leading-none">
+      {team.flag}
+    </div>
+  );
+};
+
+/** TAB 1 — Lịch thi đấu — Symmetrical matchup rows, compact layout */
+export default function ScheduleTab({
+  matches,
+  loading,
+  error,
+  onRetry,
+  predictionByMatch,
+  onBet,
+  betsByMatch,
+  onTabChange,
+}) {
+  const [filter, setFilter] = useState("ALL");
+  const [selectedGroup, setSelectedGroup] = useState("A");
+
+  const nextMatch = useMemo(() => {
+    if (!matches || matches.length === 0) return null;
+    const now = new Date();
+    const upcoming = matches.filter((m) => {
+      const isScheduled = m.status === "SCHEDULED" || m.status === "TIMED";
+      return isScheduled && new Date(m.utcDate) > now;
+    });
+    if (upcoming.length === 0) {
+      const unfinished = matches.filter((m) => m.status !== "FINISHED");
+      return unfinished[0] || matches[0];
+    }
+    return [...upcoming].sort(
+      (a, b) => new Date(a.utcDate) - new Date(b.utcDate),
+    )[0];
+  }, [matches]);
+
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isOver: false,
+  });
+
+  useEffect(() => {
+    if (!nextMatch) return;
+    const targetTime = new Date(nextMatch.utcDate).getTime();
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const diff = targetTime - now;
+      if (diff <= 0) {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0, isOver: true });
+        return;
+      }
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft({ hours, minutes, seconds, isOver: false });
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [nextMatch]);
+
+  const formatNum = (num) => String(num).padStart(2, "0");
+
+  const nextMatchGroup = nextMatch
+    ? getTeamGroup(nextMatch.homeTeam?.name)
+    : null;
+  const nextMatchPrediction = nextMatch
+    ? predictionByMatch?.get(nextMatch.id)
+    : null;
+
+  const matchesByDate = useMemo(() => {
+    let list = matches;
+    if (filter === "TODAY") {
+      const today = vnNowKey();
+      list = list.filter((m) => vnDateKey(m.utcDate) === today);
+    } else if (filter !== "ALL") {
+      list = list.filter((m) => m.stage === filter);
+      if (filter === "GROUP_STAGE") {
+        list = list.filter((m) => {
+          const group = getTeamGroup(m.homeTeam?.name);
+          return group === selectedGroup;
+        });
+      }
+    }
+    const sorted = [...list].sort(
+      (a, b) => new Date(a.utcDate) - new Date(b.utcDate),
+    );
+
+    const groups = [];
+    let lastKey = null;
+    sorted.forEach((m) => {
+      const key = vnDateKey(m.utcDate);
+      if (key !== lastKey) {
+        groups.push({ key, header: vnDateHeader(m.utcDate), items: [] });
+        lastKey = key;
+      }
+      groups[groups.length - 1].items.push(m);
+    });
+    return groups;
+  }, [matches, filter, selectedGroup]);
+
+  const groupStandings = useMemo(() => {
+    if (filter !== "GROUP_STAGE") return [];
+    return calculateGroupStandings(
+      matches,
+      selectedGroup,
+      predictionByMatch,
+      true,
+    );
+  }, [matches, selectedGroup, predictionByMatch, filter]);
+
+  return (
+    <div className="space-y-6">
+      {/* Hero Countdown / Next Kickoff Widget */}
+      {nextMatch ? (
+        <div
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#08142D] via-[#0B1735] to-[#10204A] border border-white/5 p-6 flex flex-col items-center justify-center text-center shadow-2xl"
+          style={{ minHeight: 280 }}
+        >
+          {/* Background Lights Glow */}
+          <div className="absolute inset-0 bg-radial-gradient from-[#334BFF]/10 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#334BFF]/5 rounded-bl-full pointer-events-none blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#FFA07A]/5 rounded-tr-full pointer-events-none blur-2xl" />
+
+          {/* Symmetrical Layout Grid */}
+          <div className="relative z-10 w-full flex items-center justify-between gap-6 max-w-3xl">
+            {/* Left Home Team (Desktop only) */}
+            <div className="hidden md:flex flex-col items-center justify-center gap-2 w-28 shrink-0">
+              <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center border-2 border-white/10 bg-slate-900/40 shadow-lg p-0.5">
+                {flagImgOf(nextMatch.homeTeam?.name) ? (
+                  <img
+                    src={flagImgOf(nextMatch.homeTeam?.name)}
+                    alt={nextMatch.homeTeam?.name}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <span className="text-3xl leading-none">
+                    {flagOf(nextMatch.homeTeam?.name)}
+                  </span>
+                )}
+              </div>
+              <span className="font-bold text-xs text-white truncate max-w-full">
+                {nextMatch.homeTeam?.name}
+              </span>
+            </div>
+
+            {/* Center Countdown & Match Metadata */}
+            <div className="flex-1 flex flex-col items-center space-y-4">
+              <div className="flex flex-col items-center space-y-1">
+                <span className="text-[9px] font-extrabold text-[#7b8fff] uppercase tracking-[0.25em]">
+                  Trận Đấu Tiếp Theo
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                  NEXT KICKOFF
+                </span>
+              </div>
+
+              {/* Trophy and Countdown Row */}
+              <div className="flex items-center justify-center gap-4 py-1.5 w-full">
+                {/* World Cup trophy — blended so the dark plate disappears on the hero */}
+                {/* <div className="h-20 shrink-0 relative flex items-center justify-center">
+                  <div className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-[#F5C518]/15 blur-xl" />
+                  <img
+                    src="/wc2026-emblem.png"
+                    alt="FIFA World Cup Trophy"
+                    className="relative h-full w-auto object-contain mix-blend-screen drop-shadow-[0_4px_14px_rgba(245,197,24,0.45)]"
+                  />
+                </div> */}
+
+                {/* Timer blocks */}
+                <div className="flex items-center gap-2 font-mono">
+                  {/* Hours */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-inner backdrop-blur-md">
+                      {formatNum(timeLeft.hours)}
+                    </div>
+                    <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                      GIỜ
+                    </span>
+                  </div>
+                  <span className="text-lg font-bold text-slate-600 self-start mt-3">
+                    :
+                  </span>
+
+                  {/* Minutes */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-inner backdrop-blur-md">
+                      {formatNum(timeLeft.minutes)}
+                    </div>
+                    <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                      PHÚT
+                    </span>
+                  </div>
+                  <span className="text-lg font-bold text-slate-600 self-start mt-3">
+                    :
+                  </span>
+
+                  {/* Seconds */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-[#FFA07A] shadow-inner backdrop-blur-md">
+                      {formatNum(timeLeft.seconds)}
+                    </div>
+                    <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                      GIÂY
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Match Details */}
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold text-[#62F2C0] uppercase tracking-widest">
+                  {nextMatch.stage === "GROUP_STAGE" && nextMatchGroup
+                    ? `BẢNG ${nextMatchGroup}`
+                    : nextMatch.stage}
+                </div>
+                <div className="text-xs font-bold text-slate-300 md:hidden px-3">
+                  {nextMatch.homeTeam?.name} vs {nextMatch.awayTeam?.name}
+                </div>
+                <div className="text-[10px] font-semibold text-slate-400">
+                  {vnDateHeader(nextMatch.utcDate)} ·{" "}
+                  {vnTime(nextMatch.utcDate)} — {nextMatch.venue || "BMO Field"}
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="pt-2">
+                {nextMatchPrediction ? (
+                  <button
+                    onClick={() => onBet(nextMatch)}
+                    className="btn-secondary px-5 py-2 text-xs font-bold flex items-center gap-2 hover:border-[#334BFF]/50"
+                  >
+                    <span>Dự đoán:</span>
+                    <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
+                      {nextMatchPrediction.homeGoals}–
+                      {nextMatchPrediction.awayGoals}
+                    </strong>
+                    <span className="text-[10px] text-slate-400">
+                      💎{nextMatchPrediction.wager}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onBet(nextMatch)}
+                    className="btn-primary px-6 py-2 text-xs font-bold uppercase tracking-wider shadow-[0_4px_12px_rgba(51,75,255,0.2)] animate-bounce"
+                  >
+                    Dự đoán ngay
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Right Away Team (Desktop only) */}
+            <div className="hidden md:flex flex-col items-center justify-center gap-2 w-28 shrink-0">
+              <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center border-2 border-white/10 bg-slate-900/40 shadow-lg p-0.5">
+                {flagImgOf(nextMatch.awayTeam?.name) ? (
+                  <img
+                    src={flagImgOf(nextMatch.awayTeam?.name)}
+                    alt={nextMatch.awayTeam?.name}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <span className="text-3xl leading-none">
+                    {flagOf(nextMatch.awayTeam?.name)}
+                  </span>
+                )}
+              </div>
+              <span className="font-bold text-xs text-white truncate max-w-full">
+                {nextMatch.awayTeam?.name}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Original Text Hero fallback if no upcoming matches exist */
+        <div
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B1735] to-[#10204A] border border-white/5 p-6 flex flex-col justify-center"
+          style={{ minHeight: 200 }}
+        >
+          {/* Subtle geometric shapes */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[#334BFF]/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFA07A]/5 to-transparent rounded-tr-full pointer-events-none" />
+
+          <div className="relative z-10 space-y-2.5 max-w-xl">
+            <span className="text-[10px] font-bold text-[#334BFF] uppercase tracking-[0.2em]">
+              TINY FOOTBALL 2026™
+            </span>
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">
+              Dự đoán. Tranh tài. Bứt phá.
+            </h1>
+            <p className="text-xs text-slate-400 leading-relaxed font-medium">
+              Tham gia dự đoán tỉ số các trận đấu chính thức của World Cup 2026.
+              Tích lũy điểm số, khẳng định vị thế và leo bảng xếp hạng cùng bạn
+              bè.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Match filters header anchor */}
+      <div id="match-list-start" className="space-y-3">
+        {/* Filter chips */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-thin">
+          {FILTERS.map((f) => {
+            const active = filter === f.key;
+            return (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                  active
+                    ? "bg-[#334BFF] text-white border border-[#334BFF]"
+                    : "bg-slate-800/40 text-slate-400 border border-white/5 hover:text-white hover:bg-slate-800/60"
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Group navigation pills if GROUP_STAGE is selected */}
+        {filter === "GROUP_STAGE" && (
+          <div className="flex gap-2 overflow-x-auto pb-2.5 -mx-4 px-4 scrollbar-thin">
+            {Object.keys(GROUPS).map((groupLetter) => {
+              const isActive = selectedGroup === groupLetter;
+              return (
+                <button
+                  key={groupLetter}
+                  onClick={() => setSelectedGroup(groupLetter)}
+                  className={`shrink-0 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#334BFF] text-white border border-[#334BFF]"
+                      : "bg-slate-800/40 text-slate-400 border border-white/5 hover:text-white hover:bg-slate-800/60"
+                  }`}
+                >
+                  BẢNG {groupLetter}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Standings Table for the selected group if GROUP_STAGE is selected */}
+      {filter === "GROUP_STAGE" && !loading && !error && (
+        <div className="bg-[#0B1735] border border-white/5 rounded-xl overflow-hidden shadow-xl">
+          <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-slate-900/10">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <span>Bảng Xếp Hạng</span>
+              <span className="text-[#334BFF] font-black">
+                BẢNG {selectedGroup}
+              </span>
+            </h4>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+              Top 2 đội đi tiếp
+            </span>
+          </div>
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="w-full text-xs text-left text-slate-300 min-w-[560px] table-fixed border-collapse">
+              <colgroup>
+                <col className="w-12" />
+                <col />
+                <col className="w-14" />
+                <col className="w-11" />
+                <col className="w-11" />
+                <col className="w-11" />
+                <col className="w-11" />
+                <col className="w-11" />
+                <col className="w-11" />
+                <col className="w-14" />
+              </colgroup>
+              <thead className="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-white/5 bg-slate-900/25">
+                <tr>
+                  <th className="py-2.5 px-3 text-center">#</th>
+                  <th className="py-2.5 px-2 text-left">Đội</th>
+                  <th
+                    className="py-2.5 px-1 text-center text-white font-extrabold"
+                    title="Điểm"
+                  >
+                    Điểm
+                  </th>
+                  <th
+                    className="py-2.5 px-1 text-center"
+                    title="Số trận đã đấu"
+                  >
+                    Trận
+                  </th>
+                  <th
+                    className="py-2.5 px-1 text-center text-[#62F2C0]"
+                    title="Thắng"
+                  >
+                    T
+                  </th>
+                  <th
+                    className="py-2.5 px-1 text-center text-[#FFA07A]"
+                    title="Hòa"
+                  >
+                    H
+                  </th>
+                  <th
+                    className="py-2.5 px-1 text-center text-[#ff5a5a]"
+                    title="Thua"
+                  >
+                    B
+                  </th>
+                  <th className="py-2.5 px-1 text-center" title="Bàn thắng">
+                    BT
+                  </th>
+                  <th className="py-2.5 px-1 text-center" title="Bàn thua">
+                    BB
+                  </th>
+                  <th
+                    className="py-2.5 px-2 text-center"
+                    title="Hiệu số bàn thắng"
+                  >
+                    HS
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {groupStandings.map((team, idx) => {
+                  const pos = idx + 1;
+                  const isQualified = pos <= 2;
+                  return (
+                    <tr
+                      key={team.name}
+                      className={`standings-row h-11 ${
+                        isQualified ? "standings-row-qualified" : ""
+                      }`}
+                    >
+                      <td className="py-2 px-3 text-center font-bold text-slate-400">
+                        <span
+                          className={
+                            isQualified ? "text-[#62F2C0] font-black" : ""
+                          }
+                        >
+                          {pos}
+                        </span>
+                      </td>
+                      <td className="py-2 px-2 font-bold text-white">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {renderStandingsFlag(team)}
+                          <span className="truncate">{team.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 px-1 text-center font-extrabold text-white text-sm tabular-nums">
+                        {team.pts}
+                      </td>
+                      <td className="py-2 px-1 text-center text-slate-400 font-medium tabular-nums">
+                        {team.pj}
+                      </td>
+                      <td className="py-2 px-1 text-center text-slate-300 font-medium tabular-nums">
+                        {team.pg}
+                      </td>
+                      <td className="py-2 px-1 text-center text-slate-300 font-medium tabular-nums">
+                        {team.pe}
+                      </td>
+                      <td className="py-2 px-1 text-center text-slate-300 font-medium tabular-nums">
+                        {team.pp}
+                      </td>
+                      <td className="py-2 px-1 text-center text-slate-400 font-medium tabular-nums">
+                        {team.gf}
+                      </td>
+                      <td className="py-2 px-1 text-center text-slate-400 font-medium tabular-nums">
+                        {team.gc}
+                      </td>
+                      <td
+                        className={`py-2 px-2 text-center font-bold text-xs tabular-nums ${
+                          team.dg > 0
+                            ? "text-[#62F2C0]"
+                            : team.dg < 0
+                              ? "text-[#ff5a5a]"
+                              : "text-slate-400"
+                        }`}
+                      >
+                        {team.dg > 0 ? `+${team.dg}` : team.dg}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="rounded-xl p-5 text-center bg-red-950/20 border border-red-900/40">
+          <div className="font-bold mb-1 text-[#ff5a5a] text-sm">
+            Không thể tải dữ liệu — kiểm tra API token.
+          </div>
+          <div className="text-[11px] text-slate-500 mb-3">({error})</div>
+          <button
+            onClick={onRetry}
+            className="btn-primary px-4 py-2 text-xs font-bold"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
+      {/* Loading skeletons */}
+      {loading && (
+        <div className="space-y-3.5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && matchesByDate.length === 0 && (
+        <div className="text-center py-16">
+          <div className="text-4xl mb-3 opacity-30">📅</div>
+          <p className="text-xs text-slate-500 font-medium">
+            Không có trận đấu nào trong mục này.
+          </p>
+        </div>
+      )}
+
+      {/* Matches grouped by date */}
+      {!loading &&
+        matchesByDate.map((g) => (
+          <div key={g.key} className="space-y-3">
+            {/* Date header */}
+            <div className="flex items-center gap-2.5 pt-3 pb-1">
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">
+                {g.header}
+              </h3>
+              <span className="h-px flex-grow bg-white/5 rounded-full" />
+            </div>
+
+            {/* Match rows list */}
+            <div className="space-y-2.5">
+              {g.items.map((m) => (
+                <MatchCard
+                  key={m.id}
+                  match={m}
+                  prediction={predictionByMatch.get(m.id)}
+                  onBet={onBet}
+                  roomBets={betsByMatch?.get(m.id)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+    </div>
+  );
+}

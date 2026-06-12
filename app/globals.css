@@ -1,26 +1,509 @@
 @import "tailwindcss";
 
+/* ============================================================
+   FIFA WORLD CUP 2026 — PREMIUM EDITORIAL DESIGN SYSTEM
+   Apple Sports × OneFootball × Sofascore × Linear
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core palette */
+  --c-bg-0: #08142D;
+  --c-bg-1: #0B1735;
+  --c-bg-2: #10204A;
+
+  /* Accents */
+  --c-primary:  #334BFF;
+  --c-mint:     #62F2C0;
+  --c-coral:    #FFA07A;
+  --c-lime:     #B7FF00;
+  --c-purple:   #6F00FF;
+  --c-red:      #E40000;
+
+  /* Text & Borders */
+  --c-text:     #FFFFFF;
+  --c-muted:    #8AA0C8;
+  --c-subtle:   rgba(138, 160, 200, 0.2);
+
+  /* Subtle Glassmorphism (Max opacity 8%, max blur 16px) */
+  --glass-bg:       rgba(255, 255, 255, 0.05);
+  --glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --glass-border:   rgba(255, 255, 255, 0.06);
+  --glass-blur:     blur(16px);
+
+  --foreground: var(--c-text);
+  --background: var(--c-bg-0);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Reset & Base */
+*, *::before, *::after { box-sizing: border-box; }
+html { height: 100%; scroll-behavior: smooth; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  background-color: var(--c-bg-0);
+  background-image: linear-gradient(180deg, #08142D 0%, #0B1735 50%, #10204A 100%);
+  background-attachment: fixed;
+  color: var(--c-text);
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
+
+/* Glass Panels (Only for Nav, Modals, Dropdowns, Leaderboard) */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-strong {
+  background: rgba(8, 20, 45, 0.65);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Compact Flat Cards */
+.match-card {
+  background: #0B1735;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              border-color 0.2s ease;
+}
+
+.match-card:hover {
+  transform: translateY(-2px);
+  background-color: #10204A;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Score Capsule (Minimal Soft Blue Pill) */
+.score-capsule {
+  background: rgba(51, 75, 255, 0.15);
+  border: 1px solid rgba(51, 75, 255, 0.25);
+  color: #FFFFFF;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+/* Status Badges - Small Solid Pills (No Gradients, No Glow) */
+.status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-pill.finished { background: rgba(98, 242, 192, 0.12); color: #62F2C0; }
+.status-pill.live { background: rgba(228, 0, 0, 0.12); color: #ff5a5a; }
+.status-pill.upcoming { background: rgba(51, 75, 255, 0.12); color: #7b8fff; }
+.status-pill.open { background: rgba(111, 0, 255, 0.12); color: #b366ff; }
+
+/* Predict Button */
+.btn-primary {
+  background-color: #334BFF;
+  color: #FFFFFF;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #4d60ff;
+  transform: scale(1.02);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8AA0C8;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Scrollbars */
+.scrollbar-thin::-webkit-scrollbar { height: 4px; width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+}
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* Custom Text Underline for Active States */
+.nav-underline-active {
+  position: relative;
+}
+.nav-underline-active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #334BFF;
+}
+
+/* Glass Inputs */
+.glass-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.glass-input:focus {
+  border-color: #334BFF;
+  box-shadow: 0 0 0 2px rgba(51, 75, 255, 0.2);
+}
+.glass-input::placeholder { color: rgba(138, 160, 200, 0.4); }
+
+/* Shimmer Animation for Loaders */
+@keyframes shimmer {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+  100% { opacity: 0.3; }
+}
+.shimmer { animation: shimmer 1.5s ease-in-out infinite; }
+
+/* Figma UI Component System Extensions */
+
+/* Symmetrical Circular Flag Avatars */
+.circular-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Standings Table Styles */
+.standings-table-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.standings-row {
+  transition: background-color 0.15s ease;
+}
+
+.standings-row:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Anchor the qualification indicator on the first cell so the row keeps
+   table-layout: fixed intact (a positioned <tr> with an absolute ::before
+   breaks fixed layout in Chromium). */
+.standings-row td:first-child {
+  position: relative;
+}
+
+/* Green Qualification Indicator for Top 2 Teams */
+.standings-row-qualified td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background-color: var(--c-mint);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Horizontal Scrollable Group Navigation Pills */
+.group-nav-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.group-nav-pill {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.group-nav-pill-active {
+  background-color: var(--c-primary);
+  color: #FFFFFF;
+  border: 1px solid var(--c-primary);
+}
+
+.group-nav-pill-inactive {
+  background-color: rgba(255, 255, 255, 0.04);
+  color: rgba(200, 210, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.group-nav-pill-inactive:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ============================================================
+   STREAMER & OBS OVERLAY STYLES
+   ============================================================ */
+
+@keyframes spin-orbit {
+  0% { transform: rotateX(75deg) rotateY(15deg) rotateZ(0deg); }
+  100% { transform: rotateX(75deg) rotateY(15deg) rotateZ(360deg); }
+}
+
+@keyframes spin-orbit-reverse {
+  0% { transform: rotateX(75deg) rotateY(-20deg) rotateZ(360deg); }
+  100% { transform: rotateX(75deg) rotateY(-20deg) rotateZ(0deg); }
+}
+
+.trophy-orbit {
+  position: absolute;
+  border: 1.5px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  pointer-events: none;
+  top: 50%;
+  left: 50%;
+}
+
+.orbit-1 {
+  width: 220px;
+  height: 220px;
+  margin-top: -110px;
+  margin-left: -110px;
+  animation: spin-orbit 15s linear infinite;
+  border-color: rgba(98, 242, 192, 0.25); /* Mint orbit */
+}
+
+.orbit-2 {
+  width: 280px;
+  height: 280px;
+  margin-top: -140px;
+  margin-left: -140px;
+  animation: spin-orbit-reverse 22s linear infinite;
+  border-color: rgba(51, 75, 255, 0.25); /* Blue orbit */
+}
+
+/* Vertical pitch background styling */
+.stream-pitch-bg {
+  background-color: #08142D;
+  background-image: 
+    linear-gradient(180deg, rgba(8, 20, 45, 0.93) 0%, rgba(11, 23, 53, 0.96) 50%, rgba(16, 32, 74, 0.98) 100%),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255, 255, 255, 0.007) 40px, rgba(255, 255, 255, 0.007) 80px),
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 80px 100%, 40px 40px, 40px 40px;
+}
+
+/* Spotlight glow from the center top */
+.stream-spotlight {
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 60%;
+  background: radial-gradient(ellipse at top, rgba(51, 75, 255, 0.25) 0%, rgba(98, 242, 192, 0.03) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.stream-glass-panel {
+  background: rgba(11, 23, 53, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================================
+   KNOCKOUT BRACKET (Sơ đồ knockout 2 nhánh đối xứng)
+   ============================================================ */
+.bk-wrap {
+  overflow-x: auto;
+  padding-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+  --bk-gap: 14px;
+  --bk-line: rgba(255, 255, 255, 0.16);
+}
+.bk {
+  display: flex;
+  align-items: stretch;
+  min-width: 1180px; /* buộc cuộn ngang trên màn nhỏ */
+}
+.bk-side {
+  display: flex;
+  flex: 1 1 0;
+}
+.bk-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 124px;
+}
+.bk-col-head {
+  text-align: center;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.7);
+  padding: 2px 0 10px;
+  white-space: nowrap;
+}
+.bk-col-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+}
+.bk-m {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  padding: 5px var(--bk-gap);
+  min-height: 50px;
+}
+.bk-card {
+  width: 100%;
+  position: relative;
+}
+
+/* --- Connectors --- */
+/* Out-stub bên phải (nhánh trái: trận đẩy sang phải) */
+.bk-out-right .bk-m::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(100% - var(--bk-gap));
+  width: var(--bk-gap);
+  height: 2px;
+  background: var(--bk-line);
+}
+/* Out-stub bên trái (nhánh phải: trận đẩy sang trái) */
+.bk-out-left .bk-m::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(100% - var(--bk-gap));
+  width: var(--bk-gap);
+  height: 2px;
+  background: var(--bk-line);
+}
+/* Đường dọc nối cặp trận, đặt ở ranh giới cột — bên trái */
+.bk-in-left .bk-m::before {
+  content: "";
+  position: absolute;
+  top: 25%;
+  height: 50%;
+  left: 0;
+  width: 2px;
+  background: var(--bk-line);
+}
+/* Đường dọc nối cặp — bên phải */
+.bk-in-right .bk-m::before {
+  content: "";
+  position: absolute;
+  top: 25%;
+  height: 50%;
+  right: 0;
+  width: 2px;
+  background: var(--bk-line);
+}
+/* In-stub từ ranh giới vào thẻ trận — bên trái */
+.bk-in-left .bk-card::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: var(--bk-gap);
+  height: 2px;
+  background: var(--bk-line);
+}
+/* In-stub — bên phải */
+.bk-in-right .bk-card::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: var(--bk-gap);
+  height: 2px;
+  background: var(--bk-line);
+}
+
+/* --- Center column (Chung kết + hạng 3) --- */
+.bk-center {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 168px;
+  min-width: 168px;
+}
+.bk-center .bk-final {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+.bk-center .bk-final .bk-m {
+  width: 100%;
+  flex: 0 0 auto;
+}
+.bk-center .bk-emblem {
+  height: 96px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 14px rgba(245, 197, 24, 0.35));
+}
+.bk-center .bk-third {
+  flex: 0 0 auto;
+  padding: 8px 6px 0;
+}
+.bk-center .bk-third .bk-m {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+/* Animation for mobile bottom nav popup menu */
+@keyframes slide-up {
+  0% { transform: translateY(16px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
+
