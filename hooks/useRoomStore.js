@@ -20,6 +20,7 @@ const mapPrediction = (row) => ({
   status: row.status,
   payout: row.payout,
   finalScore: row.final_score,
+  placedAt: row.created_at,
 });
 
 /**

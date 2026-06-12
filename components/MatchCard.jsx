@@ -91,15 +91,30 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
       </div>
 
       {/* Bottom status row */}
-      <div className="flex items-center justify-between mt-2.5 pt-1 border-t border-white/5">
-        <StatusBadge status={status} />
-        {/* Action / Prediction Status Right Area */}
+      <div className="flex items-start justify-between mt-2.5 pt-2 border-t border-white/5 gap-2">
+        {/* Left Area: Status and Room Bets count */}
+        <div className="flex flex-col items-start gap-1 min-w-0 shrink-0">
+          <StatusBadge status={status} />
+          {roomBets && roomBets.length > 0 && (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onBet(match, "friends");
+              }}
+              className="text-[9px] text-slate-400 hover:text-white transition-colors font-semibold cursor-pointer whitespace-nowrap"
+            >
+              👥 {roomBets.length} bạn bè đã chốt
+            </span>
+          )}
+        </div>
+
+        {/* Right Area: Prediction tags and Actions */}
         <div
-          className="flex justify-end shrink-0 ml-1"
+          className="flex flex-wrap gap-1 justify-end items-center max-w-[75%] sm:max-w-none"
           onClick={(e) => e.stopPropagation()}
         >
           {prediction && prediction.length > 0 ? (
-            <div className="flex flex-wrap gap-1 justify-end max-w-full">
+            <>
               {prediction.map((p, pIdx) => {
                 let outcome = "";
                 if (p.status !== "pending") {
@@ -127,7 +142,7 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
                   + Thêm
                 </button>
               )}
-            </div>
+            </>
           ) : canBet ? (
             <button
               onClick={() => onBet(match)}
@@ -141,17 +156,6 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
             </span>
           )}
         </div>
-        {roomBets && roomBets.length > 0 && (
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              onBet(match, "friends");
-            }}
-            className="text-[9px] text-slate-400 hover:text-white transition-colors font-semibold cursor-pointer"
-          >
-            👥 {roomBets.length} bạn bè đã chốt
-          </span>
-        )}
       </div>
     </div>
   );

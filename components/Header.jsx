@@ -28,14 +28,14 @@ export default function Header({
     { key: "schedule", label: "Lịch đấu", icon: "📅" },
     { key: "groups", label: "Bảng đấu", icon: "📋" },
     { key: "bracket", label: "Sơ đồ", icon: "🗺️" },
-    { key: "predictions", label: "Dự đoán", icon: "🎯" },
+    { key: "predictions", label: "Lịch sử", icon: "🎯" },
     { key: "leaderboard", label: "BXH", icon: "📊" },
-    { key: "statistics", label: "Thống kê", icon: "📈" },
     { key: "champion", label: "Vô địch", icon: "🏆" },
   ];
 
   const initial = (player.playerName || "?").charAt(0).toUpperCase();
   const settingsActive = tab === "settings";
+  const statsActive = tab === "statistics";
 
   return (
     <>
@@ -135,7 +135,7 @@ export default function Header({
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 className={`flex items-center gap-2.5 pl-2.5 pr-2 py-1.5 rounded-xl bg-gradient-to-r from-[#334BFF]/15 to-[#62F2C0]/10 border transition-all duration-200 ${
-                  menuOpen || settingsActive
+                  menuOpen || settingsActive || statsActive
                     ? "border-[#62F2C0]/50 shadow-[0_0_14px_rgba(98,242,192,0.18)]"
                     : "border-white/10 hover:border-white/25"
                 }`}
@@ -277,6 +277,23 @@ export default function Header({
                       <span className="text-base leading-none">📺</span>
                       Stream / OBS
                     </a>
+
+                    {/* Statistics */}
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        onTabChange("statistics");
+                        setMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                        statsActive
+                          ? "bg-[#334BFF]/20 text-white"
+                          : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      <span className="text-base leading-none">📈</span>
+                      Thống kê của tôi
+                    </button>
 
                     {/* Settings */}
                     <button

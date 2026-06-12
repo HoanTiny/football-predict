@@ -528,7 +528,12 @@ export default function WC2026App() {
               <BracketTab matches={matches} />
             )}
             {tab === "predictions" && (
-              <PredictionsTab player={player} matchById={matchById} onGoSchedule={() => setTab("schedule")} />
+              <PredictionsTab
+                player={player}
+                matchById={matchById}
+                onGoSchedule={() => setTab("schedule")}
+                betsByMatch={inRoom ? room.betsByMatch : null}
+              />
             )}
             {tab === "leaderboard" && (
               <LeaderboardTab player={player} matches={matches} roomLeaderboard={inRoom ? room.leaderboard : null} />
