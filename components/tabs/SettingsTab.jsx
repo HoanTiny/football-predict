@@ -116,8 +116,8 @@ export default function SettingsTab({
             </span>
           </div>
           <button
-            onClick={onLeaveRoom}
-            className="btn-secondary w-full py-2.5 rounded-lg text-xs font-bold"
+            onClick={() => onLeaveRoom()}
+            className="btn-secondary w-full py-2.5 rounded-lg text-xs font-bold cursor-pointer"
           >
             🚪 Rời phòng
           </button>
@@ -126,21 +126,34 @@ export default function SettingsTab({
 
       {/* Player profile */}
       <Section title="NGƯỜI CHƠI">
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/5 text-xs">
+          <span className="text-slate-400 font-medium">Chế độ chơi</span>
+          {roomCode ? (
+            <span className="font-bold text-[#F5C518] flex items-center gap-1">
+              🏟️ Phòng {roomCode} (Online)
+            </span>
+          ) : (
+            <span className="font-bold text-[#62F2C0] flex items-center gap-1">
+              🙋 Chơi cá nhân (Lưu cục bộ)
+            </span>
+          )}
+        </div>
+
         {roomCode ? (
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between text-xs pb-1">
             <span className="text-slate-400 font-medium">Tên trong phòng</span>
             <span className="font-bold text-white">{player.playerName}</span>
           </div>
         ) : (
-          <>
-            <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">
+          <div className="space-y-1.5 pb-1">
+            <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">
               Tên hiển thị (đổi tên = chuyển hồ sơ khác)
             </label>
             <PlayerNameEditor
               current={player.playerName}
               onSwitch={onSwitchPlayer}
             />
-          </>
+          </div>
         )}
         <div className="flex items-center justify-between pt-1 text-xs">
           <span className="text-slate-400 font-medium">Chips hiện tại</span>
@@ -153,6 +166,11 @@ export default function SettingsTab({
             </span>
           </span>
         </div>
+        {!roomCode && (
+          <p className="text-[10px] text-slate-500 italic mt-2 leading-relaxed">
+            * Hồ sơ chơi cá nhân được lưu trên trình duyệt của máy bạn. Khi đăng xuất tài khoản phòng chơi online, hệ thống sẽ khôi phục lại hồ sơ chơi đơn này.
+          </p>
+        )}
       </Section>
 
       {/* API token */}

@@ -53,11 +53,50 @@ export default function WC2026App() {
 
   useEffect(() => {
     if (!supabaseReady) return;
+
+    const syncRooms = async (userId) => {
+      if (!userId) return;
+      try {
+        const { fetchUserRooms } = await import("@/lib/roomApi");
+        const rooms = await fetchUserRooms(userId);
+        if (rooms && rooms.length > 0) {
+          localStorage.setItem(LS_ROOM_SESSIONS, JSON.stringify(rooms));
+          setSessionsRaw(rooms);
+          const active = localStorage.getItem(LS_ROOM_ACTIVE) || rooms[0].code;
+          localStorage.setItem(LS_ROOM_ACTIVE, active);
+          setActiveCodeRaw(active);
+          localStorage.setItem(LS_MODE, "room");
+          setModeRaw("room");
+        }
+      } catch (e) {
+        console.error("Failed to sync user rooms:", e);
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setAuthSession(s);
+      if (s?.user?.id) {
+        syncRooms(s.user.id);
+      }
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       setAuthSession(s);
+      if (event === "SIGNED_OUT") {
+        // Clear all room-related localStorage items and state to avoid hanging on RLS blocks
+        localStorage.removeItem(LS_ROOM_SESSIONS);
+        localStorage.removeItem(LS_ROOM_ACTIVE);
+        localStorage.removeItem(LS_ROOM_CODE);
+        localStorage.removeItem(LS_ROOM_PLAYER_ID);
+        localStorage.removeItem(LS_MODE); // Remove mode so app redirects to onboarding
+
+        setSessionsRaw([]);
+        setActiveCodeRaw(null);
+        setModeRaw(null);
+        setForceRoomPicker(false);
+      } else if (event === "SIGNED_IN" && s?.user?.id) {
+        syncRooms(s.user.id);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -164,10 +203,21 @@ export default function WC2026App() {
   };
 
   // Rời một phòng (mặc định phòng đang mở)
-  const leaveRoom = (code = activeCode) => {
-    const next = sessions.filter((s) => s.code !== code);
+  const leaveRoom = async (code = activeCode) => {
+    const actualCode = (code && typeof code === "string") ? code : activeCode;
+    const targetSession = sessions.find((s) => s.code === actualCode);
+    if (targetSession && targetSession.playerId) {
+      try {
+        const { deletePlayerFromRoom } = await import("@/lib/roomApi");
+        await deletePlayerFromRoom(targetSession.playerId);
+      } catch (e) {
+        console.error("Failed to delete player from room on db:", e);
+      }
+    }
+
+    const next = sessions.filter((s) => s.code !== actualCode);
     persistSessions(next);
-    if (activeCode === code || !next.some((s) => s.code === activeCode)) {
+    if (activeCode === actualCode || !next.some((s) => s.code === activeCode)) {
       if (next.length) {
         setActiveCode(next[0].code);
         setMode("room");
@@ -288,6 +338,7 @@ export default function WC2026App() {
             : undefined
         }
         session={authSession}
+        pushToast={pushToast}
       />
     );
   }

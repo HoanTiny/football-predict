@@ -1,13 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase, supabaseReady } from "@/lib/supabase";
 import { createRoom, joinRoom } from "@/lib/roomApi";
 
 /** FIFA 2026 × Premium Room Screen with Supabase Auth integration */
-export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, session }) {
+export default function RoomScreen({
+  initialCode,
+  onJoined,
+  onSolo,
+  onCancel,
+  session,
+  pushToast,
+}) {
   const [view, setView] = useState(initialCode ? "join" : "menu");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("wc2026_last_room_name");
+      if (saved) return saved;
+      
+      const solo = localStorage.getItem("wc2026_active_player");
+      if (solo) return solo;
+    }
+    return "";
+  });
   const [code, setCode] = useState(initialCode || "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -20,12 +36,36 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
 
   const nameOk = name.trim().length >= 2;
 
+  const sessionEmailRef = useRef(null);
+
+  // Tự động thông báo khi nhận diện phiên đăng nhập hoạt động trên thiết bị
+  useEffect(() => {
+    if (session && session.user?.email && sessionEmailRef.current !== session.user.email) {
+      const isNewLogin = sessionEmailRef.current === null;
+      sessionEmailRef.current = session.user.email;
+      if (isNewLogin) {
+        pushToast && pushToast(`Đã nhận diện tài khoản: ${session.user.email} 🟢`, "info");
+      }
+    }
+  }, [session, pushToast]);
+
   // Tự động chuyển view khi đăng nhập thành công
   useEffect(() => {
     if (session && view === "auth") {
       setView(authTargetView || "menu");
+      pushToast && pushToast(`Đăng nhập thành công! Tài khoản: ${session.user.email} 🎉`, "win");
     }
-  }, [session, view, authTargetView]);
+  }, [session, view, authTargetView, pushToast]);
+
+  // Tự động điền tên từ thông tin tài khoản nếu trống
+  useEffect(() => {
+    if (session && !name) {
+      const metaName = session.user?.user_metadata?.full_name || session.user?.user_metadata?.name;
+      if (metaName) {
+        setName(metaName);
+      }
+    }
+  }, [session, name]);
 
   const handleCreateClick = () => {
     if (session) {
@@ -80,7 +120,10 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
       const { error: authErr } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin + window.location.pathname + (initialCode ? `?room=${initialCode}` : ""),
+          redirectTo:
+            window.location.origin +
+            window.location.pathname +
+            (initialCode ? `?room=${initialCode}` : ""),
         },
       });
       if (authErr) throw authErr;
@@ -98,6 +141,21 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
       let roomCode = code.trim().toUpperCase();
       if (view === "create") roomCode = await createRoom();
       const me = await joinRoom(roomCode, name.trim(), session?.user?.id);
+
+      // Lưu tên cuối cùng vào localStorage thiết bị
+      localStorage.setItem("wc2026_last_room_name", name.trim());
+
+      // Đồng bộ lưu tên vào Supabase user_metadata để ghi nhớ trên DB
+      if (session) {
+        try {
+          await supabase.auth.updateUser({
+            data: { full_name: name.trim() }
+          });
+        } catch (authErr) {
+          console.error("Lưu metadata thất bại:", authErr);
+        }
+      }
+
       onJoined(roomCode, me);
     } catch (e) {
       setError(e.message);
@@ -107,7 +165,7 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
   };
 
   const titles = {
-    menu: "Chơi thế nào?",
+    menu: "Sống Cùng Bóng Đá",
     auth: authMode === "login" ? "Đăng nhập tài khoản" : "Đăng ký tài khoản",
     create: "Tạo phòng mới",
     join: "Vào phòng bạn bè",
@@ -115,54 +173,129 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
 
   return (
     <div className="min-h-[100dvh] flex items-center justify-center p-4 relative overflow-hidden bg-[#08142D]">
-      <div className="relative z-10 w-full max-w-md bg-[#0B1735] border border-white/5 rounded-xl p-8 text-center shadow-2xl overflow-hidden">
-        {/* Subtle top glow */}
+      {/* Background spotlights & radial glows */}
+      <div className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none z-0">
+        <div className="w-[500px] h-[500px] bg-gradient-to-b from-[#334BFF]/20 to-transparent rounded-full blur-[120px] absolute -top-[250px] left-1/2 -translate-x-1/2" />
+        <div className="w-[400px] h-[400px] bg-gradient-to-t from-[#62F2C0]/10 to-transparent rounded-full blur-[100px] absolute -bottom-[200px] left-1/2 -translate-x-1/2" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-md backdrop-blur-xl bg-[#091124]/80 border border-white/[0.08] rounded-2xl p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden">
+        {/* Top reflective glow */}
         <div
           aria-hidden
           className="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-40 bg-[#334BFF]/10 rounded-full blur-3xl pointer-events-none"
         />
 
-        <div className="relative z-10 text-5xl mb-3">🏟️</div>
-        <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#334BFF] mb-1">
+        <div className="h-56 w-full flex items-center justify-center relative mb-4">
+          {/* Concentric rotating orbits */}
+          <div className="trophy-orbit orbit-1 absolute" />
+          <div className="trophy-orbit orbit-2 absolute" />
+
+          <img
+            src="/wc2026-emblem.png"
+            alt="Tiny Football"
+            className="h-44 w-auto object-contain z-10 drop-shadow-[0_8px_24px_rgba(245,197,24,0.35)]"
+          />
+        </div>
+
+        <div className="text-[10px] font-extrabold tracking-[0.25em] uppercase text-[#62F2C0] mb-1">
           Tiny Football 2026™
         </div>
-        <h1 className="text-2xl font-bold text-white mb-6 uppercase tracking-wider font-oswald">
+        <h1 className="text-2xl font-extrabold text-white mb-6 uppercase tracking-wider font-oswald bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
           {titles[view]}
         </h1>
 
         {/* Menu view */}
         {view === "menu" && (
-          <div className="relative z-10 space-y-3">
+          <div className="relative z-10 space-y-4">
+            {session?.user?.email && (
+              <div className="text-[10px] text-slate-400 font-semibold bg-white/[0.02] border border-white/5 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2 mb-1 text-left">
+                <span className="flex items-center gap-1.5 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="truncate">Tài khoản: <strong className="text-white font-mono">{session.user.email}</strong></span>
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const { supabase } = await import("@/lib/supabase");
+                    await supabase.auth.signOut();
+                  }}
+                  className="text-red-400 hover:text-red-300 font-bold text-[9px] uppercase tracking-wider shrink-0 cursor-pointer"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            )}
             {supabaseReady ? (
               <>
                 <button
                   onClick={handleCreateClick}
-                  className="btn-primary w-full py-3.5 rounded-lg font-bold text-xs"
+                  className="w-full text-left p-4 rounded-xl bg-gradient-to-r from-[#2E44E8] to-[#334BFF] border border-[#334BFF]/50 hover:from-[#334BFF] hover:to-[#4d60ff] hover:shadow-[0_0_20px_rgba(51,75,255,0.3)] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group cursor-pointer"
                 >
-                  🆕 Tạo phòng — mời bạn bè đấu chung
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🆕</span> Tạo phòng thi đấu chung
+                      </div>
+                      <div className="text-[10px] text-white/70 font-medium mt-0.5">
+                        Mời bạn bè tham gia phòng dự đoán điểm số
+                      </div>
+                    </div>
+                    <span className="text-white/70 group-hover:translate-x-1 transition-transform duration-200 text-sm font-bold">
+                      →
+                    </span>
+                  </div>
                 </button>
+
                 <button
                   onClick={handleJoinClick}
-                  className="w-full py-3.5 rounded-lg font-bold text-xs bg-[#62F2C0]/10 border border-[#62F2C0]/25 text-[#62F2C0] hover:bg-[#62F2C0]/20 hover:border-[#62F2C0]/40 transition-all duration-200"
+                  className="w-full text-left p-4 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group cursor-pointer"
                 >
-                  🔑 Vào phòng bằng mã
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-[#62F2C0] uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🔑</span> Vào phòng bằng mã
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                        Nhập mã phòng đã được chia sẻ để tham gia
+                      </div>
+                    </div>
+                    <span className="text-[#62F2C0] group-hover:translate-x-1 transition-transform duration-200 text-sm font-bold">
+                      →
+                    </span>
+                  </div>
                 </button>
               </>
             ) : (
               <div className="text-xs rounded-xl p-4 text-left bg-slate-900/40 border border-white/5 text-slate-400 font-medium">
-                Chế độ phòng chưa bật: cần cấu hình NEXT_PUBLIC_SUPABASE_URL và NEXT_PUBLIC_SUPABASE_ANON_KEY.
+                Chế độ phòng chưa bật: cần cấu hình NEXT_PUBLIC_SUPABASE_URL và
+                NEXT_PUBLIC_SUPABASE_ANON_KEY.
               </div>
             )}
+
             <button
               onClick={onSolo}
-              className="btn-secondary w-full py-3.5 rounded-lg font-bold text-xs"
+              className="w-full text-left p-4 rounded-xl bg-transparent border border-white/5 hover:bg-white/[0.03] hover:border-white/10 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group cursor-pointer"
             >
-              🙋 Chơi một mình (lưu trên máy này)
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🙋</span> Chơi cá nhân (Solo)
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                    Tự dự đoán tỉ số, lưu trữ cục bộ trên máy này
+                  </div>
+                </div>
+                <span className="text-slate-400 group-hover:translate-x-1 transition-transform duration-200 text-sm font-bold">
+                  →
+                </span>
+              </div>
             </button>
+
             {onCancel && (
               <button
                 onClick={onCancel}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors block mx-auto pt-1"
+                className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors block mx-auto pt-1 cursor-pointer"
               >
                 ← Để sau, quay lại phòng hiện tại
               </button>
@@ -172,15 +305,21 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
 
         {/* Auth view */}
         {view === "auth" && (
-          <form onSubmit={handleAuthSubmit} className="relative z-10 space-y-4 text-left">
+          <form
+            onSubmit={handleAuthSubmit}
+            className="relative z-10 space-y-4 text-left"
+          >
             {/* Tab selector */}
-            <div className="flex bg-white/[0.03] border border-white/5 p-1 rounded-xl gap-1 mb-4">
+            <div className="flex bg-white/[0.02] border border-white/[0.06] p-1 rounded-xl gap-1 mb-4">
               <button
                 type="button"
-                onClick={() => { setAuthMode("login"); setError(null); }}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                onClick={() => {
+                  setAuthMode("login");
+                  setError(null);
+                }}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   authMode === "login"
-                    ? "bg-[#334BFF] text-white shadow-lg"
+                    ? "bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white shadow-[0_2px_12px_rgba(51,75,255,0.3)]"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -188,10 +327,13 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
               </button>
               <button
                 type="button"
-                onClick={() => { setAuthMode("signup"); setError(null); }}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                onClick={() => {
+                  setAuthMode("signup");
+                  setError(null);
+                }}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   authMode === "signup"
-                    ? "bg-[#334BFF] text-white shadow-lg"
+                    ? "bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white shadow-[0_2px_12px_rgba(51,75,255,0.3)]"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -201,7 +343,7 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
 
             {/* Email input */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider pl-1">
                 Email
               </label>
               <input
@@ -210,13 +352,13 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="example@email.com"
-                className="glass-input w-full px-4 py-2.5 text-xs text-left"
+                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none focus:border-[#334BFF] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#334BFF] transition-all duration-200"
               />
             </div>
 
             {/* Password input */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider pl-1">
                 Mật khẩu
               </label>
               <input
@@ -225,7 +367,7 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="glass-input w-full px-4 py-2.5 text-xs text-left"
+                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none focus:border-[#334BFF] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#334BFF] transition-all duration-200"
               />
             </div>
 
@@ -240,15 +382,21 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full py-3.5 rounded-lg font-bold text-xs btn-primary disabled:opacity-40"
+                className="w-full py-3.5 rounded-xl font-bold text-xs bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white border border-[#334BFF]/50 hover:from-[#334BFF] hover:to-[#4d60ff] hover:shadow-[0_4px_20px_rgba(51,75,255,0.3)] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed cursor-pointer"
               >
-                {busy ? "Đang xử lý…" : authMode === "login" ? "Đăng nhập" : "Đăng ký tài khoản"}
+                {busy
+                  ? "Đang xử lý…"
+                  : authMode === "login"
+                    ? "Đăng nhập"
+                    : "Đăng ký tài khoản"}
               </button>
 
               {/* Divider */}
               <div className="flex items-center gap-3 py-1">
                 <span className="h-px flex-grow bg-white/5" />
-                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Hoặc</span>
+                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                  Hoặc
+                </span>
                 <span className="h-px flex-grow bg-white/5" />
               </div>
 
@@ -257,7 +405,7 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={busy}
-                className="w-full py-3 flex items-center justify-center gap-2.5 rounded-lg font-bold text-xs bg-slate-900 border border-white/10 hover:bg-slate-800 transition-colors text-white"
+                className="w-full py-3.5 flex items-center justify-center gap-2.5 rounded-xl font-bold text-xs bg-white/[0.03] border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-all duration-200 text-white hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed cursor-pointer"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
@@ -282,8 +430,11 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
 
               <button
                 type="button"
-                onClick={() => { setView("menu"); setError(null); }}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors block mx-auto text-center pt-2"
+                onClick={() => {
+                  setView("menu");
+                  setError(null);
+                }}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors block mx-auto text-center pt-2 cursor-pointer"
               >
                 ← Quay lại
               </button>
@@ -294,12 +445,21 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
         {/* Create / Join view */}
         {view !== "menu" && view !== "auth" && (
           <div className="relative z-10 space-y-4">
+            {session?.user?.email && (
+              <div className="text-[10px] text-slate-400 font-semibold bg-white/[0.02] border border-white/5 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2 mb-1 text-left">
+                <span className="flex items-center gap-1.5 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="truncate">Tài khoản: <strong className="text-white font-mono">{session.user.email}</strong></span>
+                </span>
+                <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-wider shrink-0">Đã đăng nhập</span>
+              </div>
+            )}
             {view === "join" && (
               <input
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder="Mã phòng (VD: WC-X7K2)"
-                className="glass-input w-full px-4 py-3 text-center font-mono tracking-widest text-xs"
+                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-center font-mono tracking-widest text-xs focus:outline-none focus:border-[#334BFF] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#334BFF] transition-all duration-200"
                 disabled={Boolean(initialCode)}
               />
             )}
@@ -308,23 +468,34 @@ export default function RoomScreen({ initialCode, onJoined, onSolo, onCancel, se
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="Tên của bạn"
-              className="glass-input w-full px-4 py-3 text-center font-semibold text-xs"
+              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-center font-semibold text-xs focus:outline-none focus:border-[#334BFF] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#334BFF] transition-all duration-200"
               autoFocus
             />
-            <div className="rounded-lg px-4 py-3 text-xs font-semibold bg-[#62F2C0]/10 border border-[#62F2C0]/25 text-[#62F2C0]">
-              🎁 Mỗi người nhận 5.000 💎 chips khi vào phòng!
+            <div className="rounded-xl px-4 py-3 text-xs font-semibold bg-[#62F2C0]/10 border border-[#62F2C0]/25 text-[#62F2C0] flex items-center justify-center gap-1.5">
+              <span>🎁</span> Mỗi người nhận 5.000 💎 chips khi vào phòng!
             </div>
-            {error && <div className="text-xs text-[#ff5a5a] font-medium">{error}</div>}
+            {error && (
+              <div className="text-xs text-[#ff5a5a] font-medium bg-[#ff5a5a]/10 border border-[#ff5a5a]/25 rounded-lg p-2.5">
+                {error}
+              </div>
+            )}
             <button
               onClick={submit}
               disabled={!nameOk || (view === "join" && !code.trim()) || busy}
-              className="w-full py-3.5 rounded-lg font-bold text-xs btn-primary disabled:bg-slate-800 disabled:text-slate-500 disabled:border-white/5 disabled:cursor-not-allowed"
+              className="w-full py-3.5 rounded-xl font-bold text-xs bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white border border-[#334BFF]/50 hover:from-[#334BFF] hover:to-[#4d60ff] hover:shadow-[0_4px_20px_rgba(51,75,255,0.3)] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed cursor-pointer"
             >
-              {busy ? "Đang vào phòng…" : view === "create" ? "Tạo phòng & Vào chơi 🏟️" : "Vào phòng ⚽"}
+              {busy
+                ? "Đang vào phòng…"
+                : view === "create"
+                  ? "Tạo phòng & Vào chơi 🏟️"
+                  : "Vào phòng ⚽"}
             </button>
             <button
-              onClick={() => { setView("menu"); setError(null); }}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors block mx-auto"
+              onClick={() => {
+                setView("menu");
+                setError(null);
+              }}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors block mx-auto cursor-pointer"
             >
               ← Quay lại
             </button>
