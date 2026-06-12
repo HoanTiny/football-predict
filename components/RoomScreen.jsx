@@ -9,6 +9,7 @@ export default function RoomScreen({
   initialCode,
   onJoined,
   onSolo,
+  onViewer,
   onCancel,
   session,
   pushToast,
@@ -287,6 +288,25 @@ export default function RoomScreen({
                   </div>
                 </div>
                 <span className="text-slate-400 group-hover:translate-x-1 transition-transform duration-200 text-sm font-bold">
+                  →
+                </span>
+              </div>
+            </button>
+
+            <button
+              onClick={onViewer}
+              className="w-full text-left p-4 rounded-xl bg-transparent border border-white/5 hover:bg-white/[0.03] hover:border-amber-500/20 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group cursor-pointer"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>📅</span> Xem lịch &amp; kết quả
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                    Theo dõi lịch thi đấu và cập nhật kết quả thủ công
+                  </div>
+                </div>
+                <span className="text-amber-400/60 group-hover:translate-x-1 transition-transform duration-200 text-sm font-bold">
                   →
                 </span>
               </div>

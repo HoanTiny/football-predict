@@ -15,6 +15,15 @@ import { useMatches } from "@/hooks/useMatches";
 import { createRoom, joinRoom } from "@/lib/roomApi";
 import { supabaseReady, supabase } from "@/lib/supabase";
 
+/** Các tab hợp lệ — dùng để sync tab hiện tại với URL hash (#predictions, #leaderboard…). */
+const VALID_TABS = ["schedule", "groups", "bracket", "predictions", "leaderboard", "statistics", "champion", "settings"];
+
+/** Đọc tab từ URL hash, fallback về "schedule" nếu hash không hợp lệ. */
+function tabFromHash() {
+  const h = window.location.hash.replace("#", "");
+  return VALID_TABS.includes(h) ? h : "schedule";
+}
+
 /** Đọc danh sách phòng đã tham gia từ localStorage (kèm migrate từ phiên đơn cũ). */
 function loadSessions() {
   try {
@@ -113,6 +122,7 @@ export default function WC2026App() {
     setDemoModeRaw(v);
   };
 
+
   // Chế độ chơi: 'solo' | 'room' | null (chưa chọn)
   const [mode, setModeRaw] = useState(() => localStorage.getItem(LS_MODE) || null);
   const setMode = (m) => {
@@ -149,7 +159,17 @@ export default function WC2026App() {
     return c ? c.toUpperCase() : null;
   }, []);
 
-  const [tab, setTab] = useState("schedule");
+  // Tab hiện tại sync với URL hash → F5 giữ nguyên tab, back/forward hoạt động
+  const [tab, setTabRaw] = useState(tabFromHash);
+  const setTab = (t) => {
+    setTabRaw(t);
+    if (window.location.hash !== `#${t}`) window.location.hash = t;
+  };
+  useEffect(() => {
+    const onHashChange = () => setTabRaw(tabFromHash());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
   const [betMatch, setBetMatch] = useState(null);
   const [betModalTab, setBetModalTab] = useState("predict");
 
@@ -202,6 +222,12 @@ export default function WC2026App() {
     setForceRoomPicker(false);
   };
 
+  const goViewer = () => {
+    setMode("viewer");
+    setForceRoomPicker(false);
+    setTab("schedule");
+  };
+
   // Rời một phòng (mặc định phòng đang mở)
   const leaveRoom = async (code = activeCode) => {
     const actualCode = (code && typeof code === "string") ? code : activeCode;
@@ -248,11 +274,13 @@ export default function WC2026App() {
     pushToast(`Đã đặt cược ${bet.homeGoals}-${bet.awayGoals} với ${fmt(bet.wager)} 💎. Chúc may mắn! 🍀`, "info");
   };
 
-  const placeChampionBet = (team, wager) => {
-    if (!player || player.championPick) return;
-    const w = Math.max(10, Math.min(500, Math.min(wager, player.chips)));
-    store.placeChampionBet(team, w);
-    pushToast(`👑 Đã cược ${team} vô địch với ${fmt(w)} 💎!`, "info");
+  const placeChampionBet = (stage, team, wager, multiplier) => {
+    if (!player) return;
+    const picks = player.championPicks || [];
+    if (picks.some((p) => p.stage === stage)) return;
+    const w = Math.max(10, Math.min(wager, player.chips));
+    store.placeChampionBet(stage, team, w, multiplier);
+    pushToast(`👑 Đã cược ${team} vô địch (×${multiplier}) với ${fmt(w)} 💎!`, "info");
   };
 
   const resetPredictions = () => {
@@ -309,11 +337,16 @@ export default function WC2026App() {
 
   const predictionByMatch = useMemo(() => {
     const m = new Map();
-    (player?.predictions || []).forEach((p) => m.set(p.matchId, p));
+    (player?.predictions || []).forEach((p) => {
+      const list = m.get(p.matchId) || [];
+      list.push(p);
+      m.set(p.matchId, list);
+    });
     return m;
   }, [player]);
 
   const matchById = useMemo(() => new Map(matches.map((m) => [m.id, m])), [matches]);
+
 
   /* ----- guards ----- */
 
@@ -332,6 +365,7 @@ export default function WC2026App() {
         initialCode={fromInvite ? inviteCode : null}
         onJoined={joinedRoom}
         onSolo={goSolo}
+        onViewer={goViewer}
         onCancel={
           forceRoomPicker && !fromInvite && mode
             ? () => setForceRoomPicker(false)
@@ -340,6 +374,99 @@ export default function WC2026App() {
         session={authSession}
         pushToast={pushToast}
       />
+    );
+  }
+
+  // Chế độ xem lịch & cập nhật kết quả — không cần player
+  if (mode === "viewer") {
+    return (
+      <div className="min-h-[100dvh] pb-20">
+        {/* Minimal sticky header */}
+        <header
+          className="fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-4 gap-3 border-b border-white/5"
+          style={{ background: "rgba(8,20,45,0.95)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}
+        >
+          <span className="text-xs font-black text-white uppercase tracking-wider shrink-0">📅 Lịch &amp; Kết quả</span>
+          <div className="flex gap-1 overflow-x-auto">
+            {[
+              { key: "schedule", label: "Lịch" },
+              { key: "groups", label: "Bảng" },
+              { key: "bracket", label: "Sơ đồ" },
+            ].map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  tab === t.key ? "bg-[#334BFF] text-white" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setMode(null)}
+            className="shrink-0 text-[10px] font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer whitespace-nowrap"
+          >
+            Đổi chế độ
+          </button>
+        </header>
+
+        <main className="max-w-[1280px] mx-auto px-4 pt-20 pb-6">
+          {tab === "schedule" && (
+            <ScheduleTab
+              matches={matches}
+              loading={loading}
+              error={error}
+              onRetry={() => fetchMatches()}
+              predictionByMatch={new Map()}
+              onBet={null}
+              betsByMatch={null}
+            />
+          )}
+          {tab === "groups" && (
+            <GroupsTab matches={matches} predictionByMatch={new Map()} />
+          )}
+          {tab === "bracket" && <BracketTab matches={matches} />}
+        </main>
+
+        {/* Mobile bottom nav — viewer */}
+        <nav
+          className="md:hidden fixed bottom-0 inset-x-0 z-40 flex border-t border-white/5"
+          style={{ background: "rgba(8,20,45,0.95)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", height: "60px" }}
+        >
+          {[
+            { key: "schedule", label: "Lịch", icon: "📅" },
+            { key: "groups", label: "Bảng", icon: "📋" },
+            { key: "bracket", label: "Sơ đồ", icon: "🗺️" },
+          ].map((t) => {
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer"
+                style={{ color: active ? "#62F2C0" : "rgba(138,160,200,0.5)" }}
+              >
+                <span className="text-lg" style={{ transform: active ? "scale(1.1)" : "scale(1)" }}>
+                  {t.icon}
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-wider">{t.label}</span>
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setMode(null)}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer"
+            style={{ color: "rgba(138,160,200,0.5)" }}
+          >
+            <span className="text-lg">🔙</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider">Menu</span>
+          </button>
+        </nav>
+
+        <Toasts toasts={toasts} />
+      </div>
     );
   }
 
@@ -410,7 +537,7 @@ export default function WC2026App() {
               <StatisticsTab player={player} />
             )}
             {tab === "champion" && (
-              <ChampionTab player={player} onPlaceBet={placeChampionBet} roomChampions={inRoom ? room.champions : null} />
+              <ChampionTab player={player} onPlaceBet={placeChampionBet} roomChampions={inRoom ? room.champions : null} matches={matches} />
             )}
             {tab === "settings" && (
               <SettingsTab

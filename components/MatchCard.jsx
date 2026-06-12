@@ -35,19 +35,14 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
   const scoreText =
     ft.home == null || ft.away == null ? "–  –" : `${ft.home}  ${ft.away}`;
 
-  let outcomeLabel = "";
-  if (prediction && prediction.status !== "pending") {
-    if (prediction.status === "won_exact") outcomeLabel = "🎯";
-    else if (prediction.status !== "lost") outcomeLabel = "✅";
-    else outcomeLabel = "❌";
-  }
+  // outcomeLabel is calculated inline for multiple predictions
 
   const groupLetter = getTeamGroup(match.homeTeam?.name);
 
   return (
     <div
-      onClick={() => onBet(match)}
-      className="match-card relative px-4 py-3 cursor-pointer flex flex-col justify-between"
+      onClick={() => onBet?.(match)}
+      className={`match-card relative px-4 py-3 flex flex-col justify-between ${onBet ? "cursor-pointer" : "cursor-default"}`}
       style={{ minHeight: 96 }}
     >
       {/* Top Metadata Row (Figma inspired: Group, Date/Time, Venue) */}
@@ -103,13 +98,35 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
           className="flex justify-end shrink-0 ml-1"
           onClick={(e) => e.stopPropagation()}
         >
-          {prediction ? (
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#334BFF]/10 border border-[#334BFF]/25 text-[10px] text-[#7b8fff] font-bold">
-              {outcomeLabel && <span className="text-xs">{outcomeLabel}</span>}
-              <span>
-                {prediction.homeGoals}–{prediction.awayGoals} · 💎
-                {prediction.wager}
-              </span>
+          {prediction && prediction.length > 0 ? (
+            <div className="flex flex-wrap gap-1 justify-end max-w-full">
+              {prediction.map((p, pIdx) => {
+                let outcome = "";
+                if (p.status !== "pending") {
+                  if (p.status === "won_exact") outcome = "🎯";
+                  else if (p.status !== "lost") outcome = "✅";
+                  else outcome = "❌";
+                }
+                return (
+                  <div key={pIdx} className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#334BFF]/10 border border-[#334BFF]/20 text-[9px] text-[#7b8fff] font-bold shrink-0">
+                    {outcome && <span className="text-[10px]">{outcome}</span>}
+                    <span>
+                      {p.homeGoals}–{p.awayGoals} · 💎{p.wager}
+                    </span>
+                  </div>
+                );
+              })}
+              {canBet && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBet(match);
+                  }}
+                  className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[9px] text-emerald-400 font-bold hover:bg-emerald-500/20 shrink-0"
+                >
+                  + Thêm
+                </button>
+              )}
             </div>
           ) : canBet ? (
             <button

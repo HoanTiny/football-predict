@@ -6,12 +6,13 @@ import {
   fetchRoomState,
   insertPrediction,
   applySettlementToRoom,
-  setChampionPick,
+  addChampionPick,
   resetMyData,
   subscribeRoom,
 } from "@/lib/roomApi";
 
 const mapPrediction = (row) => ({
+  id: row.id,
   matchId: Number(row.match_id),
   homeGoals: row.home_goals,
   awayGoals: row.away_goals,
@@ -69,9 +70,7 @@ export function useRoomStore(session, matches, pushToast) {
       playerName: me.name,
       chips: me.chips,
       predictions: predictions.filter((r) => r.player_id === me.id).map(mapPrediction),
-      championPick: me.champion_team
-        ? { team: me.champion_team, wager: me.champion_wager, status: me.champion_status, payout: me.champion_payout }
-        : null,
+      championPicks: me.champion_picks || [],
     };
   }, [me, predictions]);
 
@@ -88,9 +87,9 @@ export function useRoomStore(session, matches, pushToast) {
   );
 
   const placeChampionBet = useCallback(
-    async (team, wager) => {
+    async (stage, team, wager, multiplier) => {
       try {
-        await setChampionPick(me, team, wager);
+        await addChampionPick(me, stage, team, wager, multiplier);
         await refresh();
       } catch (e) {
         pushToast(`Không chốt được cược vô địch: ${e.message}`, "lose");
@@ -116,7 +115,7 @@ export function useRoomStore(session, matches, pushToast) {
     if (!result) return;
     result.settledMatchIds.forEach((id) => settledRef.current.add(id));
     settlingRef.current = true;
-    applySettlementToRoom(me, result)
+    applySettlementToRoom({ ...me, champion_picks: player.championPicks }, result)
       .then(() => {
         result.toasts.forEach((t) => pushToast(t.msg, t.type));
         return refresh();
@@ -159,9 +158,15 @@ export function useRoomStore(session, matches, pushToast) {
       .sort((a, b) => b.chips - a.chips);
   }, [players, predictions]);
 
-  // Ai chốt đội vô địch nào
+  // Ai đã cược vô địch
   const champions = useMemo(
-    () => players.filter((p) => p.champion_team).map((p) => ({ name: p.name, team: p.champion_team })),
+    () =>
+      players
+        .filter((p) => p.champion_team)
+        .map((p) => {
+          const teamName = p.champion_team.split(":")[0];
+          return { name: p.name, team: teamName };
+        }),
     [players]
   );
 

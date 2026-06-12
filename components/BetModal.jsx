@@ -65,10 +65,11 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
   const homeName = match.homeTeam?.name;
   const awayName = match.awayTeam?.name;
 
-  const [home, setHome] = useState(prediction?.homeGoals ?? 0);
-  const [away, setAway] = useState(prediction?.awayGoals ?? 0);
+  const firstPred = Array.isArray(prediction) ? prediction[0] : prediction;
+  const [home, setHome] = useState(firstPred?.homeGoals ?? 0);
+  const [away, setAway] = useState(firstPred?.awayGoals ?? 0);
   const maxWager = Math.max(10, chips);
-  const [wager, setWager] = useState(prediction?.wager ?? Math.min(50, chips));
+  const [wager, setWager] = useState(firstPred?.wager ?? Math.min(50, chips));
   const valid = chips >= 10 && wager >= 10 && wager <= chips && home >= 0 && away >= 0;
 
   const friendBets = (roomBets || []).filter((b) => !b.isMe);
@@ -91,23 +92,23 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
             {vnDateHeader(match.utcDate)} · {vnTime(match.utcDate)}
           </div>
-          <div className="flex items-center justify-center gap-3 text-lg font-bold text-white uppercase tracking-wider flex-wrap">
-            <div className="flex items-center gap-2">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg font-bold text-white uppercase tracking-wider w-full mt-2">
+            <div className="flex items-center justify-end gap-2 text-right min-w-0">
+              <span className="truncate">{homeName}</span>
               {renderModalFlag(homeName)}
-              <span>{homeName}</span>
             </div>
-            <span className="text-xs font-black text-[#334BFF] px-1">VS</span>
-            <div className="flex items-center gap-2">
-              <span>{awayName}</span>
+            <span className="text-xs font-black text-[#334BFF] px-2 shrink-0">VS</span>
+            <div className="flex items-center justify-start gap-2 text-left min-w-0">
               {renderModalFlag(awayName)}
+              <span className="truncate">{awayName}</span>
             </div>
           </div>
 
           {/* Modal Tabs */}
-          <div className="flex justify-center gap-2 mt-4">
+          <div className="flex justify-center gap-1.5 sm:gap-2 mt-4 overflow-x-auto scrollbar-none max-w-full pb-1">
             <button
               onClick={() => setModalTab("predict")}
-              className={`px-4 py-1 text-xs font-bold rounded-full transition-all ${
+              className={`px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold rounded-full transition-all shrink-0 ${
                 modalTab === "predict"
                   ? "bg-[#334BFF] text-white"
                   : "text-slate-400 hover:text-white"
@@ -118,7 +119,7 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
             {roomBets && roomBets.length > 0 && (
               <button
                 onClick={() => setModalTab("friends")}
-                className={`px-4 py-1 text-xs font-bold rounded-full transition-all ${
+                className={`px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold rounded-full transition-all shrink-0 ${
                   modalTab === "friends"
                     ? "bg-[#334BFF] text-white"
                     : "text-slate-400 hover:text-white"
@@ -129,7 +130,7 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
             )}
             <button
               onClick={() => setModalTab("stats")}
-              className={`px-4 py-1 text-xs font-bold rounded-full transition-all ${
+              className={`px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold rounded-full transition-all shrink-0 ${
                 modalTab === "stats"
                   ? "bg-[#334BFF] text-white"
                   : "text-slate-400 hover:text-white"
@@ -150,11 +151,17 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                 <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
                   Trận đấu này đã bắt đầu hoặc kết thúc. Bạn không thể tạo hoặc chỉnh sửa dự đoán nữa.
                 </p>
-                {prediction ? (
-                  <div className="inline-flex flex-col items-center gap-1.5 bg-[#334BFF]/10 border border-[#334BFF]/25 rounded-xl px-5 py-3.5 mx-auto">
-                    <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wider">Dự đoán của bạn</span>
-                    <span className="text-lg font-black text-white">{prediction.homeGoals} – {prediction.awayGoals}</span>
-                    <span className="text-[10px] text-slate-400 font-bold">Đặt cược: 💎{prediction.wager}</span>
+                {prediction && prediction.length > 0 ? (
+                  <div className="space-y-2.5 max-w-xs mx-auto w-full">
+                    <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wider block">Dự đoán của bạn ({prediction.length})</span>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {prediction.map((p, pIdx) => (
+                        <div key={pIdx} className="inline-flex flex-col items-center gap-1 bg-[#334BFF]/10 border border-[#334BFF]/25 rounded-xl px-4 py-2 shrink-0">
+                          <span className="text-sm font-black text-white">{p.homeGoals} – {p.awayGoals}</span>
+                          <span className="text-[9px] text-slate-400 font-bold">Đặt cược: 💎{p.wager}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-xs text-slate-500 italic py-2">Bạn đã không đặt cược cho trận đấu này.</div>
@@ -175,11 +182,49 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                   <ScoreButton value={away} onChange={setAway} label={awayName} />
                 </div>
 
+                {/* Existing predictions list */}
+                {prediction && prediction.length > 0 && (
+                  <div className="bg-[#0B1735]/40 border border-white/5 rounded-xl p-3.5 space-y-2">
+                    <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wide block">
+                      Các cược đã chốt cho trận này ({prediction.length})
+                    </span>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {prediction.map((p, pIdx) => (
+                        <div key={pIdx} className="inline-flex items-center gap-2 bg-[#334BFF]/10 border border-[#334BFF]/25 px-3 py-1 rounded-lg text-xs font-semibold text-white shrink-0">
+                          <span>{p.homeGoals} – {p.awayGoals}</span>
+                          <span className="text-slate-400">·</span>
+                          <span className="text-[#62F2C0] font-bold">💎{fmt(p.wager)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Wager slider */}
                 <div>
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-slate-400 font-medium">Số chip cược</span>
-                    <span className="text-slate-300">
+                  <div className="flex items-center justify-between gap-3 text-xs mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 font-medium whitespace-nowrap">Số chips muốn cược: </span>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-2 text-slate-400 text-[10px] pointer-events-none">💎</span>
+                        <input
+                          type="number"
+                          min="10"
+                          max={chips}
+                          value={wager || ""}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            setWager(isNaN(val) ? 0 : val);
+                          }}
+                          onBlur={() => {
+                            const clamped = Math.max(10, Math.min(chips, wager || 10));
+                            setWager(clamped);
+                          }}
+                          className="glass-input w-20 pl-6 pr-1.5 py-1 text-xs font-bold text-center text-white transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    </div>
+                    <span className="text-slate-300 whitespace-nowrap">
                       Số dư: <span className="font-bold text-[#62F2C0]">💎 {fmt(chips)}</span>
                     </span>
                   </div>
@@ -261,28 +306,46 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                 Danh sách dự đoán trong phòng ({roomBets?.length || 0} người)
               </span>
               {roomBets && roomBets.length > 0 ? (
-                <div className="space-y-2.5 divide-y divide-white/5">
+                <div className="space-y-3 divide-y divide-white/5">
                   {roomBets.map((b, idx) => (
                     <div
                       key={b.playerName}
-                      className={`flex justify-between items-center text-slate-400 ${
-                        idx > 0 ? "pt-2.5" : ""
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-slate-400 ${
+                        idx > 0 ? "pt-3" : ""
                       }`}
                     >
-                      <span className="font-semibold text-white flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${b.isMe ? "bg-[#62F2C0]" : "bg-[#334BFF]"}`} />
-                        {b.playerName} {b.isMe && <span className="text-[9px] text-[#62F2C0] font-normal">(Bạn)</span>}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <span>Dự đoán:</span>
-                        <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/25 px-2 py-0.5 rounded text-[10px] tabular-nums">
-                          {b.homeGoals}–{b.awayGoals}
-                        </strong>
-                        <span className="text-slate-400">· Cược:</span>
-                        <span className="font-bold text-[#62F2C0]">
-                          💎{fmt(b.wager)}
+                      {/* Left: Player Name & Status Indicator */}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${b.isMe ? "bg-[#62F2C0]" : "bg-[#334BFF]"}`} />
+                        <span className="font-semibold text-white truncate text-xs sm:text-sm">
+                          {b.playerName}
                         </span>
-                      </span>
+                        {b.isMe && (
+                          <span className="shrink-0 text-[8px] sm:text-[9px] bg-[#62F2C0]/10 text-[#62F2C0] border border-[#62F2C0]/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                            Bạn
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Right: Score Predict & Wager badges */}
+                      <div className="flex items-center gap-2 pl-3.5 sm:pl-0 self-start sm:self-auto flex-wrap">
+                        {/* Score Predict Pill */}
+                        <div className="flex items-center gap-1.5 bg-[#334BFF]/10 border border-[#334BFF]/20 px-2 py-0.5 rounded text-[10px] sm:text-xs">
+                          <span className="text-slate-400 text-[9px] sm:text-[10px]">Dự đoán:</span>
+                          <strong className="text-white font-extrabold tabular-nums font-mono">
+                            {b.homeGoals}–{b.awayGoals}
+                          </strong>
+                        </div>
+
+                        {/* Wager Pill */}
+                        <div className="flex items-center gap-1 bg-[#62F2C0]/10 border border-[#62F2C0]/20 px-2 py-0.5 rounded text-[10px] sm:text-xs">
+                          <span className="text-slate-400 text-[9px] sm:text-[10px]">Cược:</span>
+                          <span className="font-bold text-[#62F2C0] tabular-nums font-mono flex items-center gap-0.5">
+                            <span>💎</span>
+                            {fmt(b.wager)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

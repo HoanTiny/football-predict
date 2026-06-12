@@ -9,21 +9,21 @@ create table if not exists rooms (
   created_at timestamptz not null default now()
 );
 
--- Người chơi trong phòng (kèm cược vô địch)
+-- Người chơi trong phòng (kèm cược vô địch theo vòng)
 create table if not exists players (
   id uuid primary key default gen_random_uuid(),
   room_code text not null references rooms(code) on delete cascade,
   user_id uuid references auth.users(id) on delete cascade,
   name text not null,
   chips int not null default 1000,
-  champion_team text,
-  champion_wager int,
-  champion_status text,
-  champion_payout int,
+  champion_picks jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   unique (room_code, name),
   unique (room_code, user_id)
 );
+
+-- Migration: thêm cột champion_picks nếu DB đã tồn tại
+alter table players add column if not exists champion_picks jsonb not null default '[]'::jsonb;
 
 -- Kèo từng trận
 create table if not exists predictions (
@@ -37,8 +37,7 @@ create table if not exists predictions (
   status text not null default 'pending',
   payout int not null default 0,
   final_score text,
-  created_at timestamptz not null default now(),
-  unique (player_id, match_id)
+  created_at timestamptz not null default now()
 );
 
 create index if not exists idx_players_room on players (room_code);

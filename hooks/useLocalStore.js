@@ -12,7 +12,22 @@ import { computeSettlement } from "@/lib/settlement";
 export function useLocalStore(matches, pushToast) {
   const [player, setPlayer] = useState(() => {
     const n = localStorage.getItem(LS_ACTIVE);
-    return n ? loadPlayer(n) : null;
+    if (!n) return null;
+    const p = loadPlayer(n);
+    if (!p) return null;
+    // Migrate cũ: championPick đơn → championPicks[]
+    if (p.championPick !== undefined && !p.championPicks) {
+      const migrated = {
+        ...p,
+        championPicks: p.championPick
+          ? [{ ...p.championPick, stage: "GROUP_STAGE", multiplier: 5 }]
+          : [],
+      };
+      delete migrated.championPick;
+      savePlayer(migrated);
+      return migrated;
+    }
+    return p;
   });
   const settledRef = useRef(new Set());
 
@@ -28,7 +43,23 @@ export function useLocalStore(matches, pushToast) {
   const createPlayer = useCallback(
     (name) => {
       const existing = loadPlayer(name);
-      const p = existing || { playerName: name, chips: START_CHIPS, predictions: [], championPick: null };
+      let p;
+      if (existing) {
+        // Migrate nếu cần
+        if (existing.championPick !== undefined && !existing.championPicks) {
+          p = {
+            ...existing,
+            championPicks: existing.championPick
+              ? [{ ...existing.championPick, stage: "GROUP_STAGE", multiplier: 5 }]
+              : [],
+          };
+          delete p.championPick;
+        } else {
+          p = existing;
+        }
+      } else {
+        p = { playerName: name, chips: START_CHIPS, predictions: [], championPicks: [] };
+      }
       savePlayer(p);
       localStorage.setItem(LS_ACTIVE, name);
       setPlayer(p);
@@ -42,18 +73,39 @@ export function useLocalStore(matches, pushToast) {
       updatePlayer((prev) => ({
         ...prev,
         chips: prev.chips - bet.wager,
-        predictions: [...prev.predictions, { ...bet, status: "pending", payout: 0, placedAt: new Date().toISOString() }],
+        predictions: [
+          ...prev.predictions,
+          {
+            id: Math.random().toString(36).substring(2, 11),
+            ...bet,
+            status: "pending",
+            payout: 0,
+            placedAt: new Date().toISOString(),
+          },
+        ],
       }));
     },
     [updatePlayer]
   );
 
   const placeChampionBet = useCallback(
-    (team, wager) => {
+    (stage, team, wager, multiplier) => {
       updatePlayer((prev) => ({
         ...prev,
         chips: prev.chips - wager,
-        championPick: { team, wager, status: "pending", payout: 0 },
+        championPicks: [
+          ...(prev.championPicks || []),
+          {
+            id: Math.random().toString(36).substring(2, 11),
+            stage,
+            team,
+            wager,
+            multiplier,
+            status: "pending",
+            payout: 0,
+            placedAt: new Date().toISOString(),
+          },
+        ],
       }));
     },
     [updatePlayer]
@@ -61,7 +113,7 @@ export function useLocalStore(matches, pushToast) {
 
   const reset = useCallback(() => {
     settledRef.current = new Set();
-    updatePlayer((prev) => ({ ...prev, chips: START_CHIPS, predictions: [], championPick: null }));
+    updatePlayer((prev) => ({ ...prev, chips: START_CHIPS, predictions: [], championPicks: [] }));
   }, [updatePlayer]);
 
   // Tự quyết toán khi có trận FINISHED
@@ -72,7 +124,7 @@ export function useLocalStore(matches, pushToast) {
     updatePlayer((prev) => ({
       ...prev,
       predictions: result.predictions,
-      championPick: result.championPick,
+      championPicks: result.championPicks,
       chips: prev.chips + result.chipsGain,
     }));
     result.toasts.forEach((t) => pushToast(t.msg, t.type));

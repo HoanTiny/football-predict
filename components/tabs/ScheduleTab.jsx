@@ -252,20 +252,30 @@ export default function ScheduleTab({
 
               {/* Action Button */}
               <div className="pt-2">
-                {nextMatchPrediction ? (
-                  <button
-                    onClick={() => onBet(nextMatch)}
-                    className="btn-secondary px-5 py-2 text-xs font-bold flex items-center gap-2 hover:border-[#334BFF]/50"
-                  >
-                    <span>Dự đoán:</span>
-                    <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
-                      {nextMatchPrediction.homeGoals}–
-                      {nextMatchPrediction.awayGoals}
-                    </strong>
-                    <span className="text-[10px] text-slate-400">
-                      💎{nextMatchPrediction.wager}
-                    </span>
-                  </button>
+                {onBet && (nextMatchPrediction && nextMatchPrediction.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {nextMatchPrediction.map((p, pIdx) => (
+                      <button
+                        key={pIdx}
+                        onClick={() => onBet(nextMatch)}
+                        className="btn-secondary px-4 py-2 text-xs font-bold flex items-center gap-2 hover:border-[#334BFF]/50 shrink-0"
+                      >
+                        <span>Dự đoán:</span>
+                        <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
+                          {p.homeGoals}–{p.awayGoals}
+                        </strong>
+                        <span className="text-[10px] text-slate-400">
+                          💎{p.wager}
+                        </span>
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => onBet(nextMatch)}
+                      className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-1.5 shadow-[0_4px_12px_rgba(51,75,255,0.2)] shrink-0"
+                    >
+                      <span>+ Đặt thêm</span>
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={() => onBet(nextMatch)}
@@ -273,7 +283,7 @@ export default function ScheduleTab({
                   >
                     Dự đoán ngay
                   </button>
-                )}
+                ))}
               </div>
             </div>
 
@@ -565,7 +575,7 @@ export default function ScheduleTab({
                 <MatchCard
                   key={m.id}
                   match={m}
-                  prediction={predictionByMatch.get(m.id)}
+                  prediction={predictionByMatch?.get(m.id)}
                   onBet={onBet}
                   roomBets={betsByMatch?.get(m.id)}
                 />
@@ -573,6 +583,7 @@ export default function ScheduleTab({
             </div>
           </div>
         ))}
+
     </div>
   );
 }
