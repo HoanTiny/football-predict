@@ -68,6 +68,15 @@ function GroupCard({ letter, standings }) {
                   <div className="flex items-center gap-1.5 min-w-0">
                     {renderFlag(team)}
                     <span className="truncate text-[11px]">{team.name}</span>
+                    {team.live && (
+                      <span
+                        className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-[#E40000]/15 text-[#ff5a5a]"
+                        title="Trận đang diễn ra — tỉ số cập nhật trực tiếp"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a5a] animate-pulse" />
+                        Đang đá
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="py-1 px-1 text-center font-extrabold text-white tabular-nums">
@@ -94,9 +103,16 @@ function GroupCard({ letter, standings }) {
 
 /** TAB — Bảng đấu — lưới BXH toàn bộ 12 bảng A→L */
 export default function GroupsTab({ matches, predictionByMatch }) {
+  // BXH chỉ phản ánh kết quả THẬT: trận đã đá xong + trận đang đá (tỉ số realtime).
+  // KHÔNG cộng dự đoán cho các trận chưa diễn ra.
   const groups = useMemo(
-    () => allGroupStandings(matches, predictionByMatch, true),
+    () => allGroupStandings(matches, predictionByMatch, false),
     [matches, predictionByMatch]
+  );
+
+  const hasLive = useMemo(
+    () => groups.some(({ standings }) => standings.some((t) => t.live)),
+    [groups]
   );
 
   return (
@@ -110,8 +126,14 @@ export default function GroupsTab({ matches, predictionByMatch }) {
           BẢNG XẾP HẠNG
         </h2>
         <p className="text-[11px] text-slate-500 mt-1">
-          Bao gồm cả dự đoán của bạn cho các trận chưa đá
+          Tính theo kết quả thật — cập nhật trực tiếp khi trận đang diễn ra
         </p>
+        {hasLive && (
+          <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-[#E40000]/10 border border-[#E40000]/20 text-[10px] font-bold text-[#ff5a5a]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a5a] animate-pulse" />
+            Có trận đang diễn ra · BXH đang cập nhật realtime
+          </div>
+        )}
       </div>
 
       {/* Grid of all 12 groups */}
