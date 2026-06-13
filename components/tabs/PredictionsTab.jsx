@@ -77,31 +77,36 @@ function RoomPredictions({ betsByMatch, matchById }) {
                 return (
                   <div
                     key={b.id || `${b.playerName}_${i}`}
-                    className={`flex items-center gap-3 px-4 py-2 text-xs ${b.isMe ? "bg-[#334BFF]/[0.07]" : ""}`}
+                    className={`flex flex-col gap-1.5 px-4 py-2.5 text-xs ${b.isMe ? "bg-[#334BFF]/[0.07]" : ""}`}
                   >
-                    <span className="font-semibold text-white truncate max-w-[120px]">
-                      {b.playerName}
-                      {b.isMe && <span className="text-[#62F2C0] text-[10px] font-bold ml-1">(bạn)</span>}
-                    </span>
-                    <span className="score-capsule px-2 py-0.5 text-[11px] font-bold tabular-nums bg-white/5 border border-white/10 text-white shrink-0">
-                      {b.homeGoals} – {b.awayGoals}
-                    </span>
-                    <span className="text-slate-400 font-medium tabular-nums shrink-0">💎{fmt(b.wager)}</span>
-                    {b.status !== "pending" && b.payout !== 0 && (
-                      <span className={`font-bold tabular-nums shrink-0 ${b.payout > 0 ? "text-[#62F2C0]" : "text-[#ff5a5a]"}`}>
-                        ({b.payout > 0 ? "+" : ""}{fmt(b.payout)})
+                    {/* Line 1 — player name (full, wraps instead of truncating) + status */}
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-white break-words min-w-0 leading-snug">
+                        {b.playerName}
+                        {b.isMe && <span className="text-[#62F2C0] text-[10px] font-bold ml-1">(bạn)</span>}
                       </span>
-                    )}
-                    <span className="ml-auto flex items-center gap-2 shrink-0">
+                      <span className={`ml-auto px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 ${sc.labelClass}`}>
+                        {sc.label}
+                      </span>
+                    </div>
+
+                    {/* Line 2 — predicted score / wager / payout / placed time */}
+                    <div className="flex items-center flex-wrap gap-x-2.5 gap-y-1 text-[10px]">
+                      <span className="score-capsule px-2 py-0.5 text-[11px] font-bold tabular-nums bg-white/5 border border-white/10 text-white shrink-0">
+                        {b.homeGoals} – {b.awayGoals}
+                      </span>
+                      <span className="text-slate-400 font-medium tabular-nums shrink-0">💎{fmt(b.wager)}</span>
+                      {b.status !== "pending" && b.payout !== 0 && (
+                        <span className={`font-bold tabular-nums shrink-0 ${b.payout > 0 ? "text-[#62F2C0]" : "text-[#ff5a5a]"}`}>
+                          ({b.payout > 0 ? "+" : ""}{fmt(b.payout)})
+                        </span>
+                      )}
                       {b.placedAt && (
-                        <span className="text-[10px] text-slate-500 font-medium tabular-nums" title="Thời gian đặt cược">
+                        <span className="ml-auto text-slate-500 font-medium tabular-nums shrink-0" title="Thời gian đặt cược">
                           🕐 {vnShortDateTime(b.placedAt)}
                         </span>
                       )}
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${sc.labelClass}`}>
-                        {sc.label}
-                      </span>
-                    </span>
+                    </div>
                   </div>
                 );
               })}
@@ -213,67 +218,67 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
           const away = m?.awayTeam?.name || "?";
           const sc = STATUS_CONFIG[p.status] || STATUS_CONFIG.pending;
 
+          const isWin = p.payout > 0;
+
           return (
             <div
               key={p.matchId + "_" + idx}
-              className={`rounded-xl px-4 py-3 flex items-center justify-between gap-4 border ${sc.bg}`}
+              className={`rounded-xl px-3.5 py-3 flex flex-col gap-2.5 border ${sc.bg}`}
             >
-              {/* Symmetrical prediction display */}
-              <div className="flex-grow flex flex-col justify-center">
-                <div className="flex items-center gap-4">
-                  {/* Team 1 */}
-                  <div className="flex-1 flex items-center justify-end gap-2 text-right">
-                    <span className="font-bold text-sm text-white truncate max-w-[100px] sm:max-w-none">
-                      {home}
+              {/* Top row — status badge (left) + wager/payout (right). Own row so it never overflows on mobile. */}
+              <div className="flex items-center justify-between gap-2">
+                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 ${sc.labelClass}`}>
+                  {sc.label}
+                </span>
+                <div className="flex items-center gap-1.5 font-bold text-xs shrink-0">
+                  <span className="text-slate-300 font-semibold tabular-nums">💎{fmt(p.wager)}</span>
+                  {p.status !== "pending" && p.payout !== 0 && (
+                    <span className={`tabular-nums ${isWin ? "text-[#62F2C0]" : "text-[#ff5a5a]"}`}>
+                      ({isWin ? "+" : ""}{fmt(p.payout)})
                     </span>
-                    {renderTeamFlag(home)}
-                  </div>
-
-                  {/* Predicted score capsule */}
-                  <div className="score-capsule px-3 py-0.5 text-xs font-bold shrink-0 min-w-[54px] text-center tabular-nums bg-white/5 border border-white/10 text-white">
-                    {p.homeGoals} – {p.awayGoals}
-                  </div>
-
-                  {/* Team 2 */}
-                  <div className="flex-1 flex items-center justify-start gap-2 text-left">
-                    {renderTeamFlag(away)}
-                    <span className="font-bold text-sm text-white truncate max-w-[100px] sm:max-w-none">
-                      {away}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Date / placed time / actual score row */}
-                <div className="flex justify-center items-center gap-2 mt-2 text-[10px] text-slate-500 font-medium flex-wrap">
-                  <span>{m ? `${vnDateHeader(m.utcDate)} · ${vnTime(m.utcDate)}` : "—"}</span>
-                  {p.placedAt && (
-                    <>
-                      <span>•</span>
-                      <span title="Thời gian đặt cược">🕐 Cược lúc {vnShortDateTime(p.placedAt)}</span>
-                    </>
-                  )}
-                  {p.finalScore && (
-                    <>
-                      <span>•</span>
-                      <span>Tỉ số thật: <strong className="text-white">{p.finalScore}</strong></span>
-                    </>
                   )}
                 </div>
               </div>
 
-              {/* Payout right section */}
-              <div className="shrink-0 flex flex-col items-end gap-1 text-right">
-                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${sc.labelClass}`}>
-                  {sc.label}
-                </span>
-                <div className="flex items-center gap-1 font-bold text-xs">
-                  <span className="text-slate-400 font-medium">💎{p.wager}</span>
-                  {p.status !== "pending" && p.payout !== 0 && (
-                    <span className={p.payout > 0 ? "text-[#62F2C0]" : "text-[#ff5a5a]"}>
-                      ({p.payout > 0 ? "+" : ""}{fmt(p.payout)})
-                    </span>
-                  )}
+              {/* Match row — symmetric, teams truncate instead of pushing content off-screen */}
+              <div className="flex items-center justify-center gap-2.5">
+                {/* Team 1 */}
+                <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
+                  <span className="font-bold text-sm text-white truncate text-right">
+                    {home}
+                  </span>
+                  {renderTeamFlag(home)}
                 </div>
+
+                {/* Predicted score capsule */}
+                <div className="score-capsule px-3 py-1 text-sm font-bold shrink-0 min-w-[56px] text-center tabular-nums bg-white/5 border border-white/10 text-white">
+                  {p.homeGoals} – {p.awayGoals}
+                </div>
+
+                {/* Team 2 */}
+                <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
+                  {renderTeamFlag(away)}
+                  <span className="font-bold text-sm text-white truncate text-left">
+                    {away}
+                  </span>
+                </div>
+              </div>
+
+              {/* Meta row — date / placed time / actual score */}
+              <div className="flex justify-center items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 font-medium flex-wrap">
+                <span>{m ? `${vnDateHeader(m.utcDate)} · ${vnTime(m.utcDate)}` : "—"}</span>
+                {p.placedAt && (
+                  <>
+                    <span className="opacity-60">•</span>
+                    <span title="Thời gian đặt cược">🕐 Cược lúc {vnShortDateTime(p.placedAt)}</span>
+                  </>
+                )}
+                {p.finalScore && (
+                  <>
+                    <span className="opacity-60">•</span>
+                    <span>Tỉ số thật: <strong className="text-white">{p.finalScore}</strong></span>
+                  </>
+                )}
               </div>
             </div>
           );
