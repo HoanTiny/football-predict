@@ -535,8 +535,8 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                   <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>🏟</span> Sân đấu
                   </span>
-                  <span className="font-bold text-white truncate text-xs" title={match.venue || ""}>
-                    {match.venue || "Đang cập nhật"}
+                  <span className="font-bold text-white truncate text-xs" title={match.venue || stats?.venue || ""}>
+                    {match.venue || stats?.venue || (statsLoading ? "…" : "Đang cập nhật")}
                   </span>
                 </div>
                 {/* Thời tiết */}
@@ -566,8 +566,8 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                   <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>📍</span> Thành phố
                   </span>
-                  <span className="font-bold text-white truncate text-xs" title={stats?.weather?.city || ""}>
-                    {stats?.weather?.city || "—"}
+                  <span className="font-bold text-white truncate text-xs" title={stats?.weather?.city || stats?.city || ""}>
+                    {stats?.weather?.city || stats?.city || (statsLoading ? "…" : "—")}
                   </span>
                 </div>
               </div>
