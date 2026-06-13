@@ -1,5 +1,6 @@
 import { Oswald, Inter } from "next/font/google";
 import "./globals.css";
+import PWARegister from "@/components/PWARegister";
 
 const oswald = Oswald({
   variable: "--font-oswald",
@@ -17,15 +18,34 @@ export const metadata = {
   title: "Tiny Football — Predict & Win",
   description:
     "Nền tảng dự đoán kết quả bóng đá Tiny Football. Dự đoán tỉ số, tích điểm, leo BXH toàn cầu cùng bạn bè.",
+  applicationName: "Tiny Football",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Tiny Football",
+  },
   icons: {
     icon: "/football.png",
+    apple: "/apple-icon.png",
   },
+};
+
+export const viewport = {
+  themeColor: "#0B1735",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="vi" className={`${oswald.variable} ${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <PWARegister />
+      </body>
     </html>
   );
 }
