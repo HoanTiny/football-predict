@@ -600,11 +600,12 @@ export default function StreamScreen() {
               {/* Standings Blocks Container */}
               <div className="space-y-4 flex-1 overflow-y-auto pr-1 scrollbar-thin">
                 {currentTabGroups.map((groupLetter) => {
+                  // Chỉ tính kết quả thật (đã đá + đang đá realtime), không cộng dự đoán.
                   const standings = calculateGroupStandings(
                     matches,
                     groupLetter,
                     predictionByMatch,
-                    true,
+                    false,
                   );
 
                   return (
@@ -645,6 +646,12 @@ export default function StreamScreen() {
                                 <span className="font-bold text-slate-200 truncate max-w-[90px]">
                                   {team.name}
                                 </span>
+                                {team.live && (
+                                  <span
+                                    className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#ff5a5a] animate-pulse"
+                                    title="Trận đang diễn ra — tỉ số cập nhật trực tiếp"
+                                  />
+                                )}
                               </div>
 
                               <div className="flex gap-4 font-mono font-bold">

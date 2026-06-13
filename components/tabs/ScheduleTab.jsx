@@ -128,11 +128,12 @@ export default function ScheduleTab({
 
   const groupStandings = useMemo(() => {
     if (filter !== "GROUP_STAGE") return [];
+    // Chỉ tính kết quả thật (đã đá + đang đá realtime), không cộng dự đoán.
     return calculateGroupStandings(
       matches,
       selectedGroup,
       predictionByMatch,
-      true,
+      false,
     );
   }, [matches, selectedGroup, predictionByMatch, filter]);
 
@@ -479,6 +480,15 @@ export default function ScheduleTab({
                         <div className="flex items-center gap-2.5 min-w-0">
                           {renderStandingsFlag(team)}
                           <span className="truncate">{team.name}</span>
+                          {team.live && (
+                            <span
+                              className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-[#E40000]/15 text-[#ff5a5a]"
+                              title="Trận đang diễn ra — tỉ số cập nhật trực tiếp"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a5a] animate-pulse" />
+                              Đang đá
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="py-2 px-1 text-center font-extrabold text-white text-sm tabular-nums">
