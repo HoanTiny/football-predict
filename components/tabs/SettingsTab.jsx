@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { fmt, START_CHIPS } from "@/lib/constants";
 import { supabase } from "@/lib/supabase";
+import PushToggle from "@/components/PushToggle";
 
 function Section({ title, children }) {
   return (
@@ -180,6 +181,11 @@ export default function SettingsTab({
           API được gọi qua proxy server (/api/matches) — không bị chặn CORS.
         </p>
       </Section> */}
+
+      {/* Push notifications */}
+      <Section title="THÔNG BÁO">
+        <PushToggle authSession={authSession} />
+      </Section>
 
       {/* Actions */}
       <Section title="KHÁC">

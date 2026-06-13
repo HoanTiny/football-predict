@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // web-push dùng API Node (crypto) — không bundle, require native.
+  serverExternalPackages: ["web-push"],
   async headers() {
     return [
       {

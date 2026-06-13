@@ -80,3 +80,35 @@ create policy "auth modify predictions" on predictions for all using (
 -- LƯU Ý: Nếu bảng đã được thêm vào realtime từ trước, lệnh dưới có thể bỏ qua hoặc chạy bình thường.
 alter publication supabase_realtime add table players;
 alter publication supabase_realtime add table predictions;
+
+-- ============================================================
+-- PUSH NOTIFICATIONS (Web Push) — chỉ truy cập từ server (service role)
+-- ============================================================
+
+-- Đăng ký nhận push của từng trình duyệt/thiết bị.
+-- user_id có thể null (khách chưa đăng nhập vẫn nhận được thông báo broadcast).
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  endpoint text not null unique,
+  subscription jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_push_user on push_subscriptions (user_id);
+
+-- Ảnh chụp trạng thái trận để cron phát hiện sự kiện (bóng lăn / bàn thắng / kết thúc).
+create table if not exists match_state (
+  match_id bigint primary key,
+  status text,
+  home_score int,
+  away_score int,
+  kickoff_notified boolean not null default false,
+  finished_notified boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+-- Bật RLS và KHÔNG tạo policy cho client: hai bảng này chỉ thao tác phía server
+-- bằng service role key (tự động bỏ qua RLS). Client không đọc/ghi trực tiếp.
+alter table push_subscriptions enable row level security;
+alter table match_state enable row level security;
