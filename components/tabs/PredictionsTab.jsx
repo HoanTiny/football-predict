@@ -79,22 +79,22 @@ function RoomPredictions({ betsByMatch, matchById }) {
                     key={b.id || `${b.playerName}_${i}`}
                     className={`flex flex-col gap-1.5 px-4 py-2.5 text-xs ${b.isMe ? "bg-[#334BFF]/[0.07]" : ""}`}
                   >
-                    {/* Line 1 — player + predicted score + status */}
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-semibold text-white truncate min-w-0">
+                    {/* Line 1 — player name (full, wraps instead of truncating) + status */}
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-white break-words min-w-0 leading-snug">
                         {b.playerName}
                         {b.isMe && <span className="text-[#62F2C0] text-[10px] font-bold ml-1">(bạn)</span>}
-                      </span>
-                      <span className="score-capsule px-2 py-0.5 text-[11px] font-bold tabular-nums bg-white/5 border border-white/10 text-white shrink-0">
-                        {b.homeGoals} – {b.awayGoals}
                       </span>
                       <span className={`ml-auto px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 ${sc.labelClass}`}>
                         {sc.label}
                       </span>
                     </div>
 
-                    {/* Line 2 — wager / payout / placed time */}
-                    <div className="flex items-center gap-2 text-[10px]">
+                    {/* Line 2 — predicted score / wager / payout / placed time */}
+                    <div className="flex items-center flex-wrap gap-x-2.5 gap-y-1 text-[10px]">
+                      <span className="score-capsule px-2 py-0.5 text-[11px] font-bold tabular-nums bg-white/5 border border-white/10 text-white shrink-0">
+                        {b.homeGoals} – {b.awayGoals}
+                      </span>
                       <span className="text-slate-400 font-medium tabular-nums shrink-0">💎{fmt(b.wager)}</span>
                       {b.status !== "pending" && b.payout !== 0 && (
                         <span className={`font-bold tabular-nums shrink-0 ${b.payout > 0 ? "text-[#62F2C0]" : "text-[#ff5a5a]"}`}>
