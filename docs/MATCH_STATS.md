@@ -5,15 +5,18 @@ Giờ thay bằng dữ liệu **thật**:
 
 | Mục | Nguồn | Cần key? |
 |---|---|---|
-| **Hạng bảng** (thay "BXH FIFA") | Tự tính từ BXH bảng World Cup (kết quả thật) | ❌ |
+| **BXH FIFA** | Bảng tĩnh `lib/fifaRankings.js` (ảnh chụp 6/2026, cập nhật tay) | ❌ |
+| **Hạng bảng** | Tự tính từ BXH bảng World Cup (kết quả thật) | ❌ |
 | **Phong độ** | API-Football (5 trận gần nhất); fallback: tính từ trận đã đá trong giải | ✅ (fallback không cần) |
 | **Lịch sử đối đầu (H2H)** | API-Football `/fixtures/headtohead` | ✅ |
 | **Sân đấu / Trọng tài** | Trường `venue` / `referees` từ football-data | ❌ |
 | **Thời tiết** | Open-Meteo theo toạ độ sân + ngày trận | ❌ (miễn phí) |
 | **Tỉ lệ lựa chọn cộng đồng** | Tính thật từ kèo trong phòng | ❌ |
 
-> Ghi chú: **API-Football không có "FIFA world ranking" chính thức**, nên ô xếp hạng dùng **hạng
-> trong bảng World Cup** (thật & phù hợp ngữ cảnh giải) thay vì rank thế giới.
+> Ghi chú: **API-Football không có "FIFA world ranking" chính thức**, nên rank thế giới được lưu
+> trong **bảng tĩnh `lib/fifaRankings.js`** (ảnh chụp 6/2026: Argentina #1, Switzerland #19,
+> Qatar #56…). Khi FIFA ra bảng mới chỉ cần sửa số trong file này. Ngoài ra vẫn hiển thị thêm
+> **hạng trong bảng World Cup** (tự tính từ kết quả thật).
 
 ## Biến môi trường
 

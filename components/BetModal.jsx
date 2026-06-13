@@ -8,6 +8,7 @@ import {
   getTeamGroup,
   normalizeTeamName,
 } from "@/lib/standings";
+import { getFifaRank } from "@/lib/fifaRankings";
 
 /** Phong độ thật trong giải: lấy từ các trận ĐÃ ĐÁ của đội trong dataset. */
 function localForm(matches, teamName) {
@@ -131,7 +132,9 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
   const friendBets = (roomBets || []).filter((b) => !b.isMe);
   const kickedOff = new Date(match.utcDate) <= new Date();
 
-  // Hạng thật trong bảng World Cup
+  // Hạng FIFA thế giới (bảng tĩnh cập nhật tay) + hạng trong bảng World Cup
+  const homeFifa = getFifaRank(homeName);
+  const awayFifa = getFifaRank(awayName);
   const homeRankInfo = groupRank(matches, homeName);
   const awayRankInfo = groupRank(matches, awayName);
 
@@ -488,13 +491,24 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
 
               {/* Stats Comparison */}
               <div className="space-y-3 pt-1">
+                {/* FIFA world ranking row (bảng tĩnh, cập nhật 6/2026) */}
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                  <span className="font-mono font-bold text-amber-400 text-left text-sm">
+                    {homeFifa != null ? `#${homeFifa}` : "—"}
+                  </span>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]" title="Xếp hạng FIFA thế giới (6/2026)">BXH FIFA</span>
+                  <span className="font-mono font-bold text-amber-400 text-right text-sm">
+                    {awayFifa != null ? `#${awayFifa}` : "—"}
+                  </span>
+                </div>
+
                 {/* Group standing row (thật — hạng trong bảng World Cup) */}
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                  <span className="font-mono font-bold text-amber-400 text-left text-xs">
+                  <span className="font-mono font-semibold text-slate-300 text-left text-[11px]">
                     {homeRankInfo ? `Bảng ${homeRankInfo.group} · #${homeRankInfo.pos}` : "—"}
                   </span>
                   <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]">Hạng bảng</span>
-                  <span className="font-mono font-bold text-amber-400 text-right text-xs">
+                  <span className="font-mono font-semibold text-slate-300 text-right text-[11px]">
                     {awayRankInfo ? `Bảng ${awayRankInfo.group} · #${awayRankInfo.pos}` : "—"}
                   </span>
                 </div>
