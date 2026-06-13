@@ -57,6 +57,23 @@ export default function ScheduleTab({
     )[0];
   }, [matches]);
 
+  // Trận đang diễn ra (nếu có) — ưu tiên hiển thị ở khu hero thay cho đếm ngược.
+  const liveMatch = useMemo(() => {
+    if (!matches || matches.length === 0) return null;
+    return (
+      matches.find(
+        (m) =>
+          m.status === "IN_PLAY" ||
+          m.status === "PAUSED" ||
+          m.status === "LIVE",
+      ) || null
+    );
+  }, [matches]);
+
+  // Hero ưu tiên trận live; nếu không có thì đếm ngược trận kế tiếp.
+  const heroMatch = liveMatch || nextMatch;
+  const isHeroLive = !!liveMatch;
+
   const [timeLeft, setTimeLeft] = useState({
     hours: 0,
     minutes: 0,
@@ -88,12 +105,14 @@ export default function ScheduleTab({
 
   const formatNum = (num) => String(num).padStart(2, "0");
 
-  const nextMatchGroup = nextMatch
-    ? getTeamGroup(nextMatch.homeTeam?.name)
+  const heroMatchGroup = heroMatch
+    ? getTeamGroup(heroMatch.homeTeam?.name)
     : null;
-  const nextMatchPrediction = nextMatch
-    ? predictionByMatch?.get(nextMatch.id)
+  const heroMatchPrediction = heroMatch
+    ? predictionByMatch?.get(heroMatch.id)
     : null;
+  const heroHomeScore = heroMatch?.score?.fullTime?.home ?? 0;
+  const heroAwayScore = heroMatch?.score?.fullTime?.away ?? 0;
 
   const matchesByDate = useMemo(() => {
     let list = matches;
@@ -139,8 +158,8 @@ export default function ScheduleTab({
 
   return (
     <div className="space-y-6">
-      {/* Hero Countdown / Next Kickoff Widget */}
-      {nextMatch ? (
+      {/* Hero — trận đang diễn ra (live) hoặc đếm ngược trận kế tiếp */}
+      {heroMatch ? (
         <div
           className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#08142D] via-[#0B1735] to-[#10204A] border border-white/5 p-6 flex flex-col items-center justify-center text-center shadow-2xl"
           style={{ minHeight: 280 }}
@@ -155,156 +174,198 @@ export default function ScheduleTab({
             {/* Left Home Team (Desktop only) */}
             <div className="hidden md:flex flex-col items-center justify-center gap-2 w-28 shrink-0">
               <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center border-2 border-white/10 bg-slate-900/40 shadow-lg p-0.5">
-                {flagImgOf(nextMatch.homeTeam?.name) ? (
+                {flagImgOf(heroMatch.homeTeam?.name) ? (
                   <img
-                    src={flagImgOf(nextMatch.homeTeam?.name)}
-                    alt={nextMatch.homeTeam?.name}
+                    src={flagImgOf(heroMatch.homeTeam?.name)}
+                    alt={heroMatch.homeTeam?.name}
                     className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
                   <span className="text-3xl leading-none">
-                    {flagOf(nextMatch.homeTeam?.name)}
+                    {flagOf(heroMatch.homeTeam?.name)}
                   </span>
                 )}
               </div>
               <span className="font-bold text-xs text-white truncate max-w-full">
-                {nextMatch.homeTeam?.name}
+                {heroMatch.homeTeam?.name}
               </span>
             </div>
 
             {/* Center Countdown & Match Metadata */}
             <div className="flex-1 flex flex-col items-center space-y-4">
               <div className="flex flex-col items-center space-y-1">
-                <span className="text-[9px] font-extrabold text-[#7b8fff] uppercase tracking-[0.25em]">
-                  Trận Đấu Tiếp Theo
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                  NEXT KICKOFF
-                </span>
+                {isHeroLive ? (
+                  <>
+                    <span className="inline-flex items-center gap-1.5 text-[9px] font-extrabold text-[#ff5a5a] uppercase tracking-[0.25em]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a5a] animate-pulse" />
+                      Đang Diễn Ra
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                      TRỰC TIẾP
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[9px] font-extrabold text-[#7b8fff] uppercase tracking-[0.25em]">
+                      Trận Đấu Tiếp Theo
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                      NEXT KICKOFF
+                    </span>
+                  </>
+                )}
               </div>
 
-              {/* Trophy and Countdown Row */}
+              {/* Live score OR countdown row */}
               <div className="flex items-center justify-center gap-4 py-1.5 w-full">
-                {/* World Cup trophy — blended so the dark plate disappears on the hero */}
-                {/* <div className="h-20 shrink-0 relative flex items-center justify-center">
-                  <div className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-[#F5C518]/15 blur-xl" />
-                  <img
-                    src="/wc2026-emblem.png"
-                    alt="FIFA World Cup Trophy"
-                    className="relative h-full w-auto object-contain mix-blend-screen drop-shadow-[0_4px_14px_rgba(245,197,24,0.45)]"
-                  />
-                </div> */}
-
-                {/* Timer blocks */}
-                <div className="flex items-center gap-2 font-mono">
-                  {/* Hours */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-inner backdrop-blur-md">
-                      {formatNum(timeLeft.hours)}
+                {isHeroLive ? (
+                  /* Live score — cập nhật trực tiếp mỗi lần poll dữ liệu */
+                  <div className="flex items-center gap-3 font-mono">
+                    <div className="w-14 h-16 bg-white/5 border border-[#ff5a5a]/30 rounded-xl flex items-center justify-center text-3xl font-black text-white shadow-inner backdrop-blur-md tabular-nums">
+                      {heroHomeScore}
                     </div>
-                    <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
-                      GIỜ
-                    </span>
-                  </div>
-                  <span className="text-lg font-bold text-slate-600 self-start mt-3">
-                    :
-                  </span>
-
-                  {/* Minutes */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-inner backdrop-blur-md">
-                      {formatNum(timeLeft.minutes)}
+                    <span className="text-2xl font-black text-slate-500">–</span>
+                    <div className="w-14 h-16 bg-white/5 border border-[#ff5a5a]/30 rounded-xl flex items-center justify-center text-3xl font-black text-white shadow-inner backdrop-blur-md tabular-nums">
+                      {heroAwayScore}
                     </div>
-                    <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
-                      PHÚT
-                    </span>
                   </div>
-                  <span className="text-lg font-bold text-slate-600 self-start mt-3">
-                    :
-                  </span>
-
-                  {/* Seconds */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-[#FFA07A] shadow-inner backdrop-blur-md">
-                      {formatNum(timeLeft.seconds)}
+                ) : (
+                  /* Timer blocks */
+                  <div className="flex items-center gap-2 font-mono">
+                    {/* Hours */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-inner backdrop-blur-md">
+                        {formatNum(timeLeft.hours)}
+                      </div>
+                      <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                        GIỜ
+                      </span>
                     </div>
-                    <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
-                      GIÂY
+                    <span className="text-lg font-bold text-slate-600 self-start mt-3">
+                      :
                     </span>
+
+                    {/* Minutes */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-inner backdrop-blur-md">
+                        {formatNum(timeLeft.minutes)}
+                      </div>
+                      <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                        PHÚT
+                      </span>
+                    </div>
+                    <span className="text-lg font-bold text-slate-600 self-start mt-3">
+                      :
+                    </span>
+
+                    {/* Seconds */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-[#FFA07A] shadow-inner backdrop-blur-md">
+                        {formatNum(timeLeft.seconds)}
+                      </div>
+                      <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                        GIÂY
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Match Details */}
               <div className="space-y-1">
                 <div className="text-[10px] font-bold text-[#62F2C0] uppercase tracking-widest">
-                  {nextMatch.stage === "GROUP_STAGE" && nextMatchGroup
-                    ? `BẢNG ${nextMatchGroup}`
-                    : nextMatch.stage}
+                  {heroMatch.stage === "GROUP_STAGE" && heroMatchGroup
+                    ? `BẢNG ${heroMatchGroup}`
+                    : heroMatch.stage}
                 </div>
                 <div className="text-xs font-bold text-slate-300 md:hidden px-3">
-                  {nextMatch.homeTeam?.name} vs {nextMatch.awayTeam?.name}
+                  {heroMatch.homeTeam?.name} vs {heroMatch.awayTeam?.name}
                 </div>
                 <div className="text-[10px] font-semibold text-slate-400">
-                  {vnDateHeader(nextMatch.utcDate)} ·{" "}
-                  {vnTime(nextMatch.utcDate)} — {nextMatch.venue || "BMO Field"}
+                  {vnDateHeader(heroMatch.utcDate)} ·{" "}
+                  {vnTime(heroMatch.utcDate)} — {heroMatch.venue || "BMO Field"}
                 </div>
               </div>
 
-              {/* Action Button */}
+              {/* Action Button — khi live thì khoá cược, chỉ xem lại dự đoán */}
               <div className="pt-2">
-                {onBet && (nextMatchPrediction && nextMatchPrediction.length > 0 ? (
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {nextMatchPrediction.map((p, pIdx) => (
-                      <button
-                        key={pIdx}
-                        onClick={() => onBet(nextMatch)}
-                        className="btn-secondary px-4 py-2 text-xs font-bold flex items-center gap-2 hover:border-[#334BFF]/50 shrink-0"
-                      >
-                        <span>Dự đoán:</span>
-                        <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
-                          {p.homeGoals}–{p.awayGoals}
-                        </strong>
-                        <span className="text-[10px] text-slate-400">
-                          💎{p.wager}
+                {isHeroLive ? (
+                  heroMatchPrediction && heroMatchPrediction.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {heroMatchPrediction.map((p, pIdx) => (
+                        <span
+                          key={pIdx}
+                          className="btn-secondary px-4 py-2 text-xs font-bold flex items-center gap-2 shrink-0 opacity-90"
+                        >
+                          <span>Dự đoán:</span>
+                          <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
+                            {p.homeGoals}–{p.awayGoals}
+                          </strong>
+                          <span className="text-[10px] text-slate-400">
+                            💎{p.wager}
+                          </span>
                         </span>
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => onBet(nextMatch)}
-                      className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-1.5 shadow-[0_4px_12px_rgba(51,75,255,0.2)] shrink-0"
-                    >
-                      <span>+ Đặt thêm</span>
-                    </button>
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                      🔒 Đã khoá cược — trận đang diễn ra
+                    </span>
+                  )
                 ) : (
-                  <button
-                    onClick={() => onBet(nextMatch)}
-                    className="btn-primary px-6 py-2 text-xs font-bold uppercase tracking-wider shadow-[0_4px_12px_rgba(51,75,255,0.2)] animate-bounce"
-                  >
-                    Dự đoán ngay
-                  </button>
-                ))}
+                  onBet && (heroMatchPrediction && heroMatchPrediction.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {heroMatchPrediction.map((p, pIdx) => (
+                        <button
+                          key={pIdx}
+                          onClick={() => onBet(heroMatch)}
+                          className="btn-secondary px-4 py-2 text-xs font-bold flex items-center gap-2 hover:border-[#334BFF]/50 shrink-0"
+                        >
+                          <span>Dự đoán:</span>
+                          <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
+                            {p.homeGoals}–{p.awayGoals}
+                          </strong>
+                          <span className="text-[10px] text-slate-400">
+                            💎{p.wager}
+                          </span>
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => onBet(heroMatch)}
+                        className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-1.5 shadow-[0_4px_12px_rgba(51,75,255,0.2)] shrink-0"
+                      >
+                        <span>+ Đặt thêm</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => onBet(heroMatch)}
+                      className="btn-primary px-6 py-2 text-xs font-bold uppercase tracking-wider shadow-[0_4px_12px_rgba(51,75,255,0.2)] animate-bounce"
+                    >
+                      Dự đoán ngay
+                    </button>
+                  ))
+                )}
               </div>
             </div>
 
             {/* Right Away Team (Desktop only) */}
             <div className="hidden md:flex flex-col items-center justify-center gap-2 w-28 shrink-0">
               <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center border-2 border-white/10 bg-slate-900/40 shadow-lg p-0.5">
-                {flagImgOf(nextMatch.awayTeam?.name) ? (
+                {flagImgOf(heroMatch.awayTeam?.name) ? (
                   <img
-                    src={flagImgOf(nextMatch.awayTeam?.name)}
-                    alt={nextMatch.awayTeam?.name}
+                    src={flagImgOf(heroMatch.awayTeam?.name)}
+                    alt={heroMatch.awayTeam?.name}
                     className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
                   <span className="text-3xl leading-none">
-                    {flagOf(nextMatch.awayTeam?.name)}
+                    {flagOf(heroMatch.awayTeam?.name)}
                   </span>
                 )}
               </div>
               <span className="font-bold text-xs text-white truncate max-w-full">
-                {nextMatch.awayTeam?.name}
+                {heroMatch.awayTeam?.name}
               </span>
             </div>
           </div>
