@@ -1,8 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { flagOf, flagImgOf, fmt } from "@/lib/constants";
 import { vnTime, vnDateHeader } from "@/lib/time";
+import {
+  calculateGroupStandings,
+  getTeamGroup,
+  normalizeTeamName,
+} from "@/lib/standings";
+import { getFifaRank } from "@/lib/fifaRankings";
+
+/** Phong độ thật trong giải: lấy từ các trận ĐÃ ĐÁ của đội trong dataset. */
+function localForm(matches, teamName) {
+  if (!matches?.length || !teamName) return [];
+  const norm = normalizeTeamName(teamName);
+  return matches
+    .filter(
+      (m) =>
+        m.status === "FINISHED" &&
+        m.score?.fullTime?.home != null &&
+        (normalizeTeamName(m.homeTeam?.name) === norm ||
+          normalizeTeamName(m.awayTeam?.name) === norm)
+    )
+    .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate))
+    .slice(-5)
+    .map((m) => {
+      const isHome = normalizeTeamName(m.homeTeam?.name) === norm;
+      const gf = isHome ? m.score.fullTime.home : m.score.fullTime.away;
+      const ga = isHome ? m.score.fullTime.away : m.score.fullTime.home;
+      return gf > ga ? "W" : gf < ga ? "L" : "D";
+    });
+}
+
+/** Hạng hiện tại trong bảng World Cup (thật). null nếu chưa xác định. */
+function groupRank(matches, teamName) {
+  const group = getTeamGroup(teamName);
+  if (!group || !matches?.length) return null;
+  const standings = calculateGroupStandings(matches, group, null, false);
+  const norm = normalizeTeamName(teamName);
+  const idx = standings.findIndex((t) => normalizeTeamName(t.name) === norm);
+  return idx >= 0 ? { group, pos: idx + 1 } : null;
+}
+
+const FormPips = ({ form, align = "start" }) => (
+  <div className={`flex gap-1 ${align === "end" ? "justify-end" : "justify-start"}`}>
+    {form.length === 0 ? (
+      <span className="text-[10px] text-slate-500">—</span>
+    ) : (
+      form.map((char, idx) => (
+        <span
+          key={idx}
+          className={`w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-black text-white ${
+            char === "W" ? "bg-emerald-500" : char === "L" ? "bg-rose-500" : "bg-slate-500"
+          }`}
+        >
+          {char}
+        </span>
+      ))
+    )}
+  </div>
+);
 
 const renderModalFlag = (teamName) => {
   const imgUrl = flagImgOf(teamName);
@@ -55,7 +112,7 @@ function ScoreButton({ value, onChange, label }) {
   );
 }
 
-export default function BetModal({ match, chips, onConfirm, onClose, roomBets, prediction, initialTab }) {
+export default function BetModal({ match, chips, onConfirm, onClose, roomBets, prediction, initialTab, matches }) {
   const canEdit = match.status === "SCHEDULED" || match.status === "TIMED";
   const [modalTab, setModalTab] = useState(
     (initialTab === "friends" && (!roomBets || roomBets.length === 0))
@@ -75,8 +132,55 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
   const friendBets = (roomBets || []).filter((b) => !b.isMe);
   const kickedOff = new Date(match.utcDate) <= new Date();
 
-  const homeRank = Math.abs((homeName || "").charCodeAt(0) - 50) + 5;
-  const awayRank = Math.abs((awayName || "").charCodeAt(0) - 50) + 8;
+  // Hạng FIFA thế giới (bảng tĩnh cập nhật tay) + hạng trong bảng World Cup
+  const homeFifa = getFifaRank(homeName);
+  const awayFifa = getFifaRank(awayName);
+  const homeRankInfo = groupRank(matches, homeName);
+  const awayRankInfo = groupRank(matches, awayName);
+
+  // Dữ liệu thật từ API (phong độ + H2H + thời tiết) — nạp khi mở tab "stats"
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  useEffect(() => {
+    if (modalTab !== "stats" || stats || statsLoading) return;
+    setStatsLoading(true);
+    const qs = new URLSearchParams({
+      home: homeName || "",
+      away: awayName || "",
+      venue: match.venue || "",
+      date: match.utcDate || "",
+    });
+    fetch(`/api/match-stats?${qs}`)
+      .then((r) => r.json())
+      .then((d) => setStats(d))
+      .catch(() => setStats({ form: { home: [], away: [] }, h2h: [], weather: null }))
+      .finally(() => setStatsLoading(false));
+  }, [modalTab, stats, statsLoading, homeName, awayName, match.venue, match.utcDate]);
+
+  // Phong độ: ưu tiên API-Football, fallback phong độ giải đấu (trận đã đá thật)
+  const homeForm = stats?.form?.home?.length ? stats.form.home : localForm(matches, homeName);
+  const awayForm = stats?.form?.away?.length ? stats.form.away : localForm(matches, awayName);
+
+  // Tỉ lệ lựa chọn cộng đồng — tính THẬT từ kèo trong phòng (nếu có)
+  const allBets = roomBets || [];
+  const communityDist = (() => {
+    if (!allBets.length) return null;
+    let h = 0, d = 0, a = 0;
+    allBets.forEach((b) => {
+      if (b.homeGoals > b.awayGoals) h++;
+      else if (b.homeGoals < b.awayGoals) a++;
+      else d++;
+    });
+    const total = h + d + a || 1;
+    return {
+      total,
+      home: Math.round((h / total) * 100),
+      draw: Math.round((d / total) * 100),
+      away: Math.round((a / total) * 100),
+    };
+  })();
+
+  const referee = match.referees?.[0]?.name || null;
 
   return (
     <div
@@ -387,36 +491,35 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
 
               {/* Stats Comparison */}
               <div className="space-y-3 pt-1">
-                {/* FIFA Rank Row */}
+                {/* FIFA world ranking row (bảng tĩnh, cập nhật 6/2026) */}
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                  <span className="font-mono font-bold text-amber-400 text-left text-xs">#{homeRank}</span>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]">BXH FIFA</span>
-                  <span className="font-mono font-bold text-amber-400 text-right text-xs">#{awayRank}</span>
+                  <span className="font-mono font-bold text-amber-400 text-left text-sm">
+                    {homeFifa != null ? `#${homeFifa}` : "—"}
+                  </span>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]" title="Xếp hạng FIFA thế giới (6/2026)">BXH FIFA</span>
+                  <span className="font-mono font-bold text-amber-400 text-right text-sm">
+                    {awayFifa != null ? `#${awayFifa}` : "—"}
+                  </span>
                 </div>
 
-                {/* Form Row */}
+                {/* Group standing row (thật — hạng trong bảng World Cup) */}
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                  {/* Home Form */}
-                  <div className="flex gap-1 justify-start">
-                    {['W', 'W', 'L', 'D', 'W'].map((char, idx) => (
-                      <span key={idx} className={`w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-black text-white ${
-                        char === 'W' ? 'bg-emerald-500' : char === 'L' ? 'bg-rose-500' : 'bg-slate-500'
-                      }`}>
-                        {char}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]">Phong độ</span>
-                  {/* Away Form */}
-                  <div className="flex gap-1 justify-end">
-                    {['L', 'D', 'W', 'L', 'D'].map((char, idx) => (
-                      <span key={idx} className={`w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-black text-white ${
-                        char === 'W' ? 'bg-emerald-500' : char === 'L' ? 'bg-rose-500' : 'bg-slate-500'
-                      }`}>
-                        {char}
-                      </span>
-                    ))}
-                  </div>
+                  <span className="font-mono font-semibold text-slate-300 text-left text-[11px]">
+                    {homeRankInfo ? `Bảng ${homeRankInfo.group} · #${homeRankInfo.pos}` : "—"}
+                  </span>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]">Hạng bảng</span>
+                  <span className="font-mono font-semibold text-slate-300 text-right text-[11px]">
+                    {awayRankInfo ? `Bảng ${awayRankInfo.group} · #${awayRankInfo.pos}` : "—"}
+                  </span>
+                </div>
+
+                {/* Form Row (thật — phong độ gần đây) */}
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                  <FormPips form={homeForm} align="start" />
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]">
+                    {statsLoading ? "…" : "Phong độ"}
+                  </span>
+                  <FormPips form={awayForm} align="end" />
                 </div>
               </div>
             </div>
@@ -432,8 +535,8 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                   <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>🏟</span> Sân đấu
                   </span>
-                  <span className="font-bold text-white truncate text-xs" title="MetLife Stadium">
-                    MetLife Stadium
+                  <span className="font-bold text-white truncate text-xs" title={match.venue || ""}>
+                    {match.venue || "Đang cập nhật"}
                   </span>
                 </div>
                 {/* Thời tiết */}
@@ -441,8 +544,12 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                   <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>☀️</span> Thời tiết
                   </span>
-                  <span className="font-bold text-white truncate text-xs" title="22°C (Clear Sky)">
-                    22°C (Clear Sky)
+                  <span className="font-bold text-white truncate text-xs">
+                    {stats?.weather?.tempC != null
+                      ? `${stats.weather.tempC}°C${stats.weather.text ? ` (${stats.weather.text})` : ""}`
+                      : statsLoading
+                        ? "…"
+                        : "Đang cập nhật"}
                   </span>
                 </div>
                 {/* Trọng tài */}
@@ -450,8 +557,8 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                   <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>🏁</span> Trọng tài
                   </span>
-                  <span className="font-bold text-white truncate text-xs" title="Sandro Schärer">
-                    Sandro Schärer
+                  <span className="font-bold text-white truncate text-xs" title={referee || ""}>
+                    {referee || "Đang cập nhật"}
                   </span>
                 </div>
                 {/* Thành phố */}
@@ -459,8 +566,8 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                   <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>📍</span> Thành phố
                   </span>
-                  <span className="font-bold text-white truncate text-xs" title="New York">
-                    New York
+                  <span className="font-bold text-white truncate text-xs" title={stats?.weather?.city || ""}>
+                    {stats?.weather?.city || "—"}
                   </span>
                 </div>
               </div>
@@ -472,92 +579,71 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                 Lịch sử đối đầu (H2H)
               </span>
               <div className="space-y-3">
-                {/* H2H Row 1 */}
-                <div className="flex flex-col gap-1 pb-2.5 border-b border-white/5">
-                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
-                    World Cup 2022
-                  </div>
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <div className="flex items-center gap-1.5 justify-end min-w-0">
-                      <span className="font-semibold text-white truncate text-[11px]">{homeName}</span>
-                      {renderModalFlag(homeName)}
+                {statsLoading && !stats ? (
+                  <div className="text-[10px] text-slate-500 text-center py-2">Đang tải…</div>
+                ) : stats?.h2h?.length ? (
+                  stats.h2h.map((g, i) => (
+                    <div
+                      key={i}
+                      className={`flex flex-col gap-1 ${i < stats.h2h.length - 1 ? "pb-2.5 border-b border-white/5" : ""}`}
+                    >
+                      <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                        {[g.league, g.date ? new Date(g.date).getFullYear() : null]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                        <div className="flex items-center gap-1.5 justify-end min-w-0">
+                          <span className="font-semibold text-white truncate text-[11px]">{g.home}</span>
+                          {renderModalFlag(g.home)}
+                        </div>
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-800 border border-white/5 text-white font-mono font-black text-[11px] shrink-0 min-w-[38px] text-center">
+                          {g.homeGoals ?? "-"} - {g.awayGoals ?? "-"}
+                        </span>
+                        <div className="flex items-center gap-1.5 justify-start min-w-0">
+                          {renderModalFlag(g.away)}
+                          <span className="font-semibold text-white truncate text-[11px]">{g.away}</span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-800 border border-white/5 text-[#62F2C0] font-mono font-black text-[11px] shrink-0 min-w-[38px] text-center">
-                      2 - 1
-                    </span>
-                    <div className="flex items-center gap-1.5 justify-start min-w-0">
-                      {renderModalFlag(awayName)}
-                      <span className="font-semibold text-white truncate text-[11px]">{awayName}</span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-[10px] text-slate-500 text-center py-2">
+                    {stats?.statsAvailable === false
+                      ? "Chưa cấu hình nguồn dữ liệu đối đầu."
+                      : "Không có dữ liệu đối đầu gần đây."}
                   </div>
-                </div>
-
-                {/* H2H Row 2 */}
-                <div className="flex flex-col gap-1 pb-2.5 border-b border-white/5">
-                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
-                    Giao hữu 2021
-                  </div>
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <div className="flex items-center gap-1.5 justify-end min-w-0">
-                      <span className="font-semibold text-white truncate text-[11px]">{homeName}</span>
-                      {renderModalFlag(homeName)}
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-800 border border-white/5 text-slate-300 font-mono font-black text-[11px] shrink-0 min-w-[38px] text-center">
-                      0 - 0
-                    </span>
-                    <div className="flex items-center gap-1.5 justify-start min-w-0">
-                      {renderModalFlag(awayName)}
-                      <span className="font-semibold text-white truncate text-[11px]">{awayName}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* H2H Row 3 */}
-                <div className="flex flex-col gap-1">
-                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
-                    Giao hữu 2018
-                  </div>
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <div className="flex items-center gap-1.5 justify-end min-w-0">
-                      <span className="font-semibold text-white truncate text-[11px]">{homeName}</span>
-                      {renderModalFlag(homeName)}
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-800 border border-white/5 text-white font-mono font-black text-[11px] shrink-0 min-w-[38px] text-center">
-                      1 - 2
-                    </span>
-                    <div className="flex items-center gap-1.5 justify-start min-w-0">
-                      {renderModalFlag(awayName)}
-                      <span className="font-semibold text-white truncate text-[11px]">{awayName}</span>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
-            {/* Prediction Distribution (Community Picks) */}
-            <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-3.5 space-y-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
-                Tỉ lệ lựa chọn cộng đồng
-              </span>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-[10px] font-bold text-white gap-2">
-                  <div className="flex items-center gap-1 min-w-0">
-                    {renderModalFlag(homeName)}
-                    <span className="truncate text-[10px]">{homeName} (65%)</span>
+            {/* Tỉ lệ lựa chọn cộng đồng — tính thật từ kèo trong phòng */}
+            {communityDist && (
+              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-3.5 space-y-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
+                  Tỉ lệ lựa chọn cộng đồng
+                  <span className="text-slate-500 font-medium ml-1">({communityDist.total} kèo)</span>
+                </span>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-[10px] font-bold text-white gap-2">
+                    <div className="flex items-center gap-1 min-w-0">
+                      {renderModalFlag(homeName)}
+                      <span className="truncate text-[10px]">{homeName} ({communityDist.home}%)</span>
+                    </div>
+                    <span className="text-slate-400 text-[10px] shrink-0">Hòa ({communityDist.draw}%)</span>
+                    <div className="flex items-center gap-1 justify-end min-w-0">
+                      <span className="truncate text-right text-[10px]">{awayName} ({communityDist.away}%)</span>
+                      {renderModalFlag(awayName)}
+                    </div>
                   </div>
-                  <span className="text-slate-400 text-[10px] shrink-0">Hòa (20%)</span>
-                  <div className="flex items-center gap-1 justify-end min-w-0">
-                    <span className="truncate text-right text-[10px]">{awayName} (15%)</span>
-                    {renderModalFlag(awayName)}
+                  <div className="w-full h-2 rounded-full overflow-hidden flex bg-slate-800">
+                    <div className="bg-[#334BFF] h-full" style={{ width: `${communityDist.home}%` }} />
+                    <div className="bg-slate-500 h-full" style={{ width: `${communityDist.draw}%` }} />
+                    <div className="bg-amber-500 h-full" style={{ width: `${communityDist.away}%` }} />
                   </div>
-                </div>
-                <div className="w-full h-2 rounded-full overflow-hidden flex bg-slate-800">
-                  <div className="bg-[#334BFF] h-full" style={{ width: "65%" }} />
-                  <div className="bg-slate-500 h-full" style={{ width: "20%" }} />
-                  <div className="bg-amber-500 h-full" style={{ width: "15%" }} />
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Close Button */}
             <button

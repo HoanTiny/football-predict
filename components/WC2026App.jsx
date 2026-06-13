@@ -583,6 +583,7 @@ export default function WC2026App() {
       {betMatch && (
         <BetModal
           match={betMatch}
+          matches={matches}
           chips={player.chips}
           onConfirm={placeBet}
           onClose={() => setBetMatch(null)}
