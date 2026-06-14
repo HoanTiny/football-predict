@@ -231,19 +231,11 @@ export default function WC2026App() {
     setTab("schedule");
   };
 
-  // Rời một phòng (mặc định phòng đang mở)
-  const leaveRoom = async (code = activeCode) => {
+  // Rời một phòng (mặc định phòng đang mở).
+  // SOFT-LEAVE: chỉ gỡ phòng khỏi thiết bị này, KHÔNG xoá dữ liệu trên server.
+  // Nhờ vậy chip + lịch sử kèo được giữ nguyên và sẽ khôi phục khi vào lại phòng.
+  const leaveRoom = (code = activeCode) => {
     const actualCode = (code && typeof code === "string") ? code : activeCode;
-    const targetSession = sessions.find((s) => s.code === actualCode);
-    if (targetSession && targetSession.playerId) {
-      try {
-        const { deletePlayerFromRoom } = await import("@/lib/roomApi");
-        await deletePlayerFromRoom(targetSession.playerId);
-      } catch (e) {
-        console.error("Failed to delete player from room on db:", e);
-      }
-    }
-
     const next = sessions.filter((s) => s.code !== actualCode);
     persistSessions(next);
     if (activeCode === actualCode || !next.some((s) => s.code === activeCode)) {

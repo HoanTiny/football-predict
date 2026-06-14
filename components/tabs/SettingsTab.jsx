@@ -94,7 +94,15 @@ export default function SettingsTab({
             </span>
           </div>
           <button
-            onClick={() => onLeaveRoom()}
+            onClick={() => {
+              if (
+                window.confirm(
+                  `Rời phòng ${roomCode}?\n\nDữ liệu (chip & lịch sử kèo) của bạn vẫn được giữ trên hệ thống. Bạn có thể vào lại bằng mã phòng để khôi phục.`
+                )
+              ) {
+                onLeaveRoom();
+              }
+            }}
             className="btn-secondary w-full py-2.5 rounded-lg text-xs font-bold cursor-pointer"
           >
             🚪 Rời phòng
