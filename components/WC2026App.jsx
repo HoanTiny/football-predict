@@ -551,13 +551,8 @@ export default function WC2026App() {
             {tab === "settings" && (
               <SettingsTab
                 player={player}
-                apiToken={apiToken}
                 demoMode={demoMode}
                 onSwitchPlayer={local.createPlayer}
-                onSaveToken={(t) => {
-                  saveToken(t);
-                  pushToast("Đã lưu API token.", "info");
-                }}
                 onReset={resetPredictions}
                 onShare={shareLink}
                 roomCode={inRoom ? session.code : null}

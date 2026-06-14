@@ -160,8 +160,6 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
   const [wager, setWager] = useState(firstPred?.wager ?? Math.min(50, chips));
   const valid = chips >= 10 && wager >= 10 && wager <= chips && home >= 0 && away >= 0;
 
-  const friendBets = (roomBets || []).filter((b) => !b.isMe);
-  const kickedOff = new Date(match.utcDate) <= new Date();
 
   // Hạng FIFA thế giới (bảng tĩnh cập nhật tay) + hạng trong bảng World Cup
   const homeFifa = getFifaRank(homeName);

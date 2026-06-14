@@ -40,34 +40,11 @@ function PlayerNameEditor({ current, onSwitch }) {
   );
 }
 
-function TokenEditor({ current, onSave }) {
-  const [token, setToken] = useState(current);
-  return (
-    <div className="flex gap-2">
-      <input
-        value={token}
-        onChange={(e) => setToken(e.target.value)}
-        placeholder="X-Auth-Token…"
-        className="glass-input flex-1 px-3 py-2 text-xs font-mono"
-      />
-      <button
-        onClick={() => token.trim() && onSave(token.trim())}
-        disabled={!token.trim() || token.trim() === current}
-        className="px-4 py-2 rounded-lg font-bold text-xs btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Lưu
-      </button>
-    </div>
-  );
-}
-
 /** TAB 5 — Cài đặt — Compact editorial panels */
 export default function SettingsTab({
   player,
-  apiToken,
   demoMode,
   onSwitchPlayer,
-  onSaveToken,
   onReset,
   onShare,
   roomCode,
@@ -173,14 +150,6 @@ export default function SettingsTab({
           </p>
         )}
       </Section>
-
-      {/* API token */}
-      {/* <Section title="API FOOTBALL-DATA.ORG">
-        <TokenEditor current={apiToken} onSave={onSaveToken} />
-        <p className="text-[10px] text-slate-500 font-medium">
-          API được gọi qua proxy server (/api/matches) — không bị chặn CORS.
-        </p>
-      </Section> */}
 
       {/* Push notifications */}
       <Section title="THÔNG BÁO">

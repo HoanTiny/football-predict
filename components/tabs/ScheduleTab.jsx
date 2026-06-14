@@ -36,7 +36,6 @@ export default function ScheduleTab({
   predictionByMatch,
   onBet,
   betsByMatch,
-  onTabChange,
 }) {
   const [filter, setFilter] = useState("ALL");
   const [selectedGroup, setSelectedGroup] = useState("A");
