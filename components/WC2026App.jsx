@@ -556,7 +556,7 @@ export default function WC2026App() {
 
           {/* Sidebar column (desktop only) */}
           {!fullWidth && (
-            <aside className="hidden lg:block lg:col-span-4 space-y-6">
+            <aside className="hidden lg:block lg:col-span-4 space-y-6 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
               {tab !== "leaderboard" && (
                 <LeaderboardSidebar
                   player={player}
