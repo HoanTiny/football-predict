@@ -4,6 +4,8 @@ import {
   teamForm,
   headToHead,
   upcomingVenue,
+  fixtureStatistics,
+  fixtureEvents,
 } from "@/lib/apiFootball";
 import { getWeather } from "@/lib/weather";
 
@@ -18,6 +20,7 @@ export async function GET(request) {
   const away = searchParams.get("away");
   const venue = searchParams.get("venue"); // từ football-data, có thể trống
   const date = searchParams.get("date");
+  const fixtureId = searchParams.get("fixtureId"); // = match.id khi nguồn là API-Football
 
   const result = {
     weather: null,
@@ -26,6 +29,8 @@ export async function GET(request) {
     venue: venue || null,
     city: null,
     statsAvailable: false,
+    matchStats: null, // thống kê live (sút, kiểm soát bóng…)
+    events: [], // diễn biến (bàn thắng, thẻ)
   };
 
   // 1) Phong độ + H2H + sân/thành phố (API-Football)
@@ -50,6 +55,20 @@ export async function GET(request) {
       result.statsAvailable = true;
     } catch (e) {
       result.statsError = e.message;
+    }
+
+    // Thống kê + diễn biến theo fixture id (chỉ có khi nguồn trận là API-Football).
+    if (fixtureId) {
+      try {
+        const [matchStats, events] = await Promise.all([
+          fixtureStatistics(fixtureId),
+          fixtureEvents(fixtureId),
+        ]);
+        result.matchStats = matchStats;
+        result.events = events;
+      } catch {
+        /* bỏ qua — trận chưa có thống kê hoặc id không khớp */
+      }
     }
   }
 
