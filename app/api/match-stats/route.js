@@ -4,6 +4,7 @@ import {
   teamForm,
   headToHead,
   upcomingVenue,
+  resolveFixtureId,
   fixtureStatistics,
   fixtureEvents,
 } from "@/lib/apiFootball";
@@ -20,7 +21,6 @@ export async function GET(request) {
   const away = searchParams.get("away");
   const venue = searchParams.get("venue"); // từ football-data, có thể trống
   const date = searchParams.get("date");
-  const fixtureId = searchParams.get("fixtureId"); // = match.id khi nguồn là API-Football
 
   const result = {
     weather: null,
@@ -52,23 +52,22 @@ export async function GET(request) {
         result.venue = result.venue || place.name;
         result.city = place.city;
       }
-      result.statsAvailable = true;
-    } catch (e) {
-      result.statsError = e.message;
-    }
-
-    // Thống kê + diễn biến theo fixture id (chỉ có khi nguồn trận là API-Football).
-    if (fixtureId) {
-      try {
+      // Thống kê + diễn biến — tìm ĐÚNG fixture của api-sports theo đội + ngày
+      // (không tin match.id vì có thể là id football-data → tra nhầm trận).
+      const realId = await resolveFixtureId(homeId, awayId, date);
+      if (realId) {
         const [matchStats, events] = await Promise.all([
-          fixtureStatistics(fixtureId),
-          fixtureEvents(fixtureId),
+          fixtureStatistics(realId),
+          fixtureEvents(realId),
         ]);
         result.matchStats = matchStats;
         result.events = events;
-      } catch {
-        /* bỏ qua — trận chưa có thống kê hoặc id không khớp */
+        result.fixtureId = realId;
       }
+
+      result.statsAvailable = true;
+    } catch (e) {
+      result.statsError = e.message;
     }
   }
 
