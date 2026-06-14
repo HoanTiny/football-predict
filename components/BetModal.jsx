@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { flagOf, flagImgOf, fmt } from "@/lib/constants";
+import { flagOf, flagImgOf, fmt, matchIsLive } from "@/lib/constants";
 import { vnTime, vnDateHeader } from "@/lib/time";
 import {
   calculateGroupStandings,
@@ -60,6 +60,37 @@ const FormPips = ({ form, align = "start" }) => (
     )}
   </div>
 );
+
+// Icon cho diễn biến trận
+const eventIcon = (e) => {
+  if (e.type === "Goal") return "⚽";
+  if (e.type === "Card") return (e.detail || "").includes("Red") ? "🟥" : "🟨";
+  if (e.type === "subst") return "🔁";
+  return "•";
+};
+
+// Thống kê hiển thị (theo thứ tự) → nhãn tiếng Việt
+const STAT_ROWS = [
+  ["Ball Possession", "Kiểm soát bóng"],
+  ["Total Shots", "Tổng số cú sút"],
+  ["Shots on Goal", "Sút trúng đích"],
+  ["Corner Kicks", "Phạt góc"],
+  ["Offsides", "Việt vị"],
+  ["Fouls", "Lỗi"],
+  ["Yellow Cards", "Thẻ vàng"],
+  ["Red Cards", "Thẻ đỏ"],
+  ["Goalkeeper Saves", "Cứu thua"],
+  ["Total passes", "Đường chuyền"],
+  ["Passes %", "Chính xác chuyền"],
+];
+
+// % cho thanh so sánh (xử lý cả "55%" lẫn số)
+const statPct = (h, a) => {
+  const num = (v) => (typeof v === "string" ? parseFloat(v) : v) || 0;
+  const H = num(h),
+    A = num(a);
+  return H + A ? Math.round((H / (H + A)) * 100) : 50;
+};
 
 const renderModalFlag = (teamName) => {
   const imgUrl = flagImgOf(teamName);
@@ -138,24 +169,41 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
   const homeRankInfo = groupRank(matches, homeName);
   const awayRankInfo = groupRank(matches, awayName);
 
-  // Dữ liệu thật từ API (phong độ + H2H + thời tiết) — nạp khi mở tab "stats"
+  // Dữ liệu thật từ API (phong độ + H2H + thời tiết + thống kê/diễn biến live)
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const liveNow = matchIsLive(match);
   useEffect(() => {
-    if (modalTab !== "stats" || stats || statsLoading) return;
-    setStatsLoading(true);
-    const qs = new URLSearchParams({
-      home: homeName || "",
-      away: awayName || "",
-      venue: match.venue || "",
-      date: match.utcDate || "",
-    });
-    fetch(`/api/match-stats?${qs}`)
-      .then((r) => r.json())
-      .then((d) => setStats(d))
-      .catch(() => setStats({ form: { home: [], away: [] }, h2h: [], weather: null }))
-      .finally(() => setStatsLoading(false));
-  }, [modalTab, stats, statsLoading, homeName, awayName, match.venue, match.utcDate]);
+    if (modalTab !== "stats") return;
+    let active = true;
+    const load = (silent) => {
+      if (!silent) setStatsLoading(true);
+      const qs = new URLSearchParams({
+        home: homeName || "",
+        away: awayName || "",
+        venue: match.venue || "",
+        date: match.utcDate || "",
+        fixtureId: match.id != null ? String(match.id) : "",
+      });
+      return fetch(`/api/match-stats?${qs}`)
+        .then((r) => r.json())
+        .then((d) => active && setStats(d))
+        .catch(
+          () =>
+            active &&
+            !silent &&
+            setStats({ form: { home: [], away: [] }, h2h: [], weather: null, events: [], matchStats: null })
+        )
+        .finally(() => active && !silent && setStatsLoading(false));
+    };
+    load(false);
+    // Trận đang diễn ra → poll 30s để cập nhật tỉ số/diễn biến/thống kê
+    const timer = liveNow ? setInterval(() => load(true), 30000) : null;
+    return () => {
+      active = false;
+      if (timer) clearInterval(timer);
+    };
+  }, [modalTab, homeName, awayName, match.venue, match.utcDate, match.id, liveNow]);
 
   // Phong độ: ưu tiên API-Football, fallback phong độ giải đấu (trận đã đá thật)
   const homeForm = stats?.form?.home?.length ? stats.form.home : localForm(matches, homeName);
@@ -472,6 +520,96 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
         {/* Tab 3: Stats Details */}
         {modalTab === "stats" && (
           <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin text-xs text-slate-300">
+            {/* Live score + phút (kiểu Google) */}
+            {(liveNow || match.status === "FINISHED") &&
+              match.score?.fullTime?.home != null && (
+                <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-4">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
+                      <span className="font-bold text-white truncate text-sm text-right">{homeName}</span>
+                      {renderModalFlag(homeName)}
+                    </div>
+                    <div className="text-center shrink-0">
+                      <div className="text-2xl font-black text-white tabular-nums">
+                        {match.score.fullTime.home} - {match.score.fullTime.away}
+                      </div>
+                      <div className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${liveNow ? "text-[#ff5a5a]" : "text-slate-500"}`}>
+                        {match.status === "FINISHED"
+                          ? "Kết thúc"
+                          : match.minute
+                            ? `🔴 Trực tiếp ${match.minute}'`
+                            : "🔴 Trực tiếp"}
+                      </div>
+                    </div>
+                    <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
+                      {renderModalFlag(awayName)}
+                      <span className="font-bold text-white truncate text-sm">{awayName}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            {/* Diễn biến chính (bàn thắng, thẻ) */}
+            {stats?.events?.length > 0 && (
+              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-4 space-y-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Diễn biến chính</span>
+                <div className="space-y-1.5">
+                  {stats.events
+                    .filter((e) => e.type === "Goal" || e.type === "Card")
+                    .map((e, i) => {
+                      const homeApi = stats.matchStats?.homeTeam;
+                      const isHome = homeApi ? e.team === homeApi : e.team === homeName;
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-center gap-2 text-[11px] ${isHome ? "" : "flex-row-reverse text-right"}`}
+                        >
+                          <span className="tabular-nums text-slate-500 w-7 shrink-0">
+                            {e.minute != null ? `${e.minute}'` : ""}
+                          </span>
+                          <span className="shrink-0">{eventIcon(e)}</span>
+                          <span className="text-white font-semibold truncate">
+                            {e.player}
+                            {e.assist && <span className="text-slate-500 font-normal"> ({e.assist})</span>}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* Thống kê trận đấu */}
+            {stats?.matchStats && (
+              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-4 space-y-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Thống kê trận đấu</span>
+                <div className="space-y-2.5">
+                  {STAT_ROWS.map(([key, label]) => {
+                    const h = stats.matchStats.home?.[key];
+                    const a = stats.matchStats.away?.[key];
+                    if (h == null && a == null) return null;
+                    const pct = statPct(h, a);
+                    return (
+                      <div key={key} className="space-y-1">
+                        <div className="flex justify-between items-center text-[11px] font-bold text-white">
+                          <span className="tabular-nums">{h ?? 0}</span>
+                          <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">{label}</span>
+                          <span className="tabular-nums">{a ?? 0}</span>
+                        </div>
+                        <div className="w-full h-1.5 rounded-full overflow-hidden flex bg-slate-700/40">
+                          <div className="bg-[#334BFF] h-full" style={{ width: `${pct}%` }} />
+                          <div className="bg-[#FFA07A] h-full" style={{ width: `${100 - pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {liveNow && (
+                  <div className="text-[9px] text-slate-500 text-center">Tự cập nhật mỗi 30s khi trận đang diễn ra</div>
+                )}
+              </div>
+            )}
+
             {/* FIFA Rankings & Form (Beautiful Comparison Card) */}
             <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-4 space-y-3">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">So sánh phong độ & xếp hạng</span>
