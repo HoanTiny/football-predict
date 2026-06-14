@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { FILTERS, GROUPS, flagOf, flagImgOf } from "@/lib/constants";
+import { FILTERS, GROUPS, flagOf, flagImgOf, matchIsLive } from "@/lib/constants";
 import { vnDateKey, vnDateHeader, vnNowKey, vnTime } from "@/lib/time";
 import { calculateGroupStandings, getTeamGroup } from "@/lib/standings";
 import MatchCard from "../MatchCard";
@@ -60,14 +60,7 @@ export default function ScheduleTab({
   // Trận đang diễn ra (nếu có) — ưu tiên hiển thị ở khu hero thay cho đếm ngược.
   const liveMatch = useMemo(() => {
     if (!matches || matches.length === 0) return null;
-    return (
-      matches.find(
-        (m) =>
-          m.status === "IN_PLAY" ||
-          m.status === "PAUSED" ||
-          m.status === "LIVE",
-      ) || null
-    );
+    return matches.find((m) => matchIsLive(m)) || null;
   }, [matches]);
 
   // Hero ưu tiên trận live; nếu không có thì đếm ngược trận kế tiếp.

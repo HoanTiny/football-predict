@@ -1,6 +1,6 @@
 "use client";
 
-import { flagOf, flagImgOf, isLive } from "@/lib/constants";
+import { flagOf, flagImgOf, isLiveStatus, matchIsLive } from "@/lib/constants";
 import { vnTime } from "@/lib/time";
 import { getTeamGroup } from "@/lib/standings";
 import StatusBadge from "./StatusBadge";
@@ -29,9 +29,17 @@ const renderFlag = (teamName) => {
 export default function MatchCard({ match, prediction, onBet, roomBets }) {
   const { status } = match;
   const ft = match.score?.fullTime || {};
-  const live = isLive(status) || status === "PAUSED";
   const finished = status === "FINISHED";
-  const canBet = status === "SCHEDULED" || status === "TIMED";
+  const live = matchIsLive(match);
+  // Nếu provider trễ status (đã có tỉ số mà vẫn TIMED) thì coi là TRỰC TIẾP.
+  const effectiveStatus = finished
+    ? "FINISHED"
+    : isLiveStatus(status)
+      ? status
+      : live
+        ? "IN_PLAY"
+        : status;
+  const canBet = !live && (status === "SCHEDULED" || status === "TIMED");
   const scoreText =
     ft.home == null || ft.away == null ? "–  –" : `${ft.home}  ${ft.away}`;
 
@@ -94,7 +102,7 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
       <div className="flex items-start justify-between mt-2.5 pt-2 border-t border-white/5 gap-2">
         {/* Left Area: Status and Room Bets count */}
         <div className="flex flex-col items-start gap-1 min-w-0 shrink-0">
-          <StatusBadge status={status} />
+          <StatusBadge status={effectiveStatus} />
           {roomBets && roomBets.length > 0 && (
             <span
               onClick={(e) => {
