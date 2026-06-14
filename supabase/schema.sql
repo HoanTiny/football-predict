@@ -178,3 +178,30 @@ revoke insert, update on predictions from authenticated;             -- chỉ t�
 
 -- Cron (service role) vẫn cần cộng chip nguyên tử khi quyết toán
 grant execute on function adjust_chips(uuid, int) to service_role;
+
+-- ============================================================
+-- PUSH NOTIFICATIONS (Web Push) — chỉ truy cập từ server (service role)
+-- ============================================================
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  endpoint text not null unique,
+  subscription jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_push_user on push_subscriptions (user_id);
+
+create table if not exists match_state (
+  match_id bigint primary key,
+  status text,
+  home_score int,
+  away_score int,
+  kickoff_notified boolean not null default false,
+  finished_notified boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+-- Chỉ thao tác phía server (service role bỏ qua RLS); không tạo policy cho client.
+alter table push_subscriptions enable row level security;
+alter table match_state enable row level security;
