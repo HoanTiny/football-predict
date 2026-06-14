@@ -80,3 +80,18 @@ create policy "auth modify predictions" on predictions for all using (
 -- LƯU Ý: Nếu bảng đã được thêm vào realtime từ trước, lệnh dưới có thể bỏ qua hoặc chạy bình thường.
 alter publication supabase_realtime add table players;
 alter publication supabase_realtime add table predictions;
+
+-- ============================================================
+-- CỘNG/TRỪ CHIP NGUYÊN TỬ
+-- Tránh lost-update: trước đây client ghi `chips = snapshot ± x`, nên khi đặt
+-- kèo mới ngay sau lúc quyết toán có thể GHI ĐÈ làm mất tiền thắng.
+-- Hàm này +delta trực tiếp trong DB. SECURITY INVOKER (mặc định) ⇒ RLS vẫn áp
+-- dụng nên người chơi chỉ chỉnh được chip của chính mình.
+-- CHẠY LẠI FILE NÀY TRONG SUPABASE SQL EDITOR ĐỂ TẠO HÀM.
+-- ============================================================
+create or replace function adjust_chips(p_id uuid, p_delta int)
+returns int
+language sql
+as $$
+  update players set chips = chips + p_delta where id = p_id returning chips;
+$$;
