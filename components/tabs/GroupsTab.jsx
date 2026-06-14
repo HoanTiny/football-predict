@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { flagImgOf } from "@/lib/constants";
+import { getFifaRank } from "@/lib/fifaRankings";
 import { allGroupStandings } from "@/lib/bracket";
 
 const renderFlag = (team) => {
@@ -21,6 +22,28 @@ const renderFlag = (team) => {
 };
 
 function GroupCard({ letter, standings }) {
+  const [ai, setAi] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  async function runAi() {
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/ai/group", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          letter,
+          teams: standings.map((t) => ({ name: t.name, fifa: getFifaRank(t.name) })),
+        }),
+      });
+      const data = await res.json();
+      setAi(res.ok ? data : { analysis: data.error || "Lỗi AI", qualifiers: [] });
+    } catch (e) {
+      setAi({ analysis: e.message, qualifiers: [] });
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   return (
     <div className="bg-[#0B1735] border border-white/5 rounded-xl overflow-hidden shadow-lg">
       {/* Header */}
@@ -28,9 +51,13 @@ function GroupCard({ letter, standings }) {
         <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
           <span className="text-[#334BFF] font-black">Bảng {letter}</span>
         </h4>
-        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
-          Top 2 đi tiếp
-        </span>
+        <button
+          onClick={runAi}
+          disabled={aiLoading}
+          className="text-[8px] font-bold uppercase tracking-widest text-[#7b8fff] hover:text-white disabled:opacity-50"
+        >
+          {aiLoading ? "…" : "🤖 Nhận định"}
+        </button>
       </div>
 
       <table className="w-full text-xs text-left text-slate-300 table-fixed border-collapse">
@@ -97,6 +124,23 @@ function GroupCard({ letter, standings }) {
           })}
         </tbody>
       </table>
+
+      {ai && (
+        <div className="px-3 py-2.5 border-t border-white/5 bg-[#334BFF]/[0.06] space-y-1.5">
+          <p className="text-[11px] text-slate-200 leading-relaxed">{ai.analysis}</p>
+          {ai.qualifiers?.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
+              <span className="text-slate-500 font-semibold">Đi tiếp:</span>
+              {ai.qualifiers.map((q, i) => (
+                <span key={i} className="px-2 py-0.5 rounded bg-[#62F2C0]/15 text-[#62F2C0] font-bold">
+                  {q}
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="text-[8px] text-slate-500 italic">🤖 AI nhận định tham khảo</p>
+        </div>
+      )}
     </div>
   );
 }

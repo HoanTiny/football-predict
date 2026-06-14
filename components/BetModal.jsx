@@ -230,6 +230,39 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
 
   const referee = match.referees?.[0]?.name || null;
 
+  // 🤖 Nhận định AI (gọi khi bấm nút, tránh tốn token tự động)
+  const [ai, setAi] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+  async function runAi() {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await fetch("/api/ai/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          home: homeName,
+          away: awayName,
+          homeFifa,
+          awayFifa,
+          homeRank: homeRankInfo ? `Bảng ${homeRankInfo.group} #${homeRankInfo.pos}` : null,
+          awayRank: awayRankInfo ? `Bảng ${awayRankInfo.group} #${awayRankInfo.pos}` : null,
+          homeForm,
+          awayForm,
+          stage: match.stage,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Lỗi AI");
+      setAi(data);
+    } catch (e) {
+      setAiError(e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -520,6 +553,44 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
         {/* Tab 3: Stats Details */}
         {modalTab === "stats" && (
           <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin text-xs text-slate-300">
+            {/* 🤖 Nhận định AI */}
+            <div className="bg-gradient-to-b from-[#334BFF]/10 to-[#0B1735]/40 border border-[#334BFF]/25 rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wider">🤖 Nhận định AI</span>
+                {!ai && (
+                  <button
+                    onClick={runAi}
+                    disabled={aiLoading}
+                    className="btn-primary px-3 py-1 text-[10px] font-bold rounded-lg disabled:opacity-50"
+                  >
+                    {aiLoading ? "Đang phân tích…" : "Phân tích trận này"}
+                  </button>
+                )}
+              </div>
+              {aiError && <p className="text-[10px] text-[#ff5a5a]">{aiError}</p>}
+              {ai && (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-slate-200 leading-relaxed">{ai.analysis}</p>
+                  <div className="flex items-center gap-2 flex-wrap text-[10px]">
+                    <span className="px-2 py-0.5 rounded bg-[#334BFF]/20 text-white font-bold tabular-nums">
+                      Dự đoán: {ai.predictedHome}–{ai.predictedAway}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-white/5 text-slate-300 font-semibold">
+                      Tự tin: {ai.confidence}
+                    </span>
+                  </div>
+                  {ai.keyFactors?.length > 0 && (
+                    <ul className="list-disc list-inside space-y-0.5 text-[10px] text-slate-400">
+                      {ai.keyFactors.map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="text-[9px] text-slate-500 italic">AI nhận định tham khảo — không phải số liệu chính thức.</p>
+                </div>
+              )}
+            </div>
+
             {/* Live score + phút (kiểu Google) */}
             {(liveNow || match.status === "FINISHED") &&
               match.score?.fullTime?.home != null && (
