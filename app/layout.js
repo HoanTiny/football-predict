@@ -1,6 +1,7 @@
 import { Oswald, Inter } from "next/font/google";
 import "./globals.css";
 import PWARegister from "@/components/PWARegister";
+import { Analytics } from "@vercel/analytics/next";
 
 const oswald = Oswald({
   variable: "--font-oswald",
@@ -45,6 +46,7 @@ export default function RootLayout({ children }) {
       <body className="min-h-full flex flex-col">
         {children}
         <PWARegister />
+        <Analytics />
       </body>
     </html>
   );
