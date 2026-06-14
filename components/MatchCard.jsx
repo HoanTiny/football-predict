@@ -102,7 +102,7 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
       <div className="flex items-start justify-between mt-2.5 pt-2 border-t border-white/5 gap-2">
         {/* Left Area: Status and Room Bets count */}
         <div className="flex flex-col items-start gap-1 min-w-0 shrink-0">
-          <StatusBadge status={effectiveStatus} />
+          <StatusBadge status={effectiveStatus} minute={match.minute} />
           {roomBets && roomBets.length > 0 && (
             <span
               onClick={(e) => {

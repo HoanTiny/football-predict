@@ -194,7 +194,7 @@ export default function ScheduleTab({
                       Đang Diễn Ra
                     </span>
                     <span className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                      TRỰC TIẾP
+                      {heroMatch.minute ? `TRỰC TIẾP ${heroMatch.minute}'` : "TRỰC TIẾP"}
                     </span>
                   </>
                 ) : (

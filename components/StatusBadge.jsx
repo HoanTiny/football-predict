@@ -3,12 +3,12 @@
 import { isLive } from "@/lib/constants";
 
 /** Flat solid status badges — no gradients, no glow */
-export default function StatusBadge({ status }) {
+export default function StatusBadge({ status, minute }) {
   if (isLive(status)) {
     return (
       <span className="status-pill live text-[10px]">
         <span className="w-1 h-1 rounded-full bg-[#E40000] inline-block animate-pulse" />
-        TRỰC TIẾP
+        {minute ? `TRỰC TIẾP ${minute}'` : "TRỰC TIẾP"}
       </span>
     );
   }
