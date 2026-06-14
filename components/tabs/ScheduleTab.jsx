@@ -153,8 +153,25 @@ export default function ScheduleTab({
       {/* Hero — trận đang diễn ra (live) hoặc đếm ngược trận kế tiếp */}
       {heroMatch ? (
         <div
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#08142D] via-[#0B1735] to-[#10204A] border border-white/5 p-6 flex flex-col items-center justify-center text-center shadow-2xl"
+          className={`relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#08142D] via-[#0B1735] to-[#10204A] border p-6 flex flex-col items-center justify-center text-center shadow-2xl ${
+            isHeroLive && onBet
+              ? "border-[#ff5a5a]/30 cursor-pointer transition-colors hover:border-[#ff5a5a]/60"
+              : "border-white/5"
+          }`}
           style={{ minHeight: 280 }}
+          {...(isHeroLive && onBet
+            ? {
+                role: "button",
+                tabIndex: 0,
+                onClick: () => onBet(heroMatch, "stats"),
+                onKeyDown: (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onBet(heroMatch, "stats");
+                  }
+                },
+              }
+            : {})}
         >
           {/* Background Lights Glow */}
           <div className="absolute inset-0 bg-radial-gradient from-[#334BFF]/10 via-transparent to-transparent pointer-events-none" />
@@ -282,28 +299,41 @@ export default function ScheduleTab({
               {/* Action Button — khi live thì khoá cược, chỉ xem lại dự đoán */}
               <div className="pt-2">
                 {isHeroLive ? (
-                  heroMatchPrediction && heroMatchPrediction.length > 0 ? (
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {heroMatchPrediction.map((p, pIdx) => (
-                        <span
-                          key={pIdx}
-                          className="btn-secondary px-4 py-2 text-xs font-bold flex items-center gap-2 shrink-0 opacity-90"
-                        >
-                          <span>Dự đoán:</span>
-                          <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
-                            {p.homeGoals}–{p.awayGoals}
-                          </strong>
-                          <span className="text-[10px] text-slate-400">
-                            💎{p.wager}
+                  <div className="flex flex-col items-center gap-2">
+                    {heroMatchPrediction && heroMatchPrediction.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {heroMatchPrediction.map((p, pIdx) => (
+                          <span
+                            key={pIdx}
+                            className="btn-secondary px-4 py-2 text-xs font-bold flex items-center gap-2 shrink-0 opacity-90"
+                          >
+                            <span>Dự đoán:</span>
+                            <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
+                              {p.homeGoals}–{p.awayGoals}
+                            </strong>
+                            <span className="text-[10px] text-slate-400">
+                              💎{p.wager}
+                            </span>
                           </span>
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                      🔒 Đã khoá cược — trận đang diễn ra
-                    </span>
-                  )
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                        🔒 Đã khoá cược — trận đang diễn ra
+                      </span>
+                    )}
+                    {onBet && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onBet(heroMatch, "stats");
+                        }}
+                        className="btn-primary px-5 py-2 text-xs font-bold flex items-center gap-1.5 shadow-[0_4px_12px_rgba(255,90,90,0.25)]"
+                      >
+                        📊 Xem thông số trực tiếp
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   onBet && (heroMatchPrediction && heroMatchPrediction.length > 0 ? (
                     <div className="flex flex-wrap gap-2 justify-center">
