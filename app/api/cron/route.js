@@ -5,7 +5,8 @@ import { pushReady, sendToAll, sendToUserIds } from "@/lib/push";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const KICKOFF_WINDOW_MIN = 15; // nhắc trước giờ bóng lăn (phút)
+// Nhắc trước giờ bóng lăn (phút). Chỉnh qua env KICKOFF_REMINDER_MIN (mặc định 15).
+const KICKOFF_WINDOW_MIN = Number(process.env.KICKOFF_REMINDER_MIN) || 15;
 
 const sign = (x, y) => (x > y ? 1 : x < y ? -1 : 0);
 
