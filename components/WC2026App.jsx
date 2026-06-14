@@ -110,12 +110,15 @@ export default function WC2026App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Token cá nhân (tuỳ chọn) lưu cục bộ. KHÔNG dùng token public (tránh lộ key).
   const [apiToken, setApiToken] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem(LS_TOKEN) || process.env.NEXT_PUBLIC_FOOTBALL_DATA_TOKEN || "";
+      return localStorage.getItem(LS_TOKEN) || "";
     }
     return "";
   });
+  // Server đã cấu hình FOOTBALL_DATA_TOKEN? (chỉ là cờ boolean, không lộ token)
+  const hasServerToken = process.env.NEXT_PUBLIC_HAS_SERVER_TOKEN === "true";
   const [demoMode, setDemoModeRaw] = useState(() => localStorage.getItem(LS_DEMO) === "1");
   const setDemoMode = (v) => {
     localStorage.setItem(LS_DEMO, v ? "1" : "0");
@@ -179,7 +182,7 @@ export default function WC2026App() {
   };
 
   const { toasts, pushToast } = useToasts();
-  const { matches, loading, error, lastUpdated, fetchMatches } = useMatches(apiToken, demoMode);
+  const { matches, loading, error, lastUpdated, fetchMatches } = useMatches(apiToken, demoMode, hasServerToken);
 
   const inRoom = mode === "room" && session;
   const local = useLocalStore(inRoom ? [] : matches, pushToast);
@@ -350,7 +353,8 @@ export default function WC2026App() {
 
   /* ----- guards ----- */
 
-  if (!apiToken && !demoMode) {
+  // Chỉ buộc nhập token khi server CHƯA có token và người dùng chưa chọn demo.
+  if (!apiToken && !demoMode && !hasServerToken) {
     return <ConfigScreen onSave={saveToken} onDemo={() => setDemoMode(true)} />;
   }
 

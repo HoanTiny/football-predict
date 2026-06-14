@@ -4,14 +4,17 @@ import { useState, useEffect, useCallback } from "react";
 import { buildDemoMatches } from "@/lib/demoData";
 
 /**
- * Tải danh sách trận đấu (qua proxy /api/matches) và poll mỗi 60 giây
- * để cập nhật tỉ số LIVE / bắt trận chuyển sang FINISHED.
+ * Tải danh sách trận đấu (qua proxy /api/matches) và poll mỗi 60 giây.
+ * Chạy được khi: có token cá nhân (apiToken) HOẶC server đã cấu hình token
+ * (hasServerToken) — khi đó client không cần dán token, route dùng env server.
  */
-export function useMatches(apiToken, demoMode) {
+export function useMatches(apiToken, demoMode, hasServerToken = false) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  const enabled = demoMode || !!apiToken || hasServerToken;
 
   const fetchMatches = useCallback(
     async (silent = false) => {
@@ -22,13 +25,15 @@ export function useMatches(apiToken, demoMode) {
         setError(null);
         return;
       }
-      if (!apiToken) return;
+      if (!apiToken && !hasServerToken) return;
       if (!silent) {
         setLoading(true);
         setError(null);
       }
       try {
-        const res = await fetch("/api/matches", { headers: { "X-Auth-Token": apiToken } });
+        // Chỉ gửi token cá nhân nếu có; nếu không, route dùng FOOTBALL_DATA_TOKEN server.
+        const headers = apiToken ? { "X-Auth-Token": apiToken } : undefined;
+        const res = await fetch("/api/matches", { headers });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || `HTTP ${res.status}`);
@@ -43,23 +48,22 @@ export function useMatches(apiToken, demoMode) {
         setLoading(false);
       }
     },
-    [apiToken, demoMode]
+    [apiToken, demoMode, hasServerToken]
   );
 
   useEffect(() => {
-    if (apiToken || demoMode) fetchMatches();
-  }, [fetchMatches, apiToken, demoMode]);
+    if (enabled) fetchMatches();
+  }, [fetchMatches, enabled]);
 
   useEffect(() => {
-    if (!apiToken && !demoMode) return;
+    if (!enabled) return;
     const t = setInterval(() => fetchMatches(true), 60000);
     return () => clearInterval(t);
-  }, [fetchMatches, apiToken, demoMode]);
+  }, [fetchMatches, enabled]);
 
-  // Refetch ngay khi người dùng quay lại app (mobile tạm dừng timer khi ở nền,
-  // nên không tự cập nhật — tránh phải F5 thủ công). Cũng refetch khi có mạng lại.
+  // Refetch ngay khi người dùng quay lại app (mobile tạm dừng timer khi ở nền).
   useEffect(() => {
-    if (!apiToken && !demoMode) return;
+    if (!enabled) return;
     const onVisible = () => {
       if (document.visibilityState === "visible") fetchMatches(true);
     };
@@ -71,7 +75,7 @@ export function useMatches(apiToken, demoMode) {
       window.removeEventListener("focus", onVisible);
       window.removeEventListener("online", onVisible);
     };
-  }, [fetchMatches, apiToken, demoMode]);
+  }, [fetchMatches, enabled]);
 
   return { matches, loading, error, lastUpdated, fetchMatches };
 }

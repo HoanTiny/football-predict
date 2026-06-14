@@ -23,21 +23,18 @@ export default function StreamScreen() {
   const { toasts, pushToast } = useToasts();
 
   // Load configs or default to demo mode so OBS works instantly out-of-the-box
+  const hasServerToken = process.env.NEXT_PUBLIC_HAS_SERVER_TOKEN === "true";
   const [apiToken] = useState(() => {
     if (typeof window !== "undefined") {
-      return (
-        localStorage.getItem(LS_TOKEN) ||
-        process.env.NEXT_PUBLIC_FOOTBALL_DATA_TOKEN ||
-        ""
-      );
+      return localStorage.getItem(LS_TOKEN) || "";
     }
     return "";
   });
   const [demoMode] = useState(() => {
     if (typeof window !== "undefined") {
-      // Default to demo mode true if no API token is stored, to keep OBS running immediately
+      // Mặc định demo nếu chưa có token nào (để OBS chạy ngay); nếu server có token thì chạy thật.
       const stored = localStorage.getItem(LS_DEMO);
-      if (stored === null) return !process.env.NEXT_PUBLIC_FOOTBALL_DATA_TOKEN;
+      if (stored === null) return !hasServerToken;
       return stored === "1";
     }
     return true;
@@ -62,6 +59,7 @@ export default function StreamScreen() {
   const { matches, loading, error, lastUpdated, fetchMatches } = useMatches(
     apiToken,
     demoMode,
+    hasServerToken,
   );
 
   const inRoom = mode === "room" && roomCode && roomPlayerId;
