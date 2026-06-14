@@ -25,9 +25,14 @@ chính mình → **tự đặt chip tuỳ ý**. Bản này khoá lại:
 | `CRON_SECRET` | Chuỗi ngẫu nhiên — Vercel gửi `Authorization: Bearer <CRON_SECRET>` khi chạy cron. |
 
 ## Cron
-`vercel.json` chạy `/api/cron/settle` mỗi phút.
-> 🔴 Cron mỗi phút cần **Vercel Pro**. Gói Hobby chỉ cron 1 lần/ngày → dùng dịch vụ
-> ngoài (cron-job.org) gọi `GET /api/cron/settle` kèm header `Authorization: Bearer <CRON_SECRET>`.
+`vercel.json` chạy `/api/cron/settle` mỗi ngày (`0 0 * * *`) — lịch này **deploy được trên cả Hobby lẫn Pro**.
+> 🔴 **Quan trọng về tần suất:**
+> - **Vercel Hobby** chỉ cho cron **1 lần/ngày** (đặt mỗi phút sẽ **lỗi deploy**). Quyết toán 1 lần/ngày là quá chậm cho cược trực tiếp → nên dùng **cron ngoài** (cron-job.org, GitHub Actions…) gọi mỗi 1–5 phút:
+>   ```
+>   GET https://<domain>/api/cron/settle
+>   Header: Authorization: Bearer <CRON_SECRET>
+>   ```
+> - **Vercel Pro**: sửa `vercel.json` thành `"schedule": "* * * * *"` để quyết toán gần realtime.
 
 Cron sẽ: lấy trận đã FINISHED → quyết toán mọi kèo `pending` (đúng tỉ số ×3 / đúng kết
 quả ×1 / thua) + cược vô địch khi Chung kết xong. Idempotent (chỉ xử lý `pending`).
