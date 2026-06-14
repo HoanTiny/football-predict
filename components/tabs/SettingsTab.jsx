@@ -4,6 +4,7 @@ import { useState } from "react";
 import { fmt, START_CHIPS } from "@/lib/constants";
 import { supabase } from "@/lib/supabase";
 import PushToggle from "@/components/PushToggle";
+import ConfirmModal from "@/components/ConfirmModal";
 
 function Section({ title, children }) {
   return (
@@ -40,40 +41,18 @@ function PlayerNameEditor({ current, onSwitch }) {
   );
 }
 
-function TokenEditor({ current, onSave }) {
-  const [token, setToken] = useState(current);
-  return (
-    <div className="flex gap-2">
-      <input
-        value={token}
-        onChange={(e) => setToken(e.target.value)}
-        placeholder="X-Auth-Token…"
-        className="glass-input flex-1 px-3 py-2 text-xs font-mono"
-      />
-      <button
-        onClick={() => token.trim() && onSave(token.trim())}
-        disabled={!token.trim() || token.trim() === current}
-        className="px-4 py-2 rounded-lg font-bold text-xs btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Lưu
-      </button>
-    </div>
-  );
-}
-
 /** TAB 5 — Cài đặt — Compact editorial panels */
 export default function SettingsTab({
   player,
-  apiToken,
   demoMode,
   onSwitchPlayer,
-  onSaveToken,
   onReset,
   onShare,
   roomCode,
   onLeaveRoom,
   authSession,
 }) {
+  const [confirmLeave, setConfirmLeave] = useState(false);
   return (
     <div className="max-w-lg mx-auto space-y-4 pb-8">
       {/* Section title */}
@@ -117,7 +96,7 @@ export default function SettingsTab({
             </span>
           </div>
           <button
-            onClick={() => onLeaveRoom()}
+            onClick={() => setConfirmLeave(true)}
             className="btn-secondary w-full py-2.5 rounded-lg text-xs font-bold cursor-pointer"
           >
             🚪 Rời phòng
@@ -174,14 +153,6 @@ export default function SettingsTab({
         )}
       </Section>
 
-      {/* API token */}
-      {/* <Section title="API FOOTBALL-DATA.ORG">
-        <TokenEditor current={apiToken} onSave={onSaveToken} />
-        <p className="text-[10px] text-slate-500 font-medium">
-          API được gọi qua proxy server (/api/matches) — không bị chặn CORS.
-        </p>
-      </Section> */}
-
       {/* Push notifications */}
       <Section title="THÔNG BÁO">
         <PushToggle authSession={authSession} />
@@ -212,6 +183,23 @@ export default function SettingsTab({
           </div>
         )}
       </Section>
+
+      <ConfirmModal
+        open={confirmLeave}
+        icon="🚪"
+        title={`Rời phòng ${roomCode || ""}?`}
+        message={
+          "Dữ liệu (chip & lịch sử kèo) của bạn vẫn được giữ trên hệ thống.\nBạn có thể vào lại bằng mã phòng để khôi phục bất cứ lúc nào."
+        }
+        confirmLabel="Rời phòng"
+        cancelLabel="Ở lại"
+        danger
+        onConfirm={() => {
+          setConfirmLeave(false);
+          onLeaveRoom();
+        }}
+        onCancel={() => setConfirmLeave(false)}
+      />
     </div>
   );
 }

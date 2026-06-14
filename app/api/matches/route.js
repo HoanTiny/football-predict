@@ -42,7 +42,7 @@ export async function GET(request) {
     }
 
     return Response.json(await res.json());
-  } catch (e) {
+  } catch {
     return Response.json(
       { error: "Không kết nối được football-data.org" },
       { status: 502 }

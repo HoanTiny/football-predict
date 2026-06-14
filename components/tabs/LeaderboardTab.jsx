@@ -121,6 +121,8 @@ export default function LeaderboardTab({ player, matches, roomLeaderboard }) {
         };
       })
       .sort((a, b) => b.chips - a.chips);
+    // player & matches là trigger tính lại khi dữ liệu localStorage thay đổi
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player, matches]);
 
   const leaderboard = roomLeaderboard || localLeaderboard;

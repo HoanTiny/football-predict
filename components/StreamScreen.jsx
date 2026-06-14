@@ -7,7 +7,6 @@ import {
   LS_MODE,
   LS_ROOM_CODE,
   LS_ROOM_PLAYER_ID,
-  GROUPS,
   flagOf,
   flagImgOf,
 } from "@/lib/constants";
@@ -56,11 +55,7 @@ export default function StreamScreen() {
       : null,
   );
 
-  const { matches, loading, error, lastUpdated, fetchMatches } = useMatches(
-    apiToken,
-    demoMode,
-    hasServerToken,
-  );
+  const { matches, loading } = useMatches(apiToken, demoMode, hasServerToken);
 
   const inRoom = mode === "room" && roomCode && roomPlayerId;
   const session = useMemo(
@@ -151,6 +146,8 @@ export default function StreamScreen() {
         stream.getTracks().forEach((track) => track.stop());
       }
     };
+    // pushToast là callback ổn định, không cần đưa vào deps để tránh mở lại webcam
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [webcamEnabled, language]);
 
   // Dynamic body background override for transparent OBS overlay mode

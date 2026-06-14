@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import {
   GROUPS, flagOf, flagImgOf, fmt,
-  CHAMPION_STAGES, STAGE_MULTIPLIERS, TIER_MULT, TIER_LABEL,
+  CHAMPION_STAGES, STAGE_MULTIPLIERS,
   getTeamTier, getChampionOdds,
 } from "@/lib/constants";
 
@@ -83,8 +83,6 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
   const stagePick = picks.find((p) => p.stage === currentStage);
   const stageMult = STAGE_MULTIPLIERS[currentStage] || 2;
   const combinedOdds = team ? getChampionOdds(currentStage, team) : null;
-  const teamTier = team ? getTeamTier(team) : null;
-  const tierMult = teamTier ? TIER_MULT[teamTier] : null;
   const stageInfo = CHAMPION_STAGES.find((s) => s.key === currentStage);
 
   return (
