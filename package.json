@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
@@ -14,7 +16,13 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4"
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.6.0",
+    "tailwindcss": "^4",
+    "vitest": "^4.1.8"
   }
 }
