@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { computeSettlement } from "@/lib/settlement";
+import { fmt } from "@/lib/constants";
 import {
   fetchRoomState,
   insertPrediction,
-  applySettlementToRoom,
   addChampionPick,
   resetMyData,
   subscribeRoom,
@@ -32,8 +31,7 @@ export function useRoomStore(session, matches, pushToast) {
   const [players, setPlayers] = useState([]);
   const [predictions, setPredictions] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const settledRef = useRef(new Set());
-  const settlingRef = useRef(false);
+  const toastSeenRef = useRef(null); // id kèo đã quyết toán đã hiện toast
 
   const code = session?.code;
   const playerId = session?.playerId;
@@ -101,7 +99,6 @@ export function useRoomStore(session, matches, pushToast) {
 
   const reset = useCallback(async () => {
     try {
-      settledRef.current = new Set();
       await resetMyData(me);
       await refresh();
     } catch (e) {
@@ -109,23 +106,31 @@ export function useRoomStore(session, matches, pushToast) {
     }
   }, [me, refresh, pushToast]);
 
-  // Tự quyết toán kèo CỦA TÔI khi có trận FINISHED, ghi lên Supabase
+  // Quyết toán do SERVER (cron) thực hiện bằng tỉ số thật → client chỉ hiện toast
+  // khi kèo CỦA MÌNH vừa được quyết toán (đọc, không ghi).
   useEffect(() => {
-    if (!me || settlingRef.current) return;
-    const result = computeSettlement(matches, player, settledRef.current);
-    if (!result) return;
-    result.settledMatchIds.forEach((id) => settledRef.current.add(id));
-    settlingRef.current = true;
-    applySettlementToRoom({ ...me, champion_picks: player.championPicks }, result)
-      .then(() => {
-        result.toasts.forEach((t) => pushToast(t.msg, t.type));
-        return refresh();
-      })
-      .catch((e) => pushToast(`Lỗi quyết toán: ${e.message}`, "lose"))
-      .finally(() => {
-        settlingRef.current = false;
-      });
-  }, [matches, me, player, refresh, pushToast]);
+    if (!me) return;
+    const mine = predictions.filter(
+      (r) => r.player_id === me.id && r.status !== "pending"
+    );
+    if (toastSeenRef.current === null) {
+      // Lần đầu tải: ghi nhận toàn bộ, không toast (tránh spam khi mới mở)
+      toastSeenRef.current = new Set(mine.map((r) => r.id));
+      return;
+    }
+    mine.forEach((r) => {
+      if (toastSeenRef.current.has(r.id)) return;
+      toastSeenRef.current.add(r.id);
+      const win = r.status !== "lost";
+      const amt = Math.abs(r.payout || 0);
+      pushToast(
+        win
+          ? `🎉 Thắng kèo! +${fmt(amt)} 💎 (${r.final_score || ""})`
+          : `😢 Thua kèo -${fmt(amt)} 💎 (${r.final_score || ""})`,
+        win ? "win" : "lose"
+      );
+    });
+  }, [predictions, me, pushToast]);
 
   /* ----- dữ liệu cả phòng cho UI ----- */
 

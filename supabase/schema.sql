@@ -95,3 +95,86 @@ language sql
 as $$
   update players set chips = chips + p_delta where id = p_id returning chips;
 $$;
+
+-- ============================================================
+-- QUYẾT TOÁN & CHIP PHÍA SERVER (chống gian lận)
+-- Sau khi chạy phần này, CLIENT KHÔNG còn ghi trực tiếp chip/kết quả.
+-- Mọi thay đổi chip đi qua hàm SECURITY DEFINER bên dưới; quyết toán do
+-- cron (service role) thực hiện bằng TỈ SỐ THẬT.
+-- ⚠️ PHẢI CHẠY SQL NÀY TRƯỚC KHI DEPLOY CODE MỚI (nếu không, đặt cược sẽ lỗi).
+-- ============================================================
+
+-- Chip khởi điểm khớp app (START_CHIPS = 5000) cho người chơi mới
+alter table players alter column chips set default 5000;
+
+-- Không cho client gọi hàm cộng/trừ chip tuỳ ý nữa
+revoke execute on function adjust_chips(uuid, int) from public, anon, authenticated;
+
+-- 1) Đặt kèo nguyên tử (xác định người chơi qua auth.uid())
+create or replace function place_bet(
+  p_room text, p_match bigint, p_home int, p_away int, p_wager int
+) returns int
+language plpgsql security definer set search_path = public as $$
+declare v_player uuid; v_chips int;
+begin
+  if p_wager < 10 then raise exception 'WAGER_TOO_SMALL'; end if;
+  if p_home < 0 or p_away < 0 then raise exception 'BAD_SCORE'; end if;
+  select id into v_player from players where room_code = p_room and user_id = auth.uid();
+  if v_player is null then raise exception 'PLAYER_NOT_FOUND'; end if;
+  update players set chips = chips - p_wager
+    where id = v_player and chips >= p_wager returning chips into v_chips;
+  if v_chips is null then raise exception 'INSUFFICIENT_CHIPS'; end if;
+  insert into predictions (player_id, room_code, match_id, home_goals, away_goals, wager)
+    values (v_player, p_room, p_match, p_home, p_away, p_wager);
+  return v_chips;
+end; $$;
+
+-- 2) Cược vô địch nguyên tử
+create or replace function place_champion_bet(
+  p_room text, p_stage text, p_team text, p_wager int, p_mult numeric
+) returns int
+language plpgsql security definer set search_path = public as $$
+declare v_player uuid; v_chips int; v_pick jsonb;
+begin
+  if p_wager < 10 then raise exception 'WAGER_TOO_SMALL'; end if;
+  select id into v_player from players where room_code = p_room and user_id = auth.uid();
+  if v_player is null then raise exception 'PLAYER_NOT_FOUND'; end if;
+  update players set chips = chips - p_wager
+    where id = v_player and chips >= p_wager returning chips into v_chips;
+  if v_chips is null then raise exception 'INSUFFICIENT_CHIPS'; end if;
+  v_pick := jsonb_build_object(
+    'id', substr(md5(random()::text), 1, 9),
+    'stage', p_stage, 'team', p_team, 'wager', p_wager, 'multiplier', p_mult,
+    'status', 'pending', 'payout', 0,
+    'placedAt', to_char(now() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+  );
+  update players set champion_picks = coalesce(champion_picks, '[]'::jsonb) || v_pick
+    where id = v_player;
+  return v_chips;
+end; $$;
+
+-- 3) Reset hồ sơ của tôi (xoá kèo + chip về mặc định)
+create or replace function reset_my_data(p_room text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_player uuid;
+begin
+  select id into v_player from players where room_code = p_room and user_id = auth.uid();
+  if v_player is null then raise exception 'PLAYER_NOT_FOUND'; end if;
+  delete from predictions where player_id = v_player;
+  update players set chips = 5000, champion_picks = '[]'::jsonb where id = v_player;
+end; $$;
+
+grant execute on function place_bet(text, bigint, int, int, int) to authenticated;
+grant execute on function place_champion_bet(text, text, text, int, numeric) to authenticated;
+grant execute on function reset_my_data(text) to authenticated;
+
+-- 4) KHOÁ ghi trực tiếp từ client (chỉ qua hàm DEFINER ở trên + cron service role)
+--    Postgres RLS không giới hạn cột → dùng column GRANT.
+revoke insert, update on players from authenticated;
+grant insert (room_code, user_id, name) on players to authenticated; -- chip dùng default
+grant update (name) on players to authenticated;                     -- chỉ đổi tên
+revoke insert, update on predictions from authenticated;             -- chỉ tạo/sửa qua hàm
+-- (select & delete predictions vẫn theo policy cũ; cron service role bỏ qua mọi grant)
+
+-- Cron (service role) vẫn cần cộng chip nguyên tử khi quyết toán
+grant execute on function adjust_chips(uuid, int) to service_role;
