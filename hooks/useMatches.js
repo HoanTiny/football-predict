@@ -56,5 +56,22 @@ export function useMatches(apiToken, demoMode) {
     return () => clearInterval(t);
   }, [fetchMatches, apiToken, demoMode]);
 
+  // Refetch ngay khi người dùng quay lại app (mobile tạm dừng timer khi ở nền,
+  // nên không tự cập nhật — tránh phải F5 thủ công). Cũng refetch khi có mạng lại.
+  useEffect(() => {
+    if (!apiToken && !demoMode) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchMatches(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    window.addEventListener("online", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      window.removeEventListener("online", onVisible);
+    };
+  }, [fetchMatches, apiToken, demoMode]);
+
   return { matches, loading, error, lastUpdated, fetchMatches };
 }
