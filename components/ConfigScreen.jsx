@@ -4,9 +4,7 @@ import { useState } from "react";
 
 /** FIFA 2026 × Glass Config Screen — API token setup */
 export default function ConfigScreen({ onSave, onDemo }) {
-  const [token, setToken] = useState(() => {
-    return process.env.NEXT_PUBLIC_FOOTBALL_DATA_TOKEN || "";
-  });
+  const [token, setToken] = useState("");
 
   return (
     <div
