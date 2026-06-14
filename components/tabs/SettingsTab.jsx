@@ -4,6 +4,7 @@ import { useState } from "react";
 import { fmt, START_CHIPS } from "@/lib/constants";
 import { supabase } from "@/lib/supabase";
 import PushToggle from "@/components/PushToggle";
+import ConfirmModal from "@/components/ConfirmModal";
 
 function Section({ title, children }) {
   return (
@@ -51,6 +52,7 @@ export default function SettingsTab({
   onLeaveRoom,
   authSession,
 }) {
+  const [confirmLeave, setConfirmLeave] = useState(false);
   return (
     <div className="max-w-lg mx-auto space-y-4 pb-8">
       {/* Section title */}
@@ -94,15 +96,7 @@ export default function SettingsTab({
             </span>
           </div>
           <button
-            onClick={() => {
-              if (
-                window.confirm(
-                  `Rời phòng ${roomCode}?\n\nDữ liệu (chip & lịch sử kèo) của bạn vẫn được giữ trên hệ thống. Bạn có thể vào lại bằng mã phòng để khôi phục.`
-                )
-              ) {
-                onLeaveRoom();
-              }
-            }}
+            onClick={() => setConfirmLeave(true)}
             className="btn-secondary w-full py-2.5 rounded-lg text-xs font-bold cursor-pointer"
           >
             🚪 Rời phòng
@@ -189,6 +183,23 @@ export default function SettingsTab({
           </div>
         )}
       </Section>
+
+      <ConfirmModal
+        open={confirmLeave}
+        icon="🚪"
+        title={`Rời phòng ${roomCode || ""}?`}
+        message={
+          "Dữ liệu (chip & lịch sử kèo) của bạn vẫn được giữ trên hệ thống.\nBạn có thể vào lại bằng mã phòng để khôi phục bất cứ lúc nào."
+        }
+        confirmLabel="Rời phòng"
+        cancelLabel="Ở lại"
+        danger
+        onConfirm={() => {
+          setConfirmLeave(false);
+          onLeaveRoom();
+        }}
+        onCancel={() => setConfirmLeave(false)}
+      />
     </div>
   );
 }
