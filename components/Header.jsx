@@ -42,12 +42,12 @@ export default function Header({
     <>
       {/* Floating glass navbar */}
       <header
-        className="fixed top-4 left-1/2 z-50 w-full max-w-7xl px-4"
+        className="fixed top-2 left-1/2 z-50 w-full max-w-7xl px-3"
         style={{ transform: "translateX(-50%)" }}
       >
         <div
-          className="glass-strong rounded-2xl pl-4 pr-3 py-2.5 flex items-center justify-between gap-4"
-          style={{ minHeight: 64 }}
+          className="glass-strong rounded-2xl pl-3 pr-2.5 py-2 flex items-center justify-between gap-3"
+          style={{ minHeight: 52 }}
         >
           {/* Logo */}
           <button

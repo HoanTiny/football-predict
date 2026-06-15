@@ -23,7 +23,7 @@ import {
   Check,
   ChevronDown,
   Menu,
-  MessageCircle,
+  MessagesSquare,
   Send,
   X,
   Volume2,
@@ -49,7 +49,7 @@ const MAP = {
   check: Check,
   chevron: ChevronDown,
   menu: Menu,
-  message: MessageCircle,
+  message: MessagesSquare,
   send: Send,
   close: X,
 };

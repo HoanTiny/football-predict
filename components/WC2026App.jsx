@@ -511,7 +511,7 @@ export default function WC2026App() {
         authSession={authSession}
       />
 
-      <main className={`${fullWidth ? "max-w-[1600px]" : "max-w-[1280px]"} mx-auto px-4 pt-24 pb-6`} key={tab}>
+      <main className={`${fullWidth ? "max-w-[1600px]" : "max-w-[1280px]"} mx-auto px-4 pt-[72px] pb-6`} key={tab}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Main content column */}
           <div className={`${fullWidth ? "lg:col-span-12" : "lg:col-span-8"} space-y-6 tab-fade`}>

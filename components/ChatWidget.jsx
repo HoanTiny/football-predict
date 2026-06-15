@@ -4,16 +4,60 @@ import { useState, useRef, useEffect } from "react";
 import { vnTime } from "@/lib/time";
 import Icon from "./Icon";
 
-/** Chat nổi theo phòng — chỉ hiển thị khi đang trong phòng. */
+/** Consistent avatar color from name string */
+function nameToColor(name = "") {
+  const palette = [
+    ["#6366f1", "#818cf8"], // indigo
+    ["#8b5cf6", "#a78bfa"], // violet
+    ["#ec4899", "#f472b6"], // pink
+    ["#f59e0b", "#fbbf24"], // amber
+    ["#10b981", "#34d399"], // emerald
+    ["#06b6d4", "#22d3ee"], // cyan
+    ["#f43f5e", "#fb7185"], // rose
+    ["#3b82f6", "#60a5fa"], // blue
+  ];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  const [from, to] = palette[h % palette.length];
+  return { from, to };
+}
+
+function Avatar({ name, size = 28 }) {
+  const { from, to } = nameToColor(name);
+  const letter = (name || "?").charAt(0).toUpperCase();
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        minWidth: size,
+        borderRadius: "50%",
+        background: `linear-gradient(135deg, ${from}, ${to})`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: size * 0.42,
+        fontWeight: 800,
+        color: "#fff",
+        boxShadow: `0 2px 8px ${from}55`,
+        userSelect: "none",
+      }}
+    >
+      {letter}
+    </div>
+  );
+}
+
+/** Chat nổi theo phòng — premium redesign */
 export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [seenCount, setSeenCount] = useState(0);
   const listRef = useRef(null);
+  const inputRef = useRef(null);
 
   const unread = open ? 0 : Math.max(0, messages.length - seenCount);
 
-  // Khi mở (hoặc có tin mới lúc đang mở) → coi như đã đọc + cuộn xuống đáy
   useEffect(() => {
     if (open) setSeenCount(messages.length);
   }, [open, messages.length]);
@@ -24,6 +68,10 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
     }
   }, [messages, open]);
 
+  useEffect(() => {
+    if (open && inputRef.current) inputRef.current.focus();
+  }, [open]);
+
   const submit = async () => {
     const t = draft.trim();
     if (!t) return;
@@ -31,90 +79,322 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
     await onSend(t);
   };
 
+  // Group consecutive messages from same sender
+  const grouped = messages.reduce((acc, m, i) => {
+    const prev = messages[i - 1];
+    const isContinuation =
+      prev &&
+      prev.user_id === m.user_id &&
+      new Date(m.created_at) - new Date(prev.created_at) < 2 * 60 * 1000;
+    acc.push({ ...m, isContinuation });
+    return acc;
+  }, []);
+
   return (
     <>
-      {/* Panel */}
+      {/* ── Panel ── */}
       {open && (
-        <div className="fixed z-50 bottom-24 right-4 md:bottom-24 md:right-6 w-[calc(100vw-2rem)] max-w-sm h-[60vh] max-h-[460px] flex flex-col rounded-2xl glass-strong border border-white/10 shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/[0.03] shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <Icon name="message" className="w-4 h-4 text-[#62F2C0] shrink-0" />
-              <div className="leading-tight min-w-0">
-                <div className="text-xs font-bold text-white">Chat phòng</div>
-                <div className="text-[10px] text-[#F5C518] font-mono tracking-wider truncate">
+        <div
+          className="fixed z-50 bottom-[88px] right-4 md:bottom-[88px] md:right-6"
+          style={{
+            width: "min(calc(100vw - 2rem), 360px)",
+            height: "min(62vh, 480px)",
+            display: "flex",
+            flexDirection: "column",
+            borderRadius: 20,
+            overflow: "hidden",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset",
+            background: "linear-gradient(180deg, rgba(10,18,45,0.97) 0%, rgba(7,13,35,0.99) 100%)",
+            backdropFilter: "blur(32px)",
+            WebkitBackdropFilter: "blur(32px)",
+            animation: "chatSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1) both",
+          }}
+        >
+          {/* ── Header ── */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 14px 12px 14px",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              background: "linear-gradient(90deg, rgba(51,75,255,0.12) 0%, rgba(98,242,192,0.06) 100%)",
+              flexShrink: 0,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              {/* Live dot */}
+              <div style={{ position: "relative", width: 8, height: 8, flexShrink: 0 }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50%",
+                    background: "#62F2C0",
+                    animation: "ping 1.5s cubic-bezier(0,0,0.2,1) infinite",
+                    opacity: 0.5,
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50%",
+                    background: "#62F2C0",
+                  }}
+                />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#fff", letterSpacing: "0.01em" }}>
+                  Chat phòng
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: "#F5C518",
+                    fontFamily: "monospace",
+                    letterSpacing: "0.12em",
+                    marginTop: 1,
+                  }}
+                >
                   {roomCode}
                 </div>
               </div>
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="text-slate-400 hover:text-white transition-colors p-1 -mr-1"
+              style={{
+                color: "rgba(148,163,184,0.6)",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                width: 28,
+                height: 28,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all 0.15s",
+                flexShrink: 0,
+              }}
               aria-label="Đóng chat"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#fff";
+                e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "rgba(148,163,184,0.6)";
+                e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+              }}
             >
-              <Icon name="close" className="w-4 h-4" />
+              <Icon name="close" className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Messages */}
+          {/* ── Messages ── */}
           <div
             ref={listRef}
-            className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-2.5"
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "14px 12px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(255,255,255,0.08) transparent",
+            }}
           >
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center gap-2 px-6">
-                <Icon name="message" className="w-8 h-8 text-slate-600" />
-                <p className="text-[11px] text-slate-500 leading-relaxed">
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                  opacity: 0.5,
+                  padding: "0 24px",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    background: "rgba(51,75,255,0.15)",
+                    border: "1px solid rgba(51,75,255,0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                    <Icon name="message" className="w-6 h-6" style={{ color: "#6b7fff" }} />
+                </div>
+                <p style={{ fontSize: 11, color: "rgba(148,163,184,0.7)", lineHeight: 1.6 }}>
                   {ready
-                    ? "Chưa có tin nhắn nào. Hãy là người mở màn! 👋"
-                    : "Chat chưa được bật. Cần chạy migration Supabase (bảng messages)."}
+                    ? "Chưa có tin nhắn nào.\nHãy là người mở màn! 👋"
+                    : "Chat chưa được bật.\nCần chạy migration Supabase."}
                 </p>
               </div>
             ) : (
-              messages.map((m) => {
+              grouped.map((m, idx) => {
                 const mine = m.user_id && m.user_id === myUserId;
+                const showMeta = !mine && !m.isContinuation;
+                const isLast =
+                  idx === grouped.length - 1 || grouped[idx + 1]?.user_id !== m.user_id;
+
                 return (
                   <div
                     key={m.id}
-                    className={`flex flex-col max-w-[80%] ${mine ? "ml-auto items-end" : "items-start"}`}
+                    style={{
+                      display: "flex",
+                      flexDirection: mine ? "row-reverse" : "row",
+                      alignItems: "flex-end",
+                      gap: 8,
+                      marginTop: m.isContinuation ? 2 : 10,
+                    }}
                   >
+                    {/* Avatar slot (other users only) */}
                     {!mine && (
-                      <span className="text-[10px] font-bold text-[#7b8fff] mb-0.5 px-1 truncate max-w-full">
-                        {m.name}
-                      </span>
+                      <div style={{ width: 28, flexShrink: 0, marginBottom: 2 }}>
+                        {isLast && <Avatar name={m.name} size={28} />}
+                      </div>
                     )}
+
                     <div
-                      className={`px-3 py-1.5 rounded-2xl text-xs leading-relaxed break-words ${
-                        mine
-                          ? "bg-gradient-to-br from-[#4159FF] to-[#2E44E8] text-white rounded-br-sm"
-                          : "bg-white/[0.06] text-slate-100 border border-white/5 rounded-bl-sm"
-                      }`}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: mine ? "flex-end" : "flex-start",
+                        maxWidth: "75%",
+                        gap: 2,
+                      }}
                     >
-                      {m.text}
+                      {/* Sender name */}
+                      {showMeta && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: nameToColor(m.name).from,
+                            paddingLeft: 4,
+                            marginBottom: 1,
+                          }}
+                        >
+                          {m.name}
+                        </span>
+                      )}
+
+                      {/* Bubble */}
+                      <div
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: mine
+                            ? `14px 14px ${isLast ? "4px" : "14px"} 14px`
+                            : `14px 14px 14px ${isLast ? "4px" : "14px"}`,
+                          fontSize: 12,
+                          lineHeight: 1.5,
+                          wordBreak: "break-word",
+                          ...(mine
+                            ? {
+                                background: "linear-gradient(135deg, #4159FF, #2E44E8)",
+                                color: "#fff",
+                                boxShadow: "0 2px 12px rgba(51,75,255,0.35)",
+                              }
+                            : {
+                                background: "rgba(255,255,255,0.07)",
+                                color: "rgba(226,232,240,0.95)",
+                                border: "1px solid rgba(255,255,255,0.07)",
+                              }),
+                        }}
+                      >
+                        {m.text}
+                      </div>
+
+                      {/* Timestamp — only on last in group */}
+                      {isLast && (
+                        <span
+                          style={{
+                            fontSize: 9,
+                            color: "rgba(100,116,139,0.7)",
+                            paddingLeft: mine ? 0 : 4,
+                            paddingRight: mine ? 4 : 0,
+                          }}
+                        >
+                          {m.created_at ? vnTime(m.created_at) : ""}
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[9px] text-slate-600 mt-0.5 px-1">
-                      {m.created_at ? vnTime(m.created_at) : ""}
-                    </span>
                   </div>
                 );
               })
             )}
           </div>
 
-          {/* Input */}
-          <div className="flex items-center gap-2 p-2.5 border-t border-white/10 bg-white/[0.02] shrink-0">
+          {/* ── Input ── */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 10px",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(255,255,255,0.015)",
+              flexShrink: 0,
+            }}
+          >
             <input
+              ref={inputRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="Nhập tin nhắn…"
               maxLength={500}
-              className="glass-input flex-1 px-3 py-2 text-xs"
+              style={{
+                flex: 1,
+                padding: "9px 14px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 12,
+                color: "#e2e8f0",
+                fontSize: 12,
+                outline: "none",
+                transition: "border-color 0.15s, box-shadow 0.15s",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "rgba(51,75,255,0.5)";
+                e.target.style.boxShadow = "0 0 0 3px rgba(51,75,255,0.12)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "rgba(255,255,255,0.08)";
+                e.target.style.boxShadow = "none";
+              }}
             />
             <button
               onClick={submit}
               disabled={!draft.trim()}
-              className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_2px_12px_rgba(51,75,255,0.45)] transition-all"
+              style={{
+                flexShrink: 0,
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: draft.trim()
+                  ? "linear-gradient(135deg, #4159FF, #2E44E8)"
+                  : "rgba(255,255,255,0.05)",
+                color: draft.trim() ? "#fff" : "rgba(148,163,184,0.4)",
+                border: "none",
+                cursor: draft.trim() ? "pointer" : "not-allowed",
+                transition: "all 0.18s",
+                boxShadow: draft.trim() ? "0 2px 12px rgba(51,75,255,0.4)" : "none",
+              }}
               aria-label="Gửi"
             >
               <Icon name="send" className="w-4 h-4" />
@@ -123,23 +403,79 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
         </div>
       )}
 
-      {/* Floating toggle button */}
+      {/* ── Toggle FAB ── */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`fixed z-50 bottom-20 right-4 md:bottom-6 md:right-6 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl transition-all duration-200 ${
-          open
-            ? "bg-slate-700 text-white"
-            : "bg-gradient-to-br from-[#4159FF] to-[#2E44E8] text-white hover:scale-105 hover:shadow-[0_4px_20px_rgba(51,75,255,0.5)]"
-        }`}
+        style={{
+          position: "fixed",
+          zIndex: 50,
+          bottom: 76,
+          right: 16,
+          width: 48,
+          height: 48,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "none",
+          cursor: "pointer",
+          transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+          background: open
+            ? "rgba(51,65,85,0.9)"
+            : "linear-gradient(135deg, #4159FF 0%, #2E44E8 100%)",
+          color: "#fff",
+          boxShadow: open
+            ? "0 4px 16px rgba(0,0,0,0.4)"
+            : "0 4px 20px rgba(51,75,255,0.55), 0 0 0 1px rgba(51,75,255,0.3)",
+        }}
+        onMouseEnter={(e) => {
+          if (!open) e.currentTarget.style.transform = "scale(1.08)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+        }}
         aria-label="Mở chat phòng"
       >
         <Icon name={open ? "close" : "message"} className="w-5 h-5" />
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff5a5a] text-white text-[10px] font-bold flex items-center justify-center border-2 border-[#0B1735]">
+          <span
+            style={{
+              position: "absolute",
+              top: -4,
+              right: -4,
+              minWidth: 18,
+              height: 18,
+              padding: "0 4px",
+              borderRadius: 9,
+              background: "#ef4444",
+              color: "#fff",
+              fontSize: 10,
+              fontWeight: 800,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "2px solid #07142d",
+              animation: "badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+            }}
+          >
             {unread > 9 ? "9+" : unread}
           </span>
         )}
       </button>
+
+      <style>{`
+        @keyframes chatSlideUp {
+          from { opacity: 0; transform: translateY(16px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0)    scale(1);    }
+        }
+        @keyframes ping {
+          75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        @keyframes badgePop {
+          from { transform: scale(0.5); opacity: 0; }
+          to   { transform: scale(1);   opacity: 1; }
+        }
+      `}</style>
     </>
   );
 }
