@@ -4,6 +4,7 @@ import { useState } from "react";
 import { pad } from "@/lib/time";
 import { fmt } from "@/lib/constants";
 import AnimatedNumber from "./AnimatedNumber";
+import Icon from "./Icon";
 
 /** Floating Header — Subtle Glassmorphism, Clean Editorial Aesthetics */
 export default function Header({
@@ -25,12 +26,12 @@ export default function Header({
   const close = () => setMenuOpen(false);
 
   const navTabs = [
-    { key: "schedule", label: "Lịch đấu", icon: "📅" },
-    { key: "groups", label: "Bảng đấu", icon: "📋" },
-    { key: "bracket", label: "Sơ đồ", icon: "🗺️" },
-    { key: "predictions", label: "Lịch sử", icon: "🎯" },
-    { key: "leaderboard", label: "BXH", icon: "📊" },
-    { key: "champion", label: "Vô địch", icon: "🏆" },
+    { key: "schedule", label: "Lịch đấu", icon: "calendar" },
+    { key: "groups", label: "Bảng đấu", icon: "table" },
+    { key: "bracket", label: "Sơ đồ", icon: "bracket" },
+    { key: "predictions", label: "Lịch sử", icon: "history" },
+    { key: "leaderboard", label: "BXH", icon: "chart" },
+    { key: "champion", label: "Vô địch", icon: "trophy" },
   ];
 
   const initial = (player.playerName || "?").charAt(0).toUpperCase();
@@ -98,7 +99,7 @@ export default function Header({
                       : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
-                  <span className="text-[13px] leading-none">{t.icon}</span>
+                  <Icon name={t.icon} className="w-4 h-4 shrink-0" />
                   <span className={active ? "inline" : "hidden xl:inline"}>
                     {t.label}
                   </span>
@@ -107,24 +108,15 @@ export default function Header({
             })}
           </nav>
 
-          {/* Right: stream + room code + player profile (with settings dropdown) */}
+          {/* Right: room code + player profile (Stream moved into the dropdown) */}
           <div className="flex items-center gap-2 shrink-0">
-            <a
-              href="/stream"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#62F2C0] bg-[#62F2C0]/[0.06] border border-[#62F2C0]/25 hover:bg-[#62F2C0]/15 hover:border-[#62F2C0]/50 hover:shadow-[0_0_14px_rgba(98,242,192,0.2)] transition-all duration-200 whitespace-nowrap"
-            >
-              <span className="text-[13px] leading-none">📺</span>
-              <span className="hidden xl:inline">Stream</span>
-            </a>
-
             {roomCode && (
               <span
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold font-mono tracking-[0.15em] text-[#F5C518] bg-[#F5C518]/[0.07] border border-[#F5C518]/25 whitespace-nowrap"
+                className="hidden sm:flex h-9 items-center gap-1.5 px-3 rounded-xl text-[11px] font-bold font-mono tracking-[0.15em] text-[#F5C518] bg-[#F5C518]/[0.07] border border-[#F5C518]/25 whitespace-nowrap"
                 title="Mã phòng"
               >
-                🏟 {roomCode}
+                <Icon name="users" className="w-3.5 h-3.5 shrink-0" />
+                {roomCode}
               </span>
             )}
 
@@ -134,7 +126,7 @@ export default function Header({
                 onClick={() => setMenuOpen((o) => !o)}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
-                className={`flex items-center gap-2.5 pl-2.5 pr-2 py-1.5 rounded-xl bg-gradient-to-r from-[#334BFF]/15 to-[#62F2C0]/10 border transition-all duration-200 ${
+                className={`flex h-9 items-center gap-2.5 pl-2.5 pr-2 rounded-xl bg-gradient-to-r from-[#334BFF]/15 to-[#62F2C0]/10 border transition-all duration-200 ${
                   menuOpen || settingsActive || statsActive
                     ? "border-[#62F2C0]/50 shadow-[0_0_14px_rgba(98,242,192,0.18)]"
                     : "border-white/10 hover:border-white/25"
@@ -148,11 +140,13 @@ export default function Header({
                     {player.playerName}
                   </div>
                   <div className="text-xs font-bold text-[#62F2C0] tabular-nums flex items-center gap-1">
-                    💎 <AnimatedNumber value={player.chips} />
+                    <Icon name="gem" className="w-3.5 h-3.5 shrink-0" />
+                    <AnimatedNumber value={player.chips} />
                   </div>
                 </div>
                 <div className="sm:hidden text-xs font-bold text-[#62F2C0] tabular-nums flex items-center gap-1">
-                  💎 <AnimatedNumber value={player.chips} />
+                  <Icon name="gem" className="w-3.5 h-3.5 shrink-0" />
+                  <AnimatedNumber value={player.chips} />
                 </div>
                 <svg
                   className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`}
@@ -186,20 +180,23 @@ export default function Header({
                       <div className="text-xs font-bold text-white truncate">
                         {player.playerName}
                       </div>
-                      <div className="text-[11px] text-[#62F2C0] font-bold tabular-nums mt-0.5">
-                        💎 {fmt(player.chips)} chips
+                      <div className="text-[11px] text-[#62F2C0] font-bold tabular-nums mt-0.5 flex items-center gap-1.5">
+                        <Icon name="gem" className="w-3.5 h-3.5 shrink-0" />
+                        {fmt(player.chips)} chips
                       </div>
                       {authSession?.user?.email && (
                         <div
-                          className="text-[10px] text-slate-400 truncate mt-1.5"
+                          className="text-[10px] text-slate-400 truncate mt-1.5 flex items-center gap-1.5"
                           title={authSession.user.email}
                         >
-                          ✉️ {authSession.user.email}
+                          <Icon name="mail" className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{authSession.user.email}</span>
                         </div>
                       )}
                       {roomCode && (
-                        <div className="text-[10px] text-[#F5C518] font-mono tracking-wider mt-1.5">
-                          🏟 Phòng {roomCode}
+                        <div className="text-[10px] text-[#F5C518] font-mono tracking-wider mt-1.5 flex items-center gap-1.5">
+                          <Icon name="users" className="w-3 h-3 shrink-0" />
+                          Phòng {roomCode}
                         </div>
                       )}
                     </div>
@@ -220,10 +217,10 @@ export default function Header({
                           : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
                       }`}
                     >
-                      <span className="text-base leading-none">🙋</span>
+                      <Icon name="user" className="w-4 h-4 shrink-0" />
                       Chơi một mình
                       {isSolo && (
-                        <span className="ml-auto text-[#62F2C0]">✓</span>
+                        <Icon name="check" className="ml-auto w-3.5 h-3.5 text-[#62F2C0]" />
                       )}
                     </button>
                     {sessions.map((s) => {
@@ -242,12 +239,12 @@ export default function Header({
                               : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
                           }`}
                         >
-                          <span className="text-base leading-none">🏟</span>
+                          <Icon name="users" className="w-4 h-4 shrink-0" />
                           <span className="font-mono tracking-wider">
                             {s.code}
                           </span>
                           {active && (
-                            <span className="ml-auto text-[#62F2C0]">✓</span>
+                            <Icon name="check" className="ml-auto w-3.5 h-3.5 text-[#62F2C0]" />
                           )}
                         </button>
                       );
@@ -260,21 +257,21 @@ export default function Header({
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#62F2C0] hover:bg-white/[0.06] transition-colors"
                     >
-                      <span className="text-base leading-none">➕</span>
+                      <Icon name="plus" className="w-4 h-4 shrink-0" />
                       Tạo / vào phòng khác
                     </button>
 
                     <div className="my-1 border-t border-white/5" />
 
-                    {/* Stream — useful on mobile where the button is hidden */}
+                    {/* Stream / OBS */}
                     <a
                       href="/stream"
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setMenuOpen(false)}
-                      className="md:hidden flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#62F2C0] hover:bg-white/[0.06] transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#62F2C0] hover:bg-white/[0.06] transition-colors"
                     >
-                      <span className="text-base leading-none">📺</span>
+                      <Icon name="tv" className="w-4 h-4 shrink-0" />
                       Stream / OBS
                     </a>
 
@@ -291,7 +288,7 @@ export default function Header({
                           : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
                       }`}
                     >
-                      <span className="text-base leading-none">📈</span>
+                      <Icon name="activity" className="w-4 h-4 shrink-0" />
                       Thống kê của tôi
                     </button>
 
@@ -308,7 +305,7 @@ export default function Header({
                           : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
                       }`}
                     >
-                      <span className="text-base leading-none">⚙️</span>
+                      <Icon name="settings" className="w-4 h-4 shrink-0" />
                       Cài đặt & tài khoản
                     </button>
                     {authSession && (
@@ -323,7 +320,7 @@ export default function Header({
                           }}
                           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-950/20 hover:text-red-300 transition-colors cursor-pointer"
                         >
-                          <span className="text-base leading-none">🔌</span>
+                          <Icon name="logout" className="w-4 h-4 shrink-0" />
                           Đăng xuất tài khoản
                         </button>
                       </>
