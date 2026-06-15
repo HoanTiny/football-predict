@@ -99,12 +99,37 @@ export default function RoomScreen({
         });
         if (authErr) throw authErr;
       } else {
-        const { error: authErr } = await supabase.auth.signUp({
+        const { data: signUpData, error: authErr } = await supabase.auth.signUp({
           email: email.trim(),
           password: password.trim(),
         });
         if (authErr) throw authErr;
-        setError("Đăng ký thành công! Hãy đăng nhập bằng tài khoản vừa tạo.");
+
+        // Nếu user đã tồn tại mà chưa confirm, Supabase trả về identities rỗng
+        const alreadyExists =
+          signUpData?.user &&
+          Array.isArray(signUpData.user.identities) &&
+          signUpData.user.identities.length === 0;
+
+        if (alreadyExists) {
+          throw new Error(
+            "Email này đã được đăng ký. Hãy đăng nhập hoặc kiểm tra hộp thư để xác nhận tài khoản."
+          );
+        }
+
+        // session !== null → Supabase đã tắt email confirm, đăng nhập luôn
+        if (signUpData?.session) {
+          // onAuthStateChange sẽ tự bắt và chuyển view
+          return;
+        }
+
+        // session === null → cần xác nhận email trước khi đăng nhập được
+        setError(
+          "✅ Đăng ký thành công! Supabase đã gửi email xác nhận tới " +
+          email.trim() +
+          ". Hãy mở email và nhấn link xác nhận, sau đó quay lại đăng nhập. " +
+          "(Kiểm tra cả thư mục Spam nếu không thấy.)"
+        );
         setAuthMode("login");
       }
     } catch (err) {
@@ -392,7 +417,13 @@ export default function RoomScreen({
             </div>
 
             {error && (
-              <div className="text-xs text-[#ff5a5a] font-medium bg-[#ff5a5a]/10 border border-[#ff5a5a]/25 rounded-lg p-2.5 mt-2">
+              <div
+                className={`text-xs font-medium rounded-lg p-2.5 mt-2 border ${
+                  error.startsWith("✅")
+                    ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/25"
+                    : "text-[#ff5a5a] bg-[#ff5a5a]/10 border-[#ff5a5a]/25"
+                }`}
+              >
                 {error}
               </div>
             )}
