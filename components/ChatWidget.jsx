@@ -6,12 +6,52 @@ import Icon from "./Icon";
 
 /** Bộ emoji nhanh cho chat (bóng đá + cảm xúc thường dùng). */
 const EMOJIS = [
-  "⚽", "🥅", "🏆", "🎯", "🔥", "💪", "👏", "🙌",
-  "🎉", "🥳", "😀", "😁", "😂", "🤣", "😅", "😊",
-  "😍", "😎", "🤩", "😜", "🤔", "🫡", "😱", "😭",
-  "😡", "🤯", "🙏", "👍", "👎", "👌", "✌️", "🤝",
-  "💯", "❤️", "💔", "⭐", "🚀", "🐐", "🇻🇳", "👀",
-  "💀", "🤡", "🍀", "⚡", "😈", "🥶",
+  "⚽",
+  "🥅",
+  "🏆",
+  "🎯",
+  "🔥",
+  "💪",
+  "👏",
+  "🙌",
+  "🎉",
+  "🥳",
+  "😀",
+  "😁",
+  "😂",
+  "🤣",
+  "😅",
+  "😊",
+  "😍",
+  "😎",
+  "🤩",
+  "😜",
+  "🤔",
+  "🫡",
+  "😱",
+  "😭",
+  "😡",
+  "🤯",
+  "🙏",
+  "👍",
+  "👎",
+  "👌",
+  "✌️",
+  "🤝",
+  "💯",
+  "❤️",
+  "💔",
+  "⭐",
+  "🚀",
+  "🐐",
+  "🇻🇳",
+  "👀",
+  "💀",
+  "🤡",
+  "🍀",
+  "⚡",
+  "😈",
+  "🥶",
 ];
 
 /** Consistent avatar color from name string */
@@ -141,7 +181,10 @@ export default function ChatWidget({
     if (messages.length > prevLen.current) {
       const last = messages[messages.length - 1];
       const incoming =
-        prevLen.current > 0 && last && last.user_id && last.user_id !== myUserId;
+        prevLen.current > 0 &&
+        last &&
+        last.user_id &&
+        last.user_id !== myUserId;
       if (incoming && !muted) playBeep(audioCtxRef);
     }
     prevLen.current = messages.length;
@@ -189,7 +232,12 @@ export default function ChatWidget({
     if (!el) return;
     atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
 
-    if (el.scrollTop < 48 && hasMore && !loadingOlderRef.current && onLoadOlder) {
+    if (
+      el.scrollTop < 48 &&
+      hasMore &&
+      !loadingOlderRef.current &&
+      onLoadOlder
+    ) {
       loadingOlderRef.current = true;
       const before = el.scrollHeight;
       const prevTop = el.scrollTop;
@@ -239,16 +287,19 @@ export default function ChatWidget({
             // Khi bàn phím hiện: nằm sát trên bàn phím; ngược lại nằm trên bottom-nav
             bottom: keyboardH > 0 ? keyboardH + 8 : 88,
             // dvh co lại theo viewport hiển thị khi bàn phím mở
-            height: keyboardH > 0
-              ? `min(${window.visualViewport?.height ? window.visualViewport.height - 60 : 320}px, 420px)`
-              : "min(62dvh, 480px)",
+            height:
+              keyboardH > 0
+                ? `min(${window.visualViewport?.height ? window.visualViewport.height - 60 : 320}px, 420px)`
+                : "min(62dvh, 480px)",
             display: "flex",
             flexDirection: "column",
             borderRadius: 20,
             overflow: "hidden",
             border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset",
-            background: "linear-gradient(180deg, rgba(10,18,45,0.97) 0%, rgba(7,13,35,0.99) 100%)",
+            boxShadow:
+              "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset",
+            background:
+              "linear-gradient(180deg, rgba(10,18,45,0.97) 0%, rgba(7,13,35,0.99) 100%)",
             backdropFilter: "blur(32px)",
             WebkitBackdropFilter: "blur(32px)",
             animation: "chatSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1) both",
@@ -263,13 +314,28 @@ export default function ChatWidget({
               justifyContent: "space-between",
               padding: "12px 14px 12px 14px",
               borderBottom: "1px solid rgba(255,255,255,0.06)",
-              background: "linear-gradient(90deg, rgba(51,75,255,0.12) 0%, rgba(98,242,192,0.06) 100%)",
+              background:
+                "linear-gradient(90deg, rgba(51,75,255,0.12) 0%, rgba(98,242,192,0.06) 100%)",
               flexShrink: 0,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                minWidth: 0,
+              }}
+            >
               {/* Live dot */}
-              <div style={{ position: "relative", width: 8, height: 8, flexShrink: 0 }}>
+              <div
+                style={{
+                  position: "relative",
+                  width: 8,
+                  height: 8,
+                  flexShrink: 0,
+                }}
+              >
                 <div
                   style={{
                     position: "absolute",
@@ -290,10 +356,24 @@ export default function ChatWidget({
                 />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#fff", letterSpacing: "0.01em" }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: "#fff",
+                    letterSpacing: "0.01em",
+                  }}
+                >
                   Chat phòng
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 1 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    marginTop: 1,
+                  }}
+                >
                   <span
                     style={{
                       fontSize: 10,
@@ -306,7 +386,10 @@ export default function ChatWidget({
                     {roomCode}
                   </span>
                   <span
-                    title={online.map((u) => u.name).filter(Boolean).join(", ")}
+                    title={online
+                      .map((u) => u.name)
+                      .filter(Boolean)
+                      .join(", ")}
                     style={{
                       fontSize: 10,
                       fontWeight: 600,
@@ -316,13 +399,27 @@ export default function ChatWidget({
                       gap: 3,
                     }}
                   >
-                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#62F2C0" }} />
+                    <span
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: "50%",
+                        background: "#62F2C0",
+                      }}
+                    />
                     {onlineCount} online
                   </span>
                 </div>
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                flexShrink: 0,
+              }}
+            >
               <button
                 onClick={toggleMute}
                 title={muted ? "Bật âm báo tin nhắn" : "Tắt âm báo tin nhắn"}
@@ -431,9 +528,19 @@ export default function ChatWidget({
                     justifyContent: "center",
                   }}
                 >
-                    <Icon name="message" className="w-6 h-6" style={{ color: "#6b7fff" }} />
+                  <Icon
+                    name="message"
+                    className="w-6 h-6"
+                    style={{ color: "#6b7fff" }}
+                  />
                 </div>
-                <p style={{ fontSize: 11, color: "rgba(148,163,184,0.7)", lineHeight: 1.6 }}>
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "rgba(148,163,184,0.7)",
+                    lineHeight: 1.6,
+                  }}
+                >
                   {ready
                     ? "Chưa có tin nhắn nào.\nHãy là người mở màn! 👋"
                     : "Chat chưa được bật.\nCần chạy migration Supabase."}
@@ -444,7 +551,8 @@ export default function ChatWidget({
                 const mine = m.user_id && m.user_id === myUserId;
                 const showMeta = !mine && !m.isContinuation;
                 const isLast =
-                  idx === grouped.length - 1 || grouped[idx + 1]?.user_id !== m.user_id;
+                  idx === grouped.length - 1 ||
+                  grouped[idx + 1]?.user_id !== m.user_id;
 
                 return (
                   <div
@@ -459,7 +567,9 @@ export default function ChatWidget({
                   >
                     {/* Avatar slot (other users only) */}
                     {!mine && (
-                      <div style={{ width: 28, flexShrink: 0, marginBottom: 2 }}>
+                      <div
+                        style={{ width: 28, flexShrink: 0, marginBottom: 2 }}
+                      >
                         {isLast && <Avatar name={m.name} size={28} />}
                       </div>
                     )}
@@ -500,7 +610,8 @@ export default function ChatWidget({
                           wordBreak: "break-word",
                           ...(mine
                             ? {
-                                background: "linear-gradient(135deg, #4159FF, #2E44E8)",
+                                background:
+                                  "linear-gradient(135deg, #4159FF, #2E44E8)",
                                 color: "#fff",
                                 boxShadow: "0 2px 12px rgba(51,75,255,0.35)",
                               }
@@ -560,7 +671,13 @@ export default function ChatWidget({
                   />
                 ))}
               </span>
-              <span style={{ fontSize: 10, fontStyle: "italic", color: "rgba(148,163,184,0.85)" }}>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontStyle: "italic",
+                  color: "rgba(148,163,184,0.85)",
+                }}
+              >
                 {typingText}…
               </span>
             </div>
@@ -621,8 +738,13 @@ export default function ChatWidget({
                         cursor: "pointer",
                         transition: "background 0.12s",
                       }}
-                      onMouseEnter={(ev) => (ev.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-                      onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
+                      onMouseEnter={(ev) =>
+                        (ev.currentTarget.style.background =
+                          "rgba(255,255,255,0.08)")
+                      }
+                      onMouseLeave={(ev) =>
+                        (ev.currentTarget.style.background = "transparent")
+                      }
                     >
                       {e}
                     </button>
@@ -642,7 +764,9 @@ export default function ChatWidget({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: emojiOpen ? "rgba(245,197,24,0.15)" : "rgba(255,255,255,0.04)",
+                background: emojiOpen
+                  ? "rgba(245,197,24,0.15)"
+                  : "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 color: emojiOpen ? "#F5C518" : "rgba(148,163,184,0.8)",
                 cursor: "pointer",
@@ -701,7 +825,9 @@ export default function ChatWidget({
                 border: "none",
                 cursor: draft.trim() ? "pointer" : "not-allowed",
                 transition: "all 0.18s",
-                boxShadow: draft.trim() ? "0 2px 12px rgba(51,75,255,0.4)" : "none",
+                boxShadow: draft.trim()
+                  ? "0 2px 12px rgba(51,75,255,0.4)"
+                  : "none",
               }}
               aria-label="Gửi"
             >
@@ -712,64 +838,66 @@ export default function ChatWidget({
       )}
 
       {/* ── Toggle FAB — ẩn khi panel đang mở (dùng X trong header để đóng) ── */}
-      {!open && <button
-        onClick={() => setOpen(true)}
-        style={{
-          position: "fixed",
-          zIndex: 50,
-          bottom: 76,
-          right: 16,
-          width: 48,
-          height: 48,
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          border: "none",
-          cursor: "pointer",
-          transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
-          background: open
-            ? "rgba(51,65,85,0.9)"
-            : "linear-gradient(135deg, #4159FF 0%, #2E44E8 100%)",
-          color: "#fff",
-          boxShadow: open
-            ? "0 4px 16px rgba(0,0,0,0.4)"
-            : "0 4px 20px rgba(51,75,255,0.55), 0 0 0 1px rgba(51,75,255,0.3)",
-        }}
-        onMouseEnter={(e) => {
-          if (!open) e.currentTarget.style.transform = "scale(1.08)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "scale(1)";
-        }}
-        aria-label="Mở chat phòng"
-      >
-        <Icon name={open ? "close" : "message"} className="w-5 h-5" />
-        {unread > 0 && (
-          <span
-            style={{
-              position: "absolute",
-              top: -4,
-              right: -4,
-              minWidth: 18,
-              height: 18,
-              padding: "0 4px",
-              borderRadius: 9,
-              background: "#ef4444",
-              color: "#fff",
-              fontSize: 10,
-              fontWeight: 800,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "2px solid #07142d",
-              animation: "badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-            }}
-          >
-            {unread > 9 ? "9+" : unread}
-          </span>
-        )}
-      </button>}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          style={{
+            position: "fixed",
+            zIndex: 50,
+            bottom: 76,
+            right: 16,
+            width: 48,
+            height: 48,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            border: "none",
+            cursor: "pointer",
+            transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+            background: open
+              ? "rgba(51,65,85,0.9)"
+              : "linear-gradient(135deg, #4159FF 0%, #2E44E8 100%)",
+            color: "#fff",
+            boxShadow: open
+              ? "0 4px 16px rgba(0,0,0,0.4)"
+              : "0 4px 20px rgba(51,75,255,0.55), 0 0 0 1px rgba(51,75,255,0.3)",
+          }}
+          onMouseEnter={(e) => {
+            if (!open) e.currentTarget.style.transform = "scale(1.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+          }}
+          aria-label="Mở chat phòng"
+        >
+          <Icon name={open ? "close" : "message"} className="w-5 h-5" />
+          {unread > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: -4,
+                right: -4,
+                minWidth: 18,
+                height: 18,
+                padding: "0 4px",
+                borderRadius: 9,
+                background: "#ef4444",
+                color: "#fff",
+                fontSize: 10,
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px solid #07142d",
+                animation: "badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+              }}
+            >
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
+        </button>
+      )}
 
       <style>{`
         @keyframes chatSlideUp {
