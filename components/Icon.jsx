@@ -23,6 +23,11 @@ import {
   Check,
   ChevronDown,
   Menu,
+  MessageCircle,
+  Send,
+  X,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 const MAP = {
@@ -44,6 +49,9 @@ const MAP = {
   check: Check,
   chevron: ChevronDown,
   menu: Menu,
+  message: MessageCircle,
+  send: Send,
+  close: X,
 };
 
 export default function Icon({ name, className = "w-4 h-4", strokeWidth = 2 }) {

@@ -11,6 +11,7 @@ import { LS_TOKEN, LS_DEMO, LS_MODE, LS_ROOM_CODE, LS_ROOM_PLAYER_ID, LS_ROOM_SE
 import { useToasts } from "@/hooks/useToasts";
 import { useLocalStore } from "@/hooks/useLocalStore";
 import { useRoomStore } from "@/hooks/useRoomStore";
+import { useRoomChat } from "@/hooks/useRoomChat";
 import { useMatches } from "@/hooks/useMatches";
 import { createRoom, joinRoom } from "@/lib/roomApi";
 import { supabaseReady, supabase } from "@/lib/supabase";
@@ -46,6 +47,7 @@ import OnboardingModal from "./OnboardingModal";
 import Header from "./Header";
 import BottomNav from "./BottomNav";
 import BetModal from "./BetModal";
+import ChatWidget from "./ChatWidget";
 import Toasts from "./Toasts";
 import ScheduleTab from "./tabs/ScheduleTab";
 import GroupsTab from "./tabs/GroupsTab";
@@ -190,6 +192,14 @@ export default function WC2026App() {
 
   const store = inRoom ? room : local;
   const player = store.player;
+
+  // Chat realtime theo phòng (chỉ hoạt động khi đang trong phòng & đã đăng nhập)
+  const chat = useRoomChat(
+    inRoom ? session : null,
+    authSession?.user?.id,
+    player?.playerName,
+    pushToast
+  );
 
   /* ----- actions ----- */
 
@@ -581,6 +591,16 @@ export default function WC2026App() {
           prediction={predictionByMatch.get(betMatch.id)}
           roomBets={inRoom ? room.betsByMatch?.get(betMatch.id) : null}
           initialTab={betModalTab}
+        />
+      )}
+
+      {inRoom && authSession && (
+        <ChatWidget
+          messages={chat.messages}
+          onSend={chat.send}
+          myUserId={authSession.user.id}
+          roomCode={session.code}
+          ready={chat.ready}
         />
       )}
 

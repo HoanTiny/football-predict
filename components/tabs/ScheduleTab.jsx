@@ -6,6 +6,7 @@ import { vnDateKey, vnDateHeader, vnNowKey, vnTime } from "@/lib/time";
 import { calculateGroupStandings, getTeamGroup } from "@/lib/standings";
 import MatchCard from "../MatchCard";
 import SkeletonCard from "../SkeletonCard";
+import Icon from "../Icon";
 
 const renderStandingsFlag = (team) => {
   const imgUrl = flagImgOf(team.name);
@@ -153,13 +154,39 @@ export default function ScheduleTab({
       {/* Hero — trận đang diễn ra (live) hoặc đếm ngược trận kế tiếp */}
       {heroMatch ? (
         <div
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#08142D] via-[#0B1735] to-[#10204A] border border-white/5 p-6 flex flex-col items-center justify-center text-center shadow-2xl"
+          onClick={onBet ? () => onBet(heroMatch, "stats") : undefined}
+          onKeyDown={
+            onBet
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onBet(heroMatch, "stats");
+                  }
+                }
+              : undefined
+          }
+          role={onBet ? "button" : undefined}
+          tabIndex={onBet ? 0 : undefined}
+          title={onBet ? "Xem chi tiết & thông số trận đấu" : undefined}
+          className={`group relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#08142D] via-[#0B1735] to-[#10204A] border border-white/5 p-6 flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-200 ${
+            onBet
+              ? "cursor-pointer hover:border-white/15 hover:shadow-[0_0_30px_rgba(51,75,255,0.12)]"
+              : ""
+          }`}
           style={{ minHeight: 280 }}
         >
           {/* Background Lights Glow */}
           <div className="absolute inset-0 bg-radial-gradient from-[#334BFF]/10 via-transparent to-transparent pointer-events-none" />
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#334BFF]/5 rounded-bl-full pointer-events-none blur-3xl" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#FFA07A]/5 rounded-tr-full pointer-events-none blur-2xl" />
+
+          {/* Hint: nhấn để xem chi tiết */}
+          {onBet && (
+            <div className="absolute top-3 right-3 z-20 flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider text-slate-400 bg-white/[0.04] border border-white/[0.06] group-hover:text-white group-hover:border-white/20 transition-all">
+              <Icon name="chart" className="w-3 h-3" />
+              <span className="hidden sm:inline">Chi tiết</span>
+            </div>
+          )}
 
           {/* Symmetrical Layout Grid */}
           <div className="relative z-10 w-full flex items-center justify-between gap-6 max-w-3xl">
@@ -280,7 +307,7 @@ export default function ScheduleTab({
               </div>
 
               {/* Action Button — khi live thì khoá cược, chỉ xem lại dự đoán */}
-              <div className="pt-2">
+              <div className="pt-2" onClick={(e) => e.stopPropagation()}>
                 {isHeroLive ? (
                   heroMatchPrediction && heroMatchPrediction.length > 0 ? (
                     <div className="flex flex-wrap gap-2 justify-center">
