@@ -4,6 +4,16 @@ import { useState, useRef, useEffect } from "react";
 import { vnTime } from "@/lib/time";
 import Icon from "./Icon";
 
+/** Bộ emoji nhanh cho chat (bóng đá + cảm xúc thường dùng). */
+const EMOJIS = [
+  "⚽", "🥅", "🏆", "🎯", "🔥", "💪", "👏", "🙌",
+  "🎉", "🥳", "😀", "😁", "😂", "🤣", "😅", "😊",
+  "😍", "😎", "🤩", "😜", "🤔", "🫡", "😱", "😭",
+  "😡", "🤯", "🙏", "👍", "👎", "👌", "✌️", "🤝",
+  "💯", "❤️", "💔", "⭐", "🚀", "🐐", "🇻🇳", "👀",
+  "💀", "🤡", "🍀", "⚡", "😈", "🥶",
+];
+
 /** Consistent avatar color from name string */
 function nameToColor(name = "") {
   const palette = [
@@ -76,16 +86,31 @@ function playBeep(ctxRef) {
 }
 
 /** Chat nổi theo phòng — premium redesign */
-export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready, online = [], typing = [], onTyping }) {
+export default function ChatWidget({
+  messages,
+  onSend,
+  myUserId,
+  roomCode,
+  ready,
+  online = [],
+  typing = [],
+  onTyping,
+  hasMore = false,
+  loadingOlder = false,
+  onLoadOlder,
+}) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [seenCount, setSeenCount] = useState(0);
   const [keyboardH, setKeyboardH] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const listRef = useRef(null);
   const inputRef = useRef(null);
   const prevLen = useRef(0);
   const audioCtxRef = useRef(null);
+  const atBottomRef = useRef(true);
+  const loadingOlderRef = useRef(false);
 
   const unread = open ? 0 : Math.max(0, messages.length - seenCount);
   const onlineCount = online.length;
@@ -142,21 +167,53 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
     if (open) setSeenCount(messages.length);
   }, [open, messages.length]);
 
+  // Chỉ tự cuộn xuống đáy khi người dùng đang ở gần đáy (không giật khi đọc tin cũ)
   useEffect(() => {
-    if (open && listRef.current) {
+    if (open && listRef.current && atBottomRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
   }, [messages, open]);
 
+  // Mở panel → luôn xuống đáy
   useEffect(() => {
-    if (open && inputRef.current) inputRef.current.focus();
+    if (open && listRef.current) {
+      atBottomRef.current = true;
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+      inputRef.current?.focus();
+    }
   }, [open]);
 
+  // Cuộn lên gần đầu → tự tải tin cũ hơn (như Messenger/Zalo), giữ vị trí cuộn
+  const onScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+
+    if (el.scrollTop < 48 && hasMore && !loadingOlderRef.current && onLoadOlder) {
+      loadingOlderRef.current = true;
+      const before = el.scrollHeight;
+      const prevTop = el.scrollTop;
+      Promise.resolve(onLoadOlder()).finally(() => {
+        requestAnimationFrame(() => {
+          const node = listRef.current;
+          if (node) node.scrollTop = prevTop + (node.scrollHeight - before);
+          loadingOlderRef.current = false;
+        });
+      });
+    }
+  };
+
+  const insertEmoji = (e) => {
+    setDraft((d) => (d + e).slice(0, 500));
+    onTyping?.();
+    inputRef.current?.focus();
+  };
 
   const submit = async () => {
     const t = draft.trim();
     if (!t) return;
     setDraft("");
+    setEmojiOpen(false);
     await onSend(t);
   };
 
@@ -319,6 +376,7 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
           {/* ── Messages ── */}
           <div
             ref={listRef}
+            onScroll={onScroll}
             style={{
               flex: 1,
               overflowY: "auto",
@@ -330,6 +388,23 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
               scrollbarColor: "rgba(255,255,255,0.08) transparent",
             }}
           >
+            {/* Spinner khi tự tải tin cũ hơn (cuộn lên) */}
+            {messages.length > 0 && hasMore && (
+              <div
+                style={{
+                  alignSelf: "center",
+                  margin: "0 0 6px",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: "rgba(148,163,184,0.6)",
+                  flexShrink: 0,
+                  opacity: loadingOlder ? 1 : 0,
+                  transition: "opacity 0.15s",
+                }}
+              >
+                Đang tải tin cũ…
+              </div>
+            )}
             {messages.length === 0 ? (
               <div
                 style={{
@@ -494,6 +569,7 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
           {/* ── Input ── */}
           <div
             style={{
+              position: "relative",
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -503,6 +579,80 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
               flexShrink: 0,
             }}
           >
+            {/* Emoji popover */}
+            {emojiOpen && (
+              <>
+                <div
+                  onClick={() => setEmojiOpen(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 1 }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "100%",
+                    left: 8,
+                    right: 8,
+                    zIndex: 2,
+                    marginBottom: 6,
+                    padding: 8,
+                    borderRadius: 14,
+                    background: "rgba(10,18,45,0.98)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(8, 1fr)",
+                    gap: 2,
+                    maxHeight: 180,
+                    overflowY: "auto",
+                    scrollbarWidth: "thin",
+                  }}
+                >
+                  {EMOJIS.map((e) => (
+                    <button
+                      key={e}
+                      onClick={() => insertEmoji(e)}
+                      style={{
+                        fontSize: 18,
+                        lineHeight: 1,
+                        padding: "5px 0",
+                        background: "transparent",
+                        border: "none",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        transition: "background 0.12s",
+                      }}
+                      onMouseEnter={(ev) => (ev.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+                      onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Emoji toggle */}
+            <button
+              onClick={() => setEmojiOpen((o) => !o)}
+              style={{
+                flexShrink: 0,
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: emojiOpen ? "rgba(245,197,24,0.15)" : "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: emojiOpen ? "#F5C518" : "rgba(148,163,184,0.8)",
+                cursor: "pointer",
+                transition: "all 0.15s",
+              }}
+              aria-label="Chọn emoji"
+            >
+              <Icon name="smile" className="w-4 h-4" />
+            </button>
+
             <input
               ref={inputRef}
               value={draft}

@@ -1,8 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { fetchMessages, sendMessage, subscribeMessages } from "@/lib/roomApi";
+import {
+  fetchMessages,
+  fetchOlderMessages,
+  sendMessage,
+  subscribeMessages,
+} from "@/lib/roomApi";
 import { supabase } from "@/lib/supabase";
+
+const PAGE = 30;
 
 /**
  * Chat realtime theo phòng. session = { code, ... } | null.
@@ -14,10 +21,18 @@ export function useRoomChat(session, userId, displayName, pushToast) {
   const [loaded, setLoaded] = useState(false);
   const [ready, setReady] = useState(true); // false nếu bảng messages chưa được tạo
   const [typing, setTyping] = useState([]); // [{userId, name}] — người đang gõ (trừ mình)
+  const [hasMore, setHasMore] = useState(false); // còn tin cũ hơn để tải
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const seen = useRef(new Set());
+  const messagesRef = useRef([]);
   const typingChannel = useRef(null);
   const typingTimers = useRef({});
   const lastTypingSent = useRef(0);
+
+  // Đồng bộ ref để loadOlder không bị stale closure
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const addMsg = useCallback((row) => {
     if (!row || seen.current.has(row.id)) return;
@@ -29,14 +44,16 @@ export function useRoomChat(session, userId, displayName, pushToast) {
     seen.current = new Set();
     setMessages([]);
     setLoaded(false);
+    setHasMore(false);
     if (!code) return;
 
     let active = true;
-    fetchMessages(code)
+    fetchMessages(code, PAGE)
       .then((rows) => {
         if (!active) return;
         rows.forEach((r) => seen.current.add(r.id));
         setMessages(rows);
+        setHasMore(rows.length >= PAGE);
         setReady(true);
       })
       .catch(() => {
@@ -116,5 +133,34 @@ export function useRoomChat(session, userId, displayName, pushToast) {
     [code, userId, displayName, ready, pushToast]
   );
 
-  return { messages, loaded, ready, send, typing, notifyTyping };
+  // Tải thêm tin cũ hơn (prepend). Trả về số tin mới nạp để widget giữ vị trí cuộn.
+  const loadOlder = useCallback(async () => {
+    const cur = messagesRef.current;
+    if (!code || loadingOlder || cur.length === 0) return 0;
+    setLoadingOlder(true);
+    try {
+      const older = await fetchOlderMessages(code, cur[0].created_at, PAGE);
+      const fresh = older.filter((r) => !seen.current.has(r.id));
+      fresh.forEach((r) => seen.current.add(r.id));
+      if (fresh.length) setMessages((prev) => [...fresh, ...prev]);
+      setHasMore(older.length >= PAGE);
+      return fresh.length;
+    } catch {
+      return 0;
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [code, loadingOlder]);
+
+  return {
+    messages,
+    loaded,
+    ready,
+    send,
+    typing,
+    notifyTyping,
+    hasMore,
+    loadingOlder,
+    loadOlder,
+  };
 }

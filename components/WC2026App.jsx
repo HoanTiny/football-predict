@@ -612,6 +612,9 @@ export default function WC2026App() {
           online={onlinePlayers}
           typing={chat.typing}
           onTyping={chat.notifyTyping}
+          hasMore={chat.hasMore}
+          loadingOlder={chat.loadingOlder}
+          onLoadOlder={chat.loadOlder}
         />
       )}
 

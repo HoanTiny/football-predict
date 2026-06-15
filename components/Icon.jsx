@@ -28,6 +28,7 @@ import {
   X,
   Volume2,
   VolumeX,
+  Smile,
 } from "lucide-react";
 
 const MAP = {
@@ -54,6 +55,7 @@ const MAP = {
   close: X,
   sound: Volume2,
   mute: VolumeX,
+  smile: Smile,
 };
 
 export default function Icon({ name, className = "w-4 h-4", strokeWidth = 2 }) {
