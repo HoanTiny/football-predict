@@ -53,10 +53,27 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [seenCount, setSeenCount] = useState(0);
+  const [keyboardH, setKeyboardH] = useState(0);
   const listRef = useRef(null);
   const inputRef = useRef(null);
 
   const unread = open ? 0 : Math.max(0, messages.length - seenCount);
+
+  // Theo dõi bàn phím mobile qua visualViewport
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => {
+      const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKeyboardH(kh);
+    };
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   useEffect(() => {
     if (open) setSeenCount(messages.length);
@@ -71,6 +88,7 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus();
   }, [open]);
+
 
   const submit = async () => {
     const t = draft.trim();
@@ -95,10 +113,15 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
       {/* ── Panel ── */}
       {open && (
         <div
-          className="fixed z-50 bottom-[88px] right-4 md:bottom-[88px] md:right-6"
+          className="fixed z-50 right-4 md:right-6"
           style={{
             width: "min(calc(100vw - 2rem), 360px)",
-            height: "min(62vh, 480px)",
+            // Khi bàn phím hiện: nằm sát trên bàn phím; ngược lại nằm trên bottom-nav
+            bottom: keyboardH > 0 ? keyboardH + 8 : 88,
+            // dvh co lại theo viewport hiển thị khi bàn phím mở
+            height: keyboardH > 0
+              ? `min(${window.visualViewport?.height ? window.visualViewport.height - 60 : 320}px, 420px)`
+              : "min(62dvh, 480px)",
             display: "flex",
             flexDirection: "column",
             borderRadius: 20,
@@ -109,6 +132,7 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
             backdropFilter: "blur(32px)",
             WebkitBackdropFilter: "blur(32px)",
             animation: "chatSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1) both",
+            transition: "bottom 0.18s ease, height 0.18s ease",
           }}
         >
           {/* ── Header ── */}
@@ -403,9 +427,9 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
         </div>
       )}
 
-      {/* ── Toggle FAB ── */}
-      <button
-        onClick={() => setOpen((o) => !o)}
+      {/* ── Toggle FAB — ẩn khi panel đang mở (dùng X trong header để đóng) ── */}
+      {!open && <button
+        onClick={() => setOpen(true)}
         style={{
           position: "fixed",
           zIndex: 50,
@@ -461,7 +485,7 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
             {unread > 9 ? "9+" : unread}
           </span>
         )}
-      </button>
+      </button>}
 
       <style>{`
         @keyframes chatSlideUp {
