@@ -48,16 +48,79 @@ function Avatar({ name, size = 28 }) {
   );
 }
 
+/** Tiếng "ding" 2 nốt qua Web Audio (không cần file). Tái dùng 1 AudioContext. */
+function playBeep(ctxRef) {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    if (!ctxRef.current) ctxRef.current = new Ctx();
+    const ctx = ctxRef.current;
+    if (ctx.state === "suspended") ctx.resume();
+    const now = ctx.currentTime;
+    const note = (freq, t0, dur) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.type = "sine";
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, now + t0);
+      g.gain.exponentialRampToValueAtTime(0.13, now + t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + t0 + dur);
+      o.start(now + t0);
+      o.stop(now + t0 + dur + 0.02);
+    };
+    note(660, 0, 0.12);
+    note(880, 0.1, 0.16);
+  } catch {}
+}
+
 /** Chat nổi theo phòng — premium redesign */
-export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready }) {
+export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready, online = [], typing = [], onTyping }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [seenCount, setSeenCount] = useState(0);
   const [keyboardH, setKeyboardH] = useState(0);
+  const [muted, setMuted] = useState(false);
   const listRef = useRef(null);
   const inputRef = useRef(null);
+  const prevLen = useRef(0);
+  const audioCtxRef = useRef(null);
 
   const unread = open ? 0 : Math.max(0, messages.length - seenCount);
+  const onlineCount = online.length;
+
+  // Văn bản "đang gõ…"
+  const typingText =
+    typing.length === 0
+      ? null
+      : typing.length === 1
+        ? `${typing[0].name} đang gõ`
+        : typing.length === 2
+          ? `${typing[0].name} và ${typing[1].name} đang gõ`
+          : "Nhiều người đang gõ";
+
+  // Khôi phục tuỳ chọn tắt tiếng
+  useEffect(() => {
+    setMuted(localStorage.getItem("wc2026_chat_muted") === "1");
+  }, []);
+  const toggleMute = () =>
+    setMuted((m) => {
+      const next = !m;
+      localStorage.setItem("wc2026_chat_muted", next ? "1" : "0");
+      return next;
+    });
+
+  // Âm thanh báo khi có tin nhắn mới từ người khác (bỏ qua lần tải đầu)
+  useEffect(() => {
+    if (messages.length > prevLen.current) {
+      const last = messages[messages.length - 1];
+      const incoming =
+        prevLen.current > 0 && last && last.user_id && last.user_id !== myUserId;
+      if (incoming && !muted) playBeep(audioCtxRef);
+    }
+    prevLen.current = messages.length;
+  }, [messages, myUserId, muted]);
 
   // Theo dõi bàn phím mobile qua visualViewport
   useEffect(() => {
@@ -173,48 +236,84 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
                 <div style={{ fontSize: 12, fontWeight: 800, color: "#fff", letterSpacing: "0.01em" }}>
                   Chat phòng
                 </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: "#F5C518",
-                    fontFamily: "monospace",
-                    letterSpacing: "0.12em",
-                    marginTop: 1,
-                  }}
-                >
-                  {roomCode}
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 1 }}>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: "#F5C518",
+                      fontFamily: "monospace",
+                      letterSpacing: "0.12em",
+                    }}
+                  >
+                    {roomCode}
+                  </span>
+                  <span
+                    title={online.map((u) => u.name).filter(Boolean).join(", ")}
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: "#62F2C0",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 3,
+                    }}
+                  >
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#62F2C0" }} />
+                    {onlineCount} online
+                  </span>
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              style={{
-                color: "rgba(148,163,184,0.6)",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 8,
-                width: 28,
-                height: 28,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                transition: "all 0.15s",
-                flexShrink: 0,
-              }}
-              aria-label="Đóng chat"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#fff";
-                e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "rgba(148,163,184,0.6)";
-                e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-              }}
-            >
-              <Icon name="close" className="w-3.5 h-3.5" />
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              <button
+                onClick={toggleMute}
+                title={muted ? "Bật âm báo tin nhắn" : "Tắt âm báo tin nhắn"}
+                style={{
+                  color: muted ? "rgba(148,163,184,0.6)" : "#62F2C0",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  borderRadius: 8,
+                  width: 28,
+                  height: 28,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+                aria-label={muted ? "Bật âm" : "Tắt âm"}
+              >
+                <Icon name={muted ? "mute" : "sound"} className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                style={{
+                  color: "rgba(148,163,184,0.6)",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  borderRadius: 8,
+                  width: 28,
+                  height: 28,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+                aria-label="Đóng chat"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#fff";
+                  e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "rgba(148,163,184,0.6)";
+                  e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                }}
+              >
+                <Icon name="close" className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* ── Messages ── */}
@@ -360,6 +459,38 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
             )}
           </div>
 
+          {/* ── Typing indicator ── */}
+          {typingText && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 7,
+                padding: "5px 14px 0",
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ display: "flex", gap: 3 }}>
+                {[0, 150, 300].map((d) => (
+                  <span
+                    key={d}
+                    className="animate-pulse"
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: "50%",
+                      background: "#62F2C0",
+                      animationDelay: `${d}ms`,
+                    }}
+                  />
+                ))}
+              </span>
+              <span style={{ fontSize: 10, fontStyle: "italic", color: "rgba(148,163,184,0.85)" }}>
+                {typingText}…
+              </span>
+            </div>
+          )}
+
           {/* ── Input ── */}
           <div
             style={{
@@ -375,7 +506,10 @@ export default function ChatWidget({ messages, onSend, myUserId, roomCode, ready
             <input
               ref={inputRef}
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                if (e.target.value.trim() && onTyping) onTyping();
+              }}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="Nhập tin nhắn…"
               maxLength={500}

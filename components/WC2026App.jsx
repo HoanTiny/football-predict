@@ -12,6 +12,7 @@ import { useToasts } from "@/hooks/useToasts";
 import { useLocalStore } from "@/hooks/useLocalStore";
 import { useRoomStore } from "@/hooks/useRoomStore";
 import { useRoomChat } from "@/hooks/useRoomChat";
+import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMatches } from "@/hooks/useMatches";
 import { createRoom, joinRoom } from "@/lib/roomApi";
 import { supabaseReady, supabase } from "@/lib/supabase";
@@ -199,6 +200,13 @@ export default function WC2026App() {
     authSession?.user?.id,
     player?.playerName,
     pushToast
+  );
+
+  // Số người đang online trong phòng (Supabase Presence)
+  const onlinePlayers = useRoomPresence(
+    inRoom ? session : null,
+    authSession?.user?.id,
+    player?.playerName
   );
 
   /* ----- actions ----- */
@@ -601,6 +609,9 @@ export default function WC2026App() {
           myUserId={authSession.user.id}
           roomCode={session.code}
           ready={chat.ready}
+          online={onlinePlayers}
+          typing={chat.typing}
+          onTyping={chat.notifyTyping}
         />
       )}
 

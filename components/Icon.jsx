@@ -52,6 +52,8 @@ const MAP = {
   message: MessagesSquare,
   send: Send,
   close: X,
+  sound: Volume2,
+  mute: VolumeX,
 };
 
 export default function Icon({ name, className = "w-4 h-4", strokeWidth = 2 }) {
