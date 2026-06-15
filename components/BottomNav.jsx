@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Icon from "./Icon";
 
 /** Premium bottom navigation — mobile only with collapsible menu */
 export default function BottomNav({ tab, onTabChange }) {
@@ -8,18 +9,18 @@ export default function BottomNav({ tab, onTabChange }) {
 
   // Top 4 main tabs visible directly in the navigation bar
   const mainTabs = [
-    { key: "schedule",    label: "Lịch",    icon: "📅" },
-    { key: "groups",      label: "Bảng",    icon: "📋" },
-    { key: "predictions", label: "Dự đoán", icon: "🎯" },
-    { key: "leaderboard", label: "BXH",     icon: "📊" },
+    { key: "schedule",    label: "Lịch",    icon: "calendar" },
+    { key: "groups",      label: "Bảng",    icon: "table" },
+    { key: "predictions", label: "Dự đoán", icon: "history" },
+    { key: "leaderboard", label: "BXH",     icon: "chart" },
   ];
 
   // Hidden tabs collapsed into the "More" overlay menu
   const moreTabs = [
-    { key: "bracket",     label: "Sơ đồ",   icon: "🗺️" },
-    { key: "statistics",  label: "Thống kê", icon: "📈" },
-    { key: "champion",    label: "Vô địch", icon: "🏆" },
-    { key: "settings",    label: "Cài đặt", icon: "⚙️" },
+    { key: "bracket",     label: "Sơ đồ",   icon: "bracket" },
+    { key: "statistics",  label: "Thống kê", icon: "activity" },
+    { key: "champion",    label: "Vô địch", icon: "trophy" },
+    { key: "settings",    label: "Cài đặt", icon: "settings" },
   ];
 
   const isMoreTabActive = moreTabs.some((t) => t.key === tab);
@@ -56,7 +57,7 @@ export default function BottomNav({ tab, onTabChange }) {
                       : "bg-slate-900/40 border-white/5 text-slate-300 hover:bg-slate-900/60"
                   }`}
                 >
-                  <span className="text-xl shrink-0">{t.icon}</span>
+                  <Icon name={t.icon} className="w-5 h-5 shrink-0" />
                   <span className="text-xs font-bold uppercase tracking-wider truncate">
                     {t.label}
                   </span>
@@ -93,10 +94,10 @@ export default function BottomNav({ tab, onTabChange }) {
               }}
             >
               <span
-                className="text-lg transition-transform duration-200"
+                className="transition-transform duration-200"
                 style={{ transform: active ? "scale(1.1)" : "scale(1)" }}
               >
-                {t.icon}
+                <Icon name={t.icon} className="w-5 h-5" />
               </span>
               <span className="text-[9px] font-bold uppercase tracking-wider">
                 {t.label}
@@ -114,10 +115,10 @@ export default function BottomNav({ tab, onTabChange }) {
           }}
         >
           <span
-            className="text-lg transition-transform duration-200"
+            className="transition-transform duration-200"
             style={{ transform: menuOpen || isMoreTabActive ? "scale(1.1)" : "scale(1)" }}
           >
-            ☰
+            <Icon name="menu" className="w-5 h-5" />
           </span>
           <span className="text-[9px] font-bold uppercase tracking-wider">
             Thêm

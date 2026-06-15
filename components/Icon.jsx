@@ -22,6 +22,7 @@ import {
   LogOut,
   Check,
   ChevronDown,
+  Menu,
 } from "lucide-react";
 
 const MAP = {
@@ -42,6 +43,7 @@ const MAP = {
   logout: LogOut,
   check: Check,
   chevron: ChevronDown,
+  menu: Menu,
 };
 
 export default function Icon({ name, className = "w-4 h-4", strokeWidth = 2 }) {
