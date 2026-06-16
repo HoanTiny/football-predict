@@ -9,6 +9,7 @@ import {
   normalizeTeamName,
 } from "@/lib/standings";
 import { getFifaRank } from "@/lib/fifaRankings";
+import LineupPitch from "./LineupPitch";
 
 /** Phong độ thật trong giải: lấy từ các trận ĐÃ ĐÁ của đội trong dataset. */
 function localForm(matches, teamName) {
@@ -234,7 +235,9 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg glass-strong rounded-2xl p-6 shadow-xl relative overflow-hidden"
+        className={`w-full glass-strong rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all duration-300 ${
+          modalTab === "stats" ? "max-w-4xl" : "max-w-lg"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -546,6 +549,30 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                   </div>
                 </div>
               )}
+
+            {/* Đội hình ra sân — chỉ có khi đội đã công bố (thường ~30–60' trước trận) */}
+            {stats?.lineups && <LineupPitch lineups={stats.lineups} />}
+            {!stats?.lineups && stats?.statsAvailable && (() => {
+              const ko = new Date(match.utcDate).getTime();
+              const diffMin = (ko - Date.now()) / 60000;
+              // Sắp đá trong 2h tới và chưa có lineup → hiện thông báo gọn
+              if (diffMin <= 120 && diffMin > -3 * 60 && match.status !== "FINISHED") {
+                return (
+                  <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-3 text-center">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Đội hình ra sân
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Đội chưa công bố đội hình xuất phát.{" "}
+                      <span className="text-slate-400">
+                        Thường có ~60 phút trước giờ bóng lăn.
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Diễn biến chính (bàn thắng, thẻ) */}
             {stats?.events?.length > 0 && (

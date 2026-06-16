@@ -7,6 +7,7 @@ import {
   resolveFixtureId,
   fixtureStatistics,
   fixtureEvents,
+  fixtureLineups,
 } from "@/lib/apiFootball";
 import { getWeather } from "@/lib/weather";
 
@@ -31,7 +32,17 @@ export async function GET(request) {
     statsAvailable: false,
     matchStats: null, // thống kê live (sút, kiểm soát bóng…)
     events: [], // diễn biến (bàn thắng, thẻ)
+    lineups: null, // đội hình xuất phát (có khi đội đã công bố, thường ~30–60' trước trận)
   };
+
+  // Có nên xin lineup không? Chỉ khi trận sắp đá (≤120') hoặc đã đá xong gần đây — tiết kiệm quota.
+  const wantLineups = (() => {
+    if (!date) return false;
+    const kickoff = new Date(date).getTime();
+    if (isNaN(kickoff)) return false;
+    const diff = kickoff - Date.now();
+    return diff <= 2 * 60 * 60 * 1000 && diff > -3 * 60 * 60 * 1000;
+  })();
 
   // 1) Phong độ + H2H + sân/thành phố (API-Football)
   if (apiFootballReady()) {
@@ -56,12 +67,14 @@ export async function GET(request) {
       // (không tin match.id vì có thể là id football-data → tra nhầm trận).
       const realId = await resolveFixtureId(homeId, awayId, date);
       if (realId) {
-        const [matchStats, events] = await Promise.all([
+        const [matchStats, events, lineups] = await Promise.all([
           fixtureStatistics(realId),
           fixtureEvents(realId),
+          wantLineups ? fixtureLineups(realId).catch(() => null) : Promise.resolve(null),
         ]);
         result.matchStats = matchStats;
         result.events = events;
+        result.lineups = lineups;
         result.fixtureId = realId;
       }
 

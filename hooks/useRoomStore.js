@@ -31,7 +31,9 @@ export function useRoomStore(session, matches, pushToast) {
   const [players, setPlayers] = useState([]);
   const [predictions, setPredictions] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const toastSeenRef = useRef(null); // id kèo đã quyết toán đã hiện toast
+  const errorToastedRef = useRef(false); // để chỉ toast lỗi 1 lần
 
   const code = session?.code;
   const playerId = session?.playerId;
@@ -43,13 +45,26 @@ export function useRoomStore(session, matches, pushToast) {
       setPlayers(s.players);
       setPredictions(s.predictions);
       setLoaded(true);
+      setLoadError(null);
+      errorToastedRef.current = false;
     } catch (e) {
-      pushToast(`Lỗi tải dữ liệu phòng: ${e.message}`, "lose");
+      setLoadError(e.message || "Không tải được dữ liệu phòng");
+      // chỉ báo toast 1 lần để không spam khi auth chưa sẵn sàng
+      if (!errorToastedRef.current) {
+        errorToastedRef.current = true;
+        pushToast(`Lỗi tải dữ liệu phòng: ${e.message}`, "lose");
+      }
     }
   }, [code, pushToast]);
 
   // Tải lần đầu + realtime + poll dự phòng 60s
   useEffect(() => {
+    // Đổi phòng → reset state để guard ngoài hiển thị "đang tải" đúng
+    setPlayers([]);
+    setPredictions([]);
+    setLoaded(false);
+    setLoadError(null);
+    errorToastedRef.current = false;
     if (!code) return;
     refresh();
     const unsubscribe = subscribeRoom(code, refresh);
@@ -176,5 +191,20 @@ export function useRoomStore(session, matches, pushToast) {
     [players]
   );
 
-  return { player, loaded, placeBet, placeChampionBet, reset, betsByMatch, leaderboard, champions };
+  // Người chơi không còn trong phòng (đã bị xoá / playerId mồ côi) — đã tải xong nhưng không tìm thấy me.
+  const notMember = loaded && !loadError && !me;
+
+  return {
+    player,
+    loaded,
+    loadError,
+    notMember,
+    refresh,
+    placeBet,
+    placeChampionBet,
+    reset,
+    betsByMatch,
+    leaderboard,
+    champions,
+  };
 }
