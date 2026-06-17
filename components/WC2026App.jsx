@@ -7,7 +7,7 @@
    ============================================================ */
 
 import { useState, useMemo, useEffect } from "react";
-import { LS_TOKEN, LS_DEMO, LS_MODE, LS_ROOM_CODE, LS_ROOM_PLAYER_ID, LS_ROOM_SESSIONS, LS_ROOM_ACTIVE, START_CHIPS, fmt } from "@/lib/constants";
+import { LS_TOKEN, LS_DEMO, LS_MODE, LS_ROOM_CODE, LS_ROOM_PLAYER_ID, LS_ROOM_SESSIONS, LS_ROOM_ACTIVE, LS_LEFT_ROOMS, START_CHIPS, fmt } from "@/lib/constants";
 import { useToasts } from "@/hooks/useToasts";
 import { useLocalStore } from "@/hooks/useLocalStore";
 import { useRoomStore } from "@/hooks/useRoomStore";
@@ -22,6 +22,24 @@ const VALID_TABS = ["schedule", "groups", "bracket", "predictions", "leaderboard
 function tabFromHash() {
   const h = window.location.hash.replace("#", "");
   return VALID_TABS.includes(h) ? h : "schedule";
+}
+
+/** Danh sách mã phòng đã rời (ẩn trên thiết bị này) — chặn syncRooms thêm lại sau F5. */
+function getLeftRooms() {
+  try {
+    const raw = localStorage.getItem(LS_LEFT_ROOMS);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+}
+function addLeftRoom(code) {
+  const set = new Set(getLeftRooms());
+  set.add(code);
+  localStorage.setItem(LS_LEFT_ROOMS, JSON.stringify([...set]));
+}
+function removeLeftRoom(code) {
+  const next = getLeftRooms().filter((c) => c !== code);
+  localStorage.setItem(LS_LEFT_ROOMS, JSON.stringify(next));
 }
 
 /** Đọc danh sách phòng đã tham gia từ localStorage (kèm migrate từ phiên đơn cũ). */
@@ -67,7 +85,10 @@ export default function WC2026App() {
       if (!userId) return;
       try {
         const { fetchUserRooms } = await import("@/lib/roomApi");
-        const rooms = await fetchUserRooms(userId);
+        const all = await fetchUserRooms(userId);
+        // Bỏ các phòng đã rời trên thiết bị này (soft-leave) để F5 không hiện lại.
+        const left = new Set(getLeftRooms());
+        const rooms = (all || []).filter((r) => !left.has(r.code));
         if (rooms && rooms.length > 0) {
           localStorage.setItem(LS_ROOM_SESSIONS, JSON.stringify(rooms));
           setSessionsRaw(rooms);
@@ -200,6 +221,7 @@ export default function WC2026App() {
   };
 
   const joinedRoom = (code, me) => {
+    removeLeftRoom(code); // vào lại phòng đã rời → bỏ ẩn để khôi phục
     const next = [
       ...sessions.filter((s) => s.code !== code),
       { code, playerId: me.id, name: me.name },
@@ -236,6 +258,7 @@ export default function WC2026App() {
   // Nhờ vậy chip + lịch sử kèo được giữ nguyên và sẽ khôi phục khi vào lại phòng.
   const leaveRoom = (code = activeCode) => {
     const actualCode = (code && typeof code === "string") ? code : activeCode;
+    addLeftRoom(actualCode); // ẩn phòng này khi syncRooms chạy lại sau F5
     const next = sessions.filter((s) => s.code !== actualCode);
     persistSessions(next);
     if (activeCode === actualCode || !next.some((s) => s.code === activeCode)) {
