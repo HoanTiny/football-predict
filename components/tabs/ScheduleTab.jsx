@@ -6,6 +6,7 @@ import { vnDateKey, vnDateHeader, vnNowKey, vnTime } from "@/lib/time";
 import { calculateGroupStandings, getTeamGroup } from "@/lib/standings";
 import MatchCard from "../MatchCard";
 import SkeletonCard from "../SkeletonCard";
+import Icon from "../Icon";
 
 const renderStandingsFlag = (team) => {
   const imgUrl = flagImgOf(team.name);
@@ -178,6 +179,14 @@ export default function ScheduleTab({
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#334BFF]/5 rounded-bl-full pointer-events-none blur-3xl" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#FFA07A]/5 rounded-tr-full pointer-events-none blur-2xl" />
 
+          {/* Hint: nhấn để xem chi tiết */}
+          {onBet && (
+            <div className="absolute top-3 right-3 z-20 flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider text-slate-400 bg-white/[0.04] border border-white/[0.06] group-hover:text-white group-hover:border-white/20 transition-all">
+              <Icon name="chart" className="w-3 h-3" />
+              <span className="hidden sm:inline">Chi tiết</span>
+            </div>
+          )}
+
           {/* Symmetrical Layout Grid */}
           <div className="relative z-10 w-full flex items-center justify-between gap-6 max-w-3xl">
             {/* Left Home Team (Desktop only) */}
@@ -297,7 +306,7 @@ export default function ScheduleTab({
               </div>
 
               {/* Action Button — khi live thì khoá cược, chỉ xem lại dự đoán */}
-              <div className="pt-2">
+              <div className="pt-2" onClick={(e) => e.stopPropagation()}>
                 {isHeroLive ? (
                   <div className="flex flex-col items-center gap-2">
                     {heroMatchPrediction && heroMatchPrediction.length > 0 ? (

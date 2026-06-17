@@ -19,7 +19,7 @@ export default function RoomScreen({
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("wc2026_last_room_name");
       if (saved) return saved;
-      
+
       const solo = localStorage.getItem("wc2026_active_player");
       if (solo) return solo;
     }
@@ -41,11 +41,16 @@ export default function RoomScreen({
 
   // Tự động thông báo khi nhận diện phiên đăng nhập hoạt động trên thiết bị
   useEffect(() => {
-    if (session && session.user?.email && sessionEmailRef.current !== session.user.email) {
+    if (
+      session &&
+      session.user?.email &&
+      sessionEmailRef.current !== session.user.email
+    ) {
       const isNewLogin = sessionEmailRef.current === null;
       sessionEmailRef.current = session.user.email;
       if (isNewLogin) {
-        pushToast && pushToast(`Đã nhận diện tài khoản: ${session.user.email} 🟢`, "info");
+        pushToast &&
+          pushToast(`Đã nhận diện tài khoản: ${session.user.email} 🟢`, "info");
       }
     }
   }, [session, pushToast]);
@@ -54,14 +59,20 @@ export default function RoomScreen({
   useEffect(() => {
     if (session && view === "auth") {
       setView(authTargetView || "menu");
-      pushToast && pushToast(`Đăng nhập thành công! Tài khoản: ${session.user.email} 🎉`, "win");
+      pushToast &&
+        pushToast(
+          `Đăng nhập thành công! Tài khoản: ${session.user.email} 🎉`,
+          "win",
+        );
     }
   }, [session, view, authTargetView, pushToast]);
 
   // Tự động điền tên từ thông tin tài khoản nếu trống
   useEffect(() => {
     if (session && !name) {
-      const metaName = session.user?.user_metadata?.full_name || session.user?.user_metadata?.name;
+      const metaName =
+        session.user?.user_metadata?.full_name ||
+        session.user?.user_metadata?.name;
       if (metaName) {
         setName(metaName);
       }
@@ -99,12 +110,39 @@ export default function RoomScreen({
         });
         if (authErr) throw authErr;
       } else {
-        const { error: authErr } = await supabase.auth.signUp({
-          email: email.trim(),
-          password: password.trim(),
-        });
+        const { data: signUpData, error: authErr } = await supabase.auth.signUp(
+          {
+            email: email.trim(),
+            password: password.trim(),
+          },
+        );
         if (authErr) throw authErr;
-        setError("Đăng ký thành công! Hãy đăng nhập bằng tài khoản vừa tạo.");
+
+        // Nếu user đã tồn tại mà chưa confirm, Supabase trả về identities rỗng
+        const alreadyExists =
+          signUpData?.user &&
+          Array.isArray(signUpData.user.identities) &&
+          signUpData.user.identities.length === 0;
+
+        if (alreadyExists) {
+          throw new Error(
+            "Email này đã được đăng ký. Hãy đăng nhập hoặc kiểm tra hộp thư để xác nhận tài khoản.",
+          );
+        }
+
+        // session !== null → Supabase đã tắt email confirm, đăng nhập luôn
+        if (signUpData?.session) {
+          // onAuthStateChange sẽ tự bắt và chuyển view
+          return;
+        }
+
+        // session === null → cần xác nhận email trước khi đăng nhập được
+        setError(
+          "✅ Đăng ký thành công! Tiny Football đã gửi email xác nhận tới " +
+            email.trim() +
+            ". Hãy mở email và nhấn link xác nhận, sau đó quay lại đăng nhập. " +
+            "(Kiểm tra cả thư mục Spam nếu không thấy.)",
+        );
         setAuthMode("login");
       }
     } catch (err) {
@@ -150,7 +188,7 @@ export default function RoomScreen({
       if (session) {
         try {
           await supabase.auth.updateUser({
-            data: { full_name: name.trim() }
+            data: { full_name: name.trim() },
           });
         } catch (authErr) {
           console.error("Lưu metadata thất bại:", authErr);
@@ -213,7 +251,12 @@ export default function RoomScreen({
               <div className="text-[10px] text-slate-400 font-semibold bg-white/[0.02] border border-white/5 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2 mb-1 text-left">
                 <span className="flex items-center gap-1.5 truncate">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  <span className="truncate">Tài khoản: <strong className="text-white font-mono">{session.user.email}</strong></span>
+                  <span className="truncate">
+                    Tài khoản:{" "}
+                    <strong className="text-white font-mono">
+                      {session.user.email}
+                    </strong>
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -392,7 +435,13 @@ export default function RoomScreen({
             </div>
 
             {error && (
-              <div className="text-xs text-[#ff5a5a] font-medium bg-[#ff5a5a]/10 border border-[#ff5a5a]/25 rounded-lg p-2.5 mt-2">
+              <div
+                className={`text-xs font-medium rounded-lg p-2.5 mt-2 border ${
+                  error.startsWith("✅")
+                    ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/25"
+                    : "text-[#ff5a5a] bg-[#ff5a5a]/10 border-[#ff5a5a]/25"
+                }`}
+              >
                 {error}
               </div>
             )}
@@ -469,9 +518,16 @@ export default function RoomScreen({
               <div className="text-[10px] text-slate-400 font-semibold bg-white/[0.02] border border-white/5 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2 mb-1 text-left">
                 <span className="flex items-center gap-1.5 truncate">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  <span className="truncate">Tài khoản: <strong className="text-white font-mono">{session.user.email}</strong></span>
+                  <span className="truncate">
+                    Tài khoản:{" "}
+                    <strong className="text-white font-mono">
+                      {session.user.email}
+                    </strong>
+                  </span>
                 </span>
-                <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-wider shrink-0">Đã đăng nhập</span>
+                <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-wider shrink-0">
+                  Đã đăng nhập
+                </span>
               </div>
             )}
             {view === "join" && (

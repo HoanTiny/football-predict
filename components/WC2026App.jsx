@@ -11,6 +11,8 @@ import { LS_TOKEN, LS_DEMO, LS_MODE, LS_ROOM_CODE, LS_ROOM_PLAYER_ID, LS_ROOM_SE
 import { useToasts } from "@/hooks/useToasts";
 import { useLocalStore } from "@/hooks/useLocalStore";
 import { useRoomStore } from "@/hooks/useRoomStore";
+import { useRoomChat } from "@/hooks/useRoomChat";
+import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMatches } from "@/hooks/useMatches";
 import { createRoom, joinRoom } from "@/lib/roomApi";
 import { supabaseReady, supabase } from "@/lib/supabase";
@@ -64,6 +66,7 @@ import OnboardingModal from "./OnboardingModal";
 import Header from "./Header";
 import BottomNav from "./BottomNav";
 import BetModal from "./BetModal";
+import ChatWidget from "./ChatWidget";
 import Toasts from "./Toasts";
 import ScheduleTab from "./tabs/ScheduleTab";
 import GroupsTab from "./tabs/GroupsTab";
@@ -212,6 +215,21 @@ export default function WC2026App() {
   const store = inRoom ? room : local;
   const player = store.player;
 
+  // Chat realtime theo phòng (chỉ hoạt động khi đang trong phòng & đã đăng nhập)
+  const chat = useRoomChat(
+    inRoom ? session : null,
+    authSession?.user?.id,
+    player?.playerName,
+    pushToast
+  );
+
+  // Số người đang online trong phòng (Supabase Presence)
+  const onlinePlayers = useRoomPresence(
+    inRoom ? session : null,
+    authSession?.user?.id,
+    player?.playerName
+  );
+
   /* ----- actions ----- */
 
   const saveToken = (t) => {
@@ -313,20 +331,44 @@ export default function WC2026App() {
 
   const [creatingRoom, setCreatingRoom] = useState(false);
 
-  const copyRoomLink = async (code) => {
+  // Ưu tiên khay chia sẻ gốc của thiết bị (Messenger/Zalo…), fallback sao chép link.
+  // Trả về: "shared" | "copied" | "cancelled" | "failed".
+  const shareRoom = async (code) => {
     const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: "Tiny Football",
+          text: `Vào phòng ${code} dự đoán World Cup 2026 cùng mình nhé! 🏆`,
+          url,
+        });
+        return "shared";
+      } catch (e) {
+        if (e?.name === "AbortError") return "cancelled";
+        /* trình duyệt từ chối → thử clipboard */
+      }
+    }
     try {
       await navigator.clipboard.writeText(url);
+      return "copied";
     } catch {
-      /* clipboard có thể bị chặn — vẫn coi như đã tạo phòng */
+      return "failed";
     }
   };
 
+  const toastShareResult = (code, res) => {
+    if (res === "copied")
+      pushToast(`📋 Đã sao chép link mời phòng ${code}! Gửi cho bạn bè để vào chơi chung.`, "info");
+    else if (res === "failed")
+      pushToast("Không chia sẻ được link — bạn thử lại nhé.", "lose");
+    // "shared" / "cancelled" → để khay chia sẻ của hệ điều hành tự lo, không cần toast
+  };
+
   const shareLink = async () => {
-    // Đang trong phòng → copy link phòng để bạn bè vào chung
+    // Đang trong phòng → chia sẻ link phòng để bạn bè vào chung
     if (inRoom) {
-      await copyRoomLink(session.code);
-      pushToast(`📋 Đã sao chép link mời vào phòng ${session.code}! Gửi cho bạn bè để vào chơi chung.`, "info");
+      const res = await shareRoom(session.code);
+      toastShareResult(session.code, res);
       return;
     }
 
@@ -342,8 +384,13 @@ export default function WC2026App() {
       const code = await createRoom();
       const me = await joinRoom(code, name);
       joinedRoom(code, me);
-      await copyRoomLink(code);
-      pushToast(`🏟️ Đã tạo phòng ${code} & sao chép link mời! Gửi cho bạn bè để cùng chơi.`, "win");
+      const res = await shareRoom(code);
+      if (res === "shared" || res === "cancelled")
+        pushToast(`🏟️ Đã tạo phòng ${code}! Gửi link cho bạn bè để cùng chơi.`, "win");
+      else if (res === "copied")
+        pushToast(`🏟️ Đã tạo phòng ${code} & sao chép link mời! Gửi cho bạn bè để cùng chơi.`, "win");
+      else
+        pushToast(`🏟️ Đã tạo phòng ${code}. Mã phòng: ${code}`, "win");
     } catch (e) {
       pushToast(`Không tạo được phòng: ${e.message}`, "lose");
     } finally {
@@ -490,14 +537,82 @@ export default function WC2026App() {
   }
 
   if (inRoom && !player) {
+    // 3 trạng thái: đang tải / lỗi tải / không còn là thành viên phòng
+    const { loadError, notMember } = room;
+    const isLoading = !loadError && !notMember;
     return (
       <div
-        className="min-h-[100dvh] flex items-center justify-center"
-        style={{ background: "linear-gradient(180deg, #06101e 0%, #08142d 100%)", color: "rgba(200,210,255,0.5)", fontFamily: "var(--font-jakarta)" }}
+        className="min-h-[100dvh] flex items-center justify-center px-6"
+        style={{
+          background: "linear-gradient(180deg, #06101e 0%, #08142d 100%)",
+          color: "rgba(200,210,255,0.7)",
+          fontFamily: "var(--font-jakarta)",
+        }}
       >
-        <div className="text-center">
-          <div className="text-4xl mb-3">🏟️</div>
-          <div>Đang vào phòng {session.code}…</div>
+        <div className="text-center max-w-sm">
+          <div className="text-5xl mb-3">
+            {isLoading ? "🏟️" : notMember ? "🚪" : "⚠️"}
+          </div>
+          <div className="text-lg font-bold text-white mb-1.5">
+            {isLoading
+              ? `Đang vào phòng ${session.code}…`
+              : notMember
+                ? `Bạn không còn trong phòng ${session.code}`
+                : `Không tải được phòng ${session.code}`}
+          </div>
+          {isLoading ? (
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Đang đồng bộ dữ liệu… Nếu chờ quá lâu, kiểm tra kết nối hoặc thử
+              các lựa chọn bên dưới.
+            </p>
+          ) : notMember ? (
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Tài khoản của bạn không có trong danh sách phòng này (có thể đã
+              được tạo trên thiết bị khác hoặc đã bị xoá). Vào lại để được thêm
+              vào phòng, hoặc rời phòng.
+            </p>
+          ) : (
+            <p className="text-xs text-[#ff8a8a] leading-relaxed break-words">
+              {loadError}
+            </p>
+          )}
+          <div className="mt-5 flex flex-col gap-2">
+            {!isLoading && (
+              <button
+                onClick={() => {
+                  // Cho re-join: gỡ phòng khỏi sessions rồi mở picker với mã hiện tại
+                  const code = session.code;
+                  leaveRoom(code);
+                  setForceRoomPicker(true);
+                  // ghi nhớ mã để form pre-fill (qua URL hash để đơn giản)
+                  if (typeof window !== "undefined") {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("room", code);
+                    window.history.replaceState(null, "", url.toString());
+                  }
+                }}
+                className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white shadow-[0_4px_12px_rgba(51,75,255,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                {notMember ? "Vào lại phòng" : "Thử lại / Vào lại"}
+              </button>
+            )}
+            {isLoading && (
+              <button
+                onClick={() => room.refresh()}
+                className="w-full py-2.5 rounded-xl text-xs font-bold bg-white/[0.06] border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white transition-all"
+              >
+                Thử lại
+              </button>
+            )}
+            <button
+              onClick={() => leaveRoom(session.code)}
+              className="w-full py-2 rounded-xl text-[11px] font-semibold text-slate-400 hover:text-white transition-colors"
+            >
+              {sessions.length > 1
+                ? "Chuyển sang phòng khác"
+                : "Rời phòng & chơi một mình"}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -524,7 +639,7 @@ export default function WC2026App() {
         authSession={authSession}
       />
 
-      <main className={`${fullWidth ? "max-w-[1600px]" : "max-w-[1280px]"} mx-auto px-4 pt-24 pb-6`} key={tab}>
+      <main className={`${fullWidth ? "max-w-[1600px]" : "max-w-[1280px]"} mx-auto px-4 pt-[72px] pb-6`} key={tab}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Main content column */}
           <div className={`${fullWidth ? "lg:col-span-12" : "lg:col-span-8"} space-y-6 tab-fade`}>
@@ -604,6 +719,22 @@ export default function WC2026App() {
           prediction={predictionByMatch.get(betMatch.id)}
           roomBets={inRoom ? room.betsByMatch?.get(betMatch.id) : null}
           initialTab={betModalTab}
+        />
+      )}
+
+      {inRoom && authSession && (
+        <ChatWidget
+          messages={chat.messages}
+          onSend={chat.send}
+          myUserId={authSession.user.id}
+          roomCode={session.code}
+          ready={chat.ready}
+          online={onlinePlayers}
+          typing={chat.typing}
+          onTyping={chat.notifyTyping}
+          hasMore={chat.hasMore}
+          loadingOlder={chat.loadingOlder}
+          onLoadOlder={chat.loadOlder}
         />
       )}
 

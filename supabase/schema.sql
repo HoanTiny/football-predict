@@ -205,3 +205,30 @@ create table if not exists match_state (
 -- Chỉ thao tác phía server (service role bỏ qua RLS); không tạo policy cho client.
 alter table push_subscriptions enable row level security;
 alter table match_state enable row level security;
+
+-- ============================================================
+-- CHAT THEO PHÒNG
+-- Tin nhắn realtime trong từng phòng. Người đã đăng nhập đọc được mọi tin,
+-- chỉ gửi được dưới danh nghĩa chính mình (user_id = auth.uid()).
+-- ============================================================
+create table if not exists messages (
+  id uuid primary key default gen_random_uuid(),
+  room_code text not null references rooms(code) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  name text not null,
+  text text not null check (char_length(text) between 1 and 500),
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_messages_room on messages (room_code, created_at);
+
+alter table messages enable row level security;
+
+drop policy if exists "auth read messages" on messages;
+drop policy if exists "auth insert messages" on messages;
+create policy "auth read messages" on messages
+  for select using (auth.role() = 'authenticated');
+create policy "auth insert messages" on messages
+  for insert with check (auth.role() = 'authenticated' and user_id = auth.uid());
+
+-- Realtime để tin nhắn hiện ngay cho cả phòng
+alter publication supabase_realtime add table messages;
