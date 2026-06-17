@@ -177,7 +177,7 @@ function PitchLines() {
   );
 }
 
-function SingleTeamPitch({ team, color, isHome }) {
+function SingleTeamPitch({ team, color }) {
   const dots = layoutFull(team.startXI || []);
 
   return (
