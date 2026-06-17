@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { FILTERS, GROUPS, flagOf, flagImgOf, matchIsLive } from "@/lib/constants";
-import { vnDateKey, vnDateHeader, vnNowKey, vnTime } from "@/lib/time";
+import { vnDateKey, vnDateHeader, vnNowKey, vnTomorrowKey, vnTime } from "@/lib/time";
 import { calculateGroupStandings, getTeamGroup } from "@/lib/standings";
 import MatchCard from "../MatchCard";
 import SkeletonCard from "../SkeletonCard";
@@ -112,6 +112,12 @@ export default function ScheduleTab({
     if (filter === "TODAY") {
       const today = vnNowKey();
       list = list.filter((m) => vnDateKey(m.utcDate) === today);
+    } else if (filter === "TOMORROW") {
+      const tomorrow = vnTomorrowKey();
+      list = list.filter((m) => vnDateKey(m.utcDate) === tomorrow);
+    } else if (filter === "UPCOMING") {
+      // Trận chưa kết thúc (đang đá + sắp đá) — gom lên đầu, khỏi kéo qua trận đã xong.
+      list = list.filter((m) => m.status !== "FINISHED");
     } else if (filter !== "ALL") {
       list = list.filter((m) => m.stage === filter);
       if (filter === "GROUP_STAGE") {
