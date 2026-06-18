@@ -107,6 +107,10 @@ $$;
 -- Chip khởi điểm khớp app (START_CHIPS = 5000) cho người chơi mới
 alter table players alter column chips set default 5000;
 
+-- Đánh dấu "đã rời phòng" phía server (soft-leave) — null = vẫn là thành viên.
+-- Giúp việc rời phòng bền vững: xoá localStorage / đổi thiết bị vẫn không hiện lại.
+alter table players add column if not exists left_at timestamptz;
+
 -- Không cho client gọi hàm cộng/trừ chip tuỳ ý nữa
 revoke execute on function adjust_chips(uuid, int) from public, anon, authenticated;
 
@@ -173,6 +177,7 @@ grant execute on function reset_my_data(text) to authenticated;
 revoke insert, update on players from authenticated;
 grant insert (room_code, user_id, name) on players to authenticated; -- chip dùng default
 grant update (name) on players to authenticated;                     -- chỉ đổi tên
+grant update (left_at) on players to authenticated;                  -- đánh dấu rời/vào lại phòng (chỉ row của mình theo RLS)
 revoke insert, update on predictions from authenticated;             -- chỉ tạo/sửa qua hàm
 -- (select & delete predictions vẫn theo policy cũ; cron service role bỏ qua mọi grant)
 

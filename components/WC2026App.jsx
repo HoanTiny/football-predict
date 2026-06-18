@@ -276,7 +276,14 @@ export default function WC2026App() {
   // Nhờ vậy chip + lịch sử kèo được giữ nguyên và sẽ khôi phục khi vào lại phòng.
   const leaveRoom = (code = activeCode) => {
     const actualCode = (code && typeof code === "string") ? code : activeCode;
-    addLeftRoom(actualCode); // ẩn phòng này khi syncRooms chạy lại sau F5
+    addLeftRoom(actualCode); // ẩn ngay trên thiết bị này (UX tức thì)
+    // Đánh dấu left_at trên server (bền vững: xoá localStorage / đổi máy vẫn ẩn).
+    const target = sessions.find((s) => s.code === actualCode);
+    if (target?.playerId) {
+      import("@/lib/roomApi")
+        .then(({ leaveRoomDb }) => leaveRoomDb(target.playerId))
+        .catch((e) => console.error("leaveRoomDb failed:", e));
+    }
     const next = sessions.filter((s) => s.code !== actualCode);
     persistSessions(next);
     if (activeCode === actualCode || !next.some((s) => s.code === activeCode)) {
