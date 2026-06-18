@@ -116,19 +116,20 @@ function GoalCardIcons({ p }) {
   );
 }
 
-function PlayerDot({ p, color }) {
+function PlayerDot({ p, color, onSelect }) {
   const isGK = p.pos === "G" || p.pos === "GK";
   const subText = isGK ? `🧤 GK · ${p.number}` : p.number;
 
   return (
     <div
+      onClick={() => onSelect?.(p)}
       style={{
         position: "absolute",
         left: `${p.leftPct}%`,
         top: `${p.topPct}%`,
         transform: "translate(-50%, -50%)",
       }}
-      className="flex flex-col items-center select-none w-[80px] lg:w-[100px] pointer-events-auto transition-transform hover:scale-105 active:scale-95 cursor-default"
+      className="flex flex-col items-center select-none w-[80px] lg:w-[100px] pointer-events-auto transition-transform hover:scale-105 active:scale-95 cursor-pointer"
     >
       {/* Avatar Badge (ảnh hoặc chữ viết tắt) + điểm số (nếu có) */}
       <div className="relative">
@@ -238,7 +239,7 @@ function PitchLines() {
   );
 }
 
-function SingleTeamPitch({ team, color }) {
+function SingleTeamPitch({ team, color, onSelect }) {
   const dots = layoutFull(team.startXI || []);
 
   return (
@@ -264,7 +265,7 @@ function SingleTeamPitch({ team, color }) {
 
         {/* Cầu thủ xuất phát */}
         {dots.map((p, i) => (
-          <PlayerDot key={`${team.team}-${i}`} p={p} color={color} />
+          <PlayerDot key={`${team.team}-${i}`} p={p} color={color} onSelect={onSelect} />
         ))}
       </div>
 
@@ -289,7 +290,8 @@ function SingleTeamPitch({ team, color }) {
               return (
                 <li
                   key={i}
-                  className="flex items-center gap-3 px-4 py-2 text-xs hover:bg-white/[0.02] transition-colors"
+                  onClick={() => onSelect?.(p)}
+                  className="flex items-center gap-3 px-4 py-2 text-xs hover:bg-white/[0.02] transition-colors cursor-pointer"
                 >
                   {/* Avatar nhỏ + điểm (nếu đã vào sân & được chấm) */}
                   <div className="relative shrink-0">
@@ -342,11 +344,102 @@ function SingleTeamPitch({ team, color }) {
   );
 }
 
+/** Popup thống kê 1 cầu thủ khi click (kèm link tìm Google). */
+function PlayerStatsCard({ entry, onClose }) {
+  const { player: p, team, color } = entry;
+  const q = encodeURIComponent(`${p.name} ${team || ""} cầu thủ`.trim());
+  const posLabel =
+    p.pos === "G" ? "Thủ môn" : p.pos === "D" ? "Hậu vệ" : p.pos === "M" ? "Tiền vệ" : p.pos === "F" ? "Tiền đạo" : null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm bg-[#0B1735] border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[88vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 p-4 border-b border-white/10">
+          <PlayerAvatar photo={p.photo} name={p.name} color={color} size="w-12 h-12" />
+          <div className="min-w-0">
+            <div className="text-white font-bold text-base truncate">{p.name}</div>
+            <div className="text-slate-400 text-[11px] truncate">
+              {team}
+              {p.number ? ` · #${p.number}` : ""}
+              {posLabel ? ` · ${posLabel}` : ""}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Đóng"
+            className="ml-auto w-7 h-7 shrink-0 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white"
+          >
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M2 2 L12 12 M12 2 L2 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-4 overflow-y-auto scrollbar-thin">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            Thống kê về trận đấu
+          </div>
+          {p.rating != null && (
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <div className="text-sm font-semibold text-white">Điểm xếp hạng cầu thủ</div>
+                <div className="text-[10px] text-slate-500">Dựa trên dữ liệu trận đấu</div>
+              </div>
+              <span className={`text-sm font-black text-white tabular-nums px-2 py-0.5 rounded ${ratingClass(p.rating)}`}>
+                {p.rating.toFixed(1)}
+              </span>
+            </div>
+          )}
+          {p.details && p.details.length > 0 ? (
+            <div className="divide-y divide-white/5 border-t border-white/5">
+              {p.details.map((d, i) => (
+                <div key={i} className="flex items-center justify-between py-2 text-sm">
+                  <span className="text-slate-300">{d.label}</span>
+                  <span className="text-white font-bold tabular-nums">{d.value}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-slate-500 italic py-3 text-center">
+              Cầu thủ chưa ra sân — chưa có thống kê.
+            </div>
+          )}
+        </div>
+
+        {/* Link tìm Google */}
+        <a
+          href={`https://www.google.com/search?q=${q}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center py-3 border-t border-white/10 text-[#7b8fff] hover:text-white hover:bg-white/[0.03] text-xs font-bold transition-colors"
+        >
+          🔍 Xem thêm về {p.name}
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function LineupPitch({ lineups }) {
   const [side, setSide] = useState("home");
+  const [selected, setSelected] = useState(null);
   if (!lineups || !lineups.home || !lineups.away) return null;
 
   const predicted = lineups.predicted;
+  const pickPlayer = (p) =>
+    setSelected({
+      player: p,
+      team: lineups[side]?.team,
+      color: side === "home" ? HOME_COLOR : AWAY_COLOR,
+    });
 
   return (
     <div
@@ -387,11 +480,14 @@ export default function LineupPitch({ lineups }) {
       {/* Sân bóng — 1 sân duy nhất, căn giữa, giới hạn chiều rộng trên PC */}
       <div className="mx-auto w-full max-w-[460px] lg:max-w-[620px]">
         {side === "home" ? (
-          <SingleTeamPitch team={lineups.home} color={HOME_COLOR} isHome={true} />
+          <SingleTeamPitch team={lineups.home} color={HOME_COLOR} isHome={true} onSelect={pickPlayer} />
         ) : (
-          <SingleTeamPitch team={lineups.away} color={AWAY_COLOR} isHome={false} />
+          <SingleTeamPitch team={lineups.away} color={AWAY_COLOR} isHome={false} onSelect={pickPlayer} />
         )}
       </div>
+
+      {/* Popup thống kê cầu thủ */}
+      {selected && <PlayerStatsCard entry={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }
