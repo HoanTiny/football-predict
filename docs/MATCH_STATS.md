@@ -9,6 +9,8 @@ Giờ thay bằng dữ liệu **thật**:
 | **Hạng bảng** | Tự tính từ BXH bảng World Cup (kết quả thật) | ❌ |
 | **Phong độ** | API-Football (5 trận gần nhất); fallback: tính từ trận đã đá trong giải | ✅ (fallback không cần) |
 | **Lịch sử đối đầu (H2H)** | API-Football `/fixtures/headtohead` | ✅ |
+| **Đội hình ra sân** | API-Football `/fixtures/lineups`; **fallback FotMob** (không key) | ⚠️ free không có WC2026 → FotMob bù |
+| **Thống kê trận (sút, kiểm soát bóng…)** | API-Football `/fixtures/statistics`; **fallback FotMob** (không key) | ⚠️ như trên |
 | **Sân đấu / Trọng tài** | Trường `venue` / `referees` từ football-data | ❌ |
 | **Thời tiết** | Open-Meteo theo toạ độ sân + ngày trận | ❌ (miễn phí) |
 | **Tỉ lệ lựa chọn cộng đồng** | Tính thật từ kèo trong phòng | ❌ |
@@ -25,6 +27,12 @@ Giờ thay bằng dữ liệu **thật**:
 | `RAPIDAPI_KEY` | cho phong độ + H2H | Key API-Football qua RapidAPI. Nếu thiếu, phong độ tự fallback sang dữ liệu giải, và H2H hiện "chưa cấu hình". |
 
 Thời tiết (Open-Meteo) không cần key.
+
+> 🆓 **Đội hình + thống kê (FotMob fallback)** — `lib/fotmob.js`. Gói free của API-Football &
+> football-data **không** có lineup/stats cho World Cup 2026, nên route tự lấy từ **API nội bộ
+> FotMob** (không cần key) khi 2 thứ này còn trống. ⚠️ Đây là API **không chính thức** — có thể
+> đổi/chặn bất cứ lúc nào; mọi lỗi được nuốt gọn (trả null → UI tự ẩn khối). Chỉ gọi server-side
+> (Cloudflare chặn client). Chỉ nên dùng cho mục đích phi thương mại.
 
 ### Lấy key API-Football (RapidAPI)
 1. Đăng ký https://rapidapi.com → subscribe **API-Football** (api-football-v1) — có gói **Free** (~100 req/ngày).
