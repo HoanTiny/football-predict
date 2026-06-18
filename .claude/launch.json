@@ -6,7 +6,8 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
-      "cwd": "C:\\Users\\ADMIN\\wc2026"
+      "autoPort": true,
+      "cwd": "D:\\Work\\football-predict"
     }
   ]
 }

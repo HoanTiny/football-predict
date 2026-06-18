@@ -76,6 +76,7 @@ import LeaderboardTab from "./tabs/LeaderboardTab";
 import ChampionTab from "./tabs/ChampionTab";
 import SettingsTab from "./tabs/SettingsTab";
 import StatisticsTab from "./tabs/StatisticsTab";
+import LeaguesTab from "./leagues/LeaguesTab";
 import LeaderboardSidebar from "./LeaderboardSidebar";
 
 export default function WC2026App() {
@@ -483,6 +484,7 @@ export default function WC2026App() {
               { key: "schedule", label: "Lịch" },
               { key: "groups", label: "Bảng" },
               { key: "bracket", label: "Sơ đồ" },
+              { key: "leagues", label: "Giải đấu" },
             ].map((t) => (
               <button
                 key={t.key}
@@ -519,6 +521,7 @@ export default function WC2026App() {
             <GroupsTab matches={matches} predictionByMatch={new Map()} />
           )}
           {tab === "bracket" && <BracketTab matches={matches} />}
+          {tab === "leagues" && <LeaguesTab />}
         </main>
 
         {/* Mobile bottom nav — viewer */}
@@ -530,6 +533,7 @@ export default function WC2026App() {
             { key: "schedule", label: "Lịch", icon: "📅" },
             { key: "groups", label: "Bảng", icon: "📋" },
             { key: "bracket", label: "Sơ đồ", icon: "🗺️" },
+            { key: "leagues", label: "Giải đấu", icon: "🏆" },
           ].map((t) => {
             const active = tab === t.key;
             return (

@@ -1,6 +1,7 @@
 "use client";
 
-import { flagOf, flagImgOf, isLiveStatus, matchIsLive } from "@/lib/constants";
+import { useState, useEffect } from "react";
+import { flagOf, flagImgOf, isLiveStatus, matchIsLive, liveStatusVN } from "@/lib/constants";
 import { vnTime } from "@/lib/time";
 import { getTeamGroup } from "@/lib/standings";
 import StatusBadge from "./StatusBadge";
@@ -42,6 +43,42 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
   const canBet = !live && (status === "SCHEDULED" || status === "TIMED");
   const scoreText =
     ft.home == null || ft.away == null ? "–  –" : `${ft.home}  ${ft.away}`;
+
+  // Dữ liệu trực tiếp cho thẻ trận đang đá: phút + người ghi bàn (FotMob bù khi feed thiếu).
+  // Chỉ fetch khi trận đang diễn ra; poll 30s.
+  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [] });
+  const homeName = match.homeTeam?.name;
+  const awayName = match.awayTeam?.name;
+  useEffect(() => {
+    if (!live) {
+      setLiveDetail({ minute: null, events: [] });
+      return;
+    }
+    let active = true;
+    const load = () => {
+      const qs = new URLSearchParams({
+        home: homeName || "",
+        away: awayName || "",
+        venue: match.venue || "",
+        date: match.utcDate || "",
+      });
+      fetch(`/api/match-stats?${qs}`)
+        .then((r) => r.json())
+        .then((d) => active && setLiveDetail({ minute: d.liveMinute || null, events: d.events || [] }))
+        .catch(() => {});
+    };
+    load();
+    const timer = setInterval(load, 30000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [live, homeName, awayName, match.venue, match.utcDate]);
+
+  const liveText = live
+    ? liveStatusVN(match.minute != null ? String(match.minute) : liveDetail.minute)
+    : null;
+  const goals = live ? (liveDetail.events || []).filter((e) => e.type === "Goal") : [];
 
   // outcomeLabel is calculated inline for multiple predictions
 
@@ -98,11 +135,36 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
         </div>
       </div>
 
+      {/* Người ghi bàn (trận đang đá) — chủ nhà trái, khách phải, ⚽ ở giữa */}
+      {goals.length > 0 && (
+        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 mt-2 text-[10px]">
+          <div className="flex flex-col gap-0.5 items-end text-right min-w-0">
+            {goals
+              .filter((g) => g.team === homeName)
+              .map((g, i) => (
+                <span key={i} className="text-slate-400 truncate max-w-full">
+                  {g.player} <span className="text-slate-600 tabular-nums">{g.minute}'</span>
+                </span>
+              ))}
+          </div>
+          <span className="text-slate-600 shrink-0">⚽</span>
+          <div className="flex flex-col gap-0.5 items-start text-left min-w-0">
+            {goals
+              .filter((g) => g.team !== homeName)
+              .map((g, i) => (
+                <span key={i} className="text-slate-400 truncate max-w-full">
+                  <span className="text-slate-600 tabular-nums">{g.minute}'</span> {g.player}
+                </span>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* Bottom status row */}
       <div className="flex items-start justify-between mt-2.5 pt-2 border-t border-white/5 gap-2">
         {/* Left Area: Status and Room Bets count */}
         <div className="flex flex-col items-start gap-1 min-w-0 shrink-0">
-          <StatusBadge status={effectiveStatus} minute={match.minute} />
+          <StatusBadge status={effectiveStatus} minute={match.minute} liveText={liveText} />
           {roomBets && roomBets.length > 0 && (
             <span
               onClick={(e) => {

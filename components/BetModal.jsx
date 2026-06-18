@@ -173,7 +173,7 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
   const [statsLoading, setStatsLoading] = useState(false);
   const liveNow = matchIsLive(match);
   useEffect(() => {
-    if (modalTab !== "stats") return;
+    if (modalTab !== "stats" && modalTab !== "lineup") return;
     let active = true;
     const load = (silent) => {
       if (!silent) setStatsLoading(true);
@@ -241,7 +241,7 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
     >
       <div
         className={`w-full glass-strong rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all duration-300 flex flex-col max-h-[92vh] ${
-          modalTab === "stats" ? "max-w-6xl" : "max-w-lg"
+          modalTab === "stats" || modalTab === "lineup" ? "max-w-6xl" : "max-w-lg"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -277,7 +277,9 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                     ? "Kết thúc"
                     : match.minute
                       ? `🔴 Trực tiếp ${match.minute}'`
-                      : "🔴 Trực tiếp"}
+                      : stats?.liveMinute
+                        ? `🔴 ${stats.liveMinute}`
+                        : "🔴 Trực tiếp"}
                 </span>
               </div>
             ) : (
@@ -313,6 +315,16 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                 Bạn bè ({roomBets.length})
               </button>
             )}
+            <button
+              onClick={() => setModalTab("lineup")}
+              className={`px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold rounded-full transition-all shrink-0 ${
+                modalTab === "lineup"
+                  ? "bg-[#334BFF] text-white"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Đội hình
+            </button>
             <button
               onClick={() => setModalTab("stats")}
               className={`px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold rounded-full transition-all shrink-0 ${
@@ -550,34 +562,37 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
           </div>
         )}
 
+        {/* Tab: Đội hình ra sân (tách riêng) */}
+        {modalTab === "lineup" && (
+          <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin text-xs text-slate-300">
+            {stats?.lineups ? (
+              <LineupPitch lineups={stats.lineups} />
+            ) : statsLoading ? (
+              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-6 text-center text-[11px] text-slate-500">
+                Đang tải đội hình…
+              </div>
+            ) : (
+              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-6 text-center">
+                <div className="text-3xl mb-2 opacity-40">👥</div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  Đội hình ra sân
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  Đội chưa công bố đội hình xuất phát.{" "}
+                  <span className="text-slate-400">
+                    Thường có ~60 phút trước giờ bóng lăn.
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Tab 3: Stats Details */}
         {modalTab === "stats" && (
           <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin text-xs text-slate-300">
-            {/* Tỉ số đã gộp vào header modal (xem khối Header) — không lặp lại ở đây. */}
-
-            {/* Đội hình ra sân — chỉ có khi đội đã công bố (thường ~30–60' trước trận) */}
-            {stats?.lineups && <LineupPitch lineups={stats.lineups} />}
-            {!stats?.lineups && stats?.statsAvailable && (() => {
-              const ko = new Date(match.utcDate).getTime();
-              const diffMin = (ko - Date.now()) / 60000;
-              // Sắp đá trong 2h tới và chưa có lineup → hiện thông báo gọn
-              if (diffMin <= 120 && diffMin > -3 * 60 && match.status !== "FINISHED") {
-                return (
-                  <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-3 text-center">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Đội hình ra sân
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Đội chưa công bố đội hình xuất phát.{" "}
-                      <span className="text-slate-400">
-                        Thường có ~60 phút trước giờ bóng lăn.
-                      </span>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
+            {/* Tỉ số đã gộp vào header modal (xem khối Header) — không lặp lại ở đây.
+                Đội hình ra sân đã tách sang tab "Đội hình" riêng. */}
 
             {/* Diễn biến chính (bàn thắng, thẻ) */}
             {stats?.events?.length > 0 && (

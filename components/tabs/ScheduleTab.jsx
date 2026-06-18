@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { FILTERS, GROUPS, flagOf, flagImgOf, matchIsLive } from "@/lib/constants";
+import { FILTERS, GROUPS, flagOf, flagImgOf, matchIsLive, liveStatusVN } from "@/lib/constants";
 import { vnDateKey, vnDateHeader, vnNowKey, vnTomorrowKey, vnTime } from "@/lib/time";
 import { calculateGroupStandings, getTeamGroup } from "@/lib/standings";
+import { getFifaRank } from "@/lib/fifaRankings";
 import MatchCard from "../MatchCard";
 import SkeletonCard from "../SkeletonCard";
 import Icon from "../Icon";
@@ -66,6 +67,42 @@ export default function ScheduleTab({
   // Hero ưu tiên trận live; nếu không có thì đếm ngược trận kế tiếp.
   const heroMatch = liveMatch || nextMatch;
   const isHeroLive = !!liveMatch;
+
+  // Dữ liệu trực tiếp cho hero (phút + người ghi bàn) — lấy từ /api/match-stats (FotMob
+  // bù khi feed không có). Chỉ fetch khi có trận đang đá; poll 30s.
+  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [] });
+  const liveHome = liveMatch?.homeTeam?.name;
+  const liveAway = liveMatch?.awayTeam?.name;
+  const liveVenue = liveMatch?.venue;
+  const liveDate = liveMatch?.utcDate;
+  useEffect(() => {
+    if (!isHeroLive) {
+      setLiveDetail({ minute: null, events: [] });
+      return;
+    }
+    let active = true;
+    const load = () => {
+      const qs = new URLSearchParams({
+        home: liveHome || "",
+        away: liveAway || "",
+        venue: liveVenue || "",
+        date: liveDate || "",
+      });
+      fetch(`/api/match-stats?${qs}`)
+        .then((r) => r.json())
+        .then((d) => active && setLiveDetail({ minute: d.liveMinute || null, events: d.events || [] }))
+        .catch(() => {});
+    };
+    load();
+    const timer = setInterval(load, 30000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [isHeroLive, liveHome, liveAway, liveVenue, liveDate]);
+
+  // Người ghi bàn của hero, tách theo đội (để xếp bên trái/phải như Google Sports).
+  const heroGoals = (liveDetail.events || []).filter((e) => e.type === "Goal");
 
   const [timeLeft, setTimeLeft] = useState({
     hours: 0,
@@ -213,6 +250,11 @@ export default function ScheduleTab({
               <span className="font-bold text-xs text-white truncate max-w-full">
                 {heroMatch.homeTeam?.name}
               </span>
+              {getFifaRank(heroMatch.homeTeam?.name) != null && (
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                  FIFA #{getFifaRank(heroMatch.homeTeam?.name)}
+                </span>
+              )}
             </div>
 
             {/* Center Countdown & Match Metadata */}
@@ -225,7 +267,7 @@ export default function ScheduleTab({
                       Đang Diễn Ra
                     </span>
                     <span className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                      {heroMatch.minute ? `TRỰC TIẾP ${heroMatch.minute}'` : "TRỰC TIẾP"}
+                      {liveStatusVN(heroMatch.minute != null ? String(heroMatch.minute) : liveDetail.minute)}
                     </span>
                   </>
                 ) : (
@@ -294,6 +336,31 @@ export default function ScheduleTab({
                   </div>
                 )}
               </div>
+
+              {/* Người ghi bàn — kiểu Google Sports: chủ nhà bên trái, khách bên phải */}
+              {isHeroLive && heroGoals.length > 0 && (
+                <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 w-full max-w-md text-[11px]">
+                  <div className="flex flex-col gap-0.5 items-end text-right min-w-0">
+                    {heroGoals
+                      .filter((g) => g.team === heroMatch.homeTeam?.name)
+                      .map((g, i) => (
+                        <span key={i} className="text-slate-300 font-semibold truncate max-w-full">
+                          {g.player} <span className="text-slate-500 tabular-nums">{g.minute}'</span>
+                        </span>
+                      ))}
+                  </div>
+                  <span className="text-slate-500 shrink-0 pt-0.5">⚽</span>
+                  <div className="flex flex-col gap-0.5 items-start text-left min-w-0">
+                    {heroGoals
+                      .filter((g) => g.team !== heroMatch.homeTeam?.name)
+                      .map((g, i) => (
+                        <span key={i} className="text-slate-300 font-semibold truncate max-w-full">
+                          <span className="text-slate-500 tabular-nums">{g.minute}'</span> {g.player}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
 
               {/* Match Details */}
               <div className="space-y-1">
@@ -404,6 +471,11 @@ export default function ScheduleTab({
               <span className="font-bold text-xs text-white truncate max-w-full">
                 {heroMatch.awayTeam?.name}
               </span>
+              {getFifaRank(heroMatch.awayTeam?.name) != null && (
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                  FIFA #{getFifaRank(heroMatch.awayTeam?.name)}
+                </span>
+              )}
             </div>
           </div>
         </div>

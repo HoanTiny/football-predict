@@ -34,6 +34,7 @@ export async function GET(request) {
     matchStats: null, // thống kê live (sút, kiểm soát bóng…)
     events: [], // diễn biến (bàn thắng, thẻ)
     lineups: null, // đội hình xuất phát (có khi đội đã công bố, thường ~30–60' trước trận)
+    liveMinute: null, // phút thi đấu hiện tại khi đang đá ("67'", "HT"…)
   };
 
   // Có nên xin lineup không? Chỉ khi trận sắp đá (≤120') hoặc đã đá xong gần đây — tiết kiệm quota.
@@ -90,16 +91,18 @@ export async function GET(request) {
   // API-Football & football-data KHÔNG có những thứ này cho World Cup 2026 — đây là nguồn $0
   // thực tế duy nhất còn lấy được. Chỉ điền vào ô nào còn trống (ưu tiên API-Football nếu có).
   const noForm = !result.form.home.length && !result.form.away.length;
-  if (!result.lineups || !result.matchStats || !result.h2h.length || noForm || !result.venue || !result.city) {
+  if (!result.lineups || !result.matchStats || !result.h2h.length || noForm || !result.venue || !result.city || !result.events.length || !result.liveMinute) {
     try {
       const fm = await fotmobMatchData(home, away, date);
       if (!result.lineups && fm.lineups) result.lineups = fm.lineups;
       if (!result.matchStats && fm.matchStats) result.matchStats = fm.matchStats;
       if (noForm && (fm.form.home.length || fm.form.away.length)) result.form = fm.form;
       if (!result.h2h.length && fm.h2h.length) result.h2h = fm.h2h;
+      if (!result.events.length && fm.events?.length) result.events = fm.events;
+      if (!result.liveMinute && fm.liveMinute) result.liveMinute = fm.liveMinute;
       if (!result.venue && fm.venue) result.venue = fm.venue;
       if (!result.city && fm.city) result.city = fm.city;
-      if (fm.lineups || fm.matchStats || fm.h2h.length || fm.venue) {
+      if (fm.lineups || fm.matchStats || fm.h2h.length || fm.venue || fm.events?.length) {
         result.statsAvailable = true;
         if (!result.fixtureId) result.fixtureId = fm.fixtureId;
         result.statsSource = "fotmob";
