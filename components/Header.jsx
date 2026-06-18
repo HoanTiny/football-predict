@@ -25,6 +25,9 @@ export default function Header({
   const [menuOpen, setMenuOpen] = useState(false);
   const close = () => setMenuOpen(false);
 
+  // Tên phòng đang mở (nếu đã đặt) để hiển thị thay cho mã khô khan.
+  const activeRoomName = sessions.find((s) => s.code === activeCode)?.roomName || null;
+
   const navTabs = [
     { key: "schedule", label: "Lịch đấu", icon: "calendar" },
     { key: "groups", label: "Bảng đấu", icon: "table" },
@@ -112,11 +115,15 @@ export default function Header({
           <div className="flex items-center gap-2 shrink-0">
             {roomCode && (
               <span
-                className="hidden sm:flex h-9 items-center gap-1.5 px-3 rounded-xl text-[11px] font-bold font-mono tracking-[0.15em] text-[#F5C518] bg-[#F5C518]/[0.07] border border-[#F5C518]/25 whitespace-nowrap"
-                title="Mã phòng"
+                className="hidden sm:flex h-9 items-center gap-1.5 px-3 rounded-xl text-[11px] font-bold tracking-[0.1em] text-[#F5C518] bg-[#F5C518]/[0.07] border border-[#F5C518]/25 whitespace-nowrap max-w-[220px]"
+                title={activeRoomName ? `${activeRoomName} · ${roomCode}` : "Mã phòng"}
               >
                 <Icon name="users" className="w-3.5 h-3.5 shrink-0" />
-                {roomCode}
+                {activeRoomName ? (
+                  <span className="truncate">{activeRoomName}</span>
+                ) : (
+                  <span className="font-mono tracking-[0.15em]">{roomCode}</span>
+                )}
               </span>
             )}
 
@@ -194,9 +201,16 @@ export default function Header({
                         </div>
                       )}
                       {roomCode && (
-                        <div className="text-[10px] text-[#F5C518] font-mono tracking-wider mt-1.5 flex items-center gap-1.5">
+                        <div className="text-[10px] text-[#F5C518] mt-1.5 flex items-center gap-1.5">
                           <Icon name="users" className="w-3 h-3 shrink-0" />
-                          Phòng {roomCode}
+                          {activeRoomName ? (
+                            <span className="truncate">
+                              {activeRoomName}{" "}
+                              <span className="font-mono text-slate-500">· {roomCode}</span>
+                            </span>
+                          ) : (
+                            <span className="font-mono tracking-wider">Phòng {roomCode}</span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -240,9 +254,16 @@ export default function Header({
                           }`}
                         >
                           <Icon name="users" className="w-4 h-4 shrink-0" />
-                          <span className="font-mono tracking-wider">
-                            {s.code}
-                          </span>
+                          {s.roomName ? (
+                            <span className="flex flex-col items-start min-w-0">
+                              <span className="truncate max-w-[150px]">{s.roomName}</span>
+                              <span className="font-mono tracking-wider text-[10px] text-slate-500">
+                                {s.code}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="font-mono tracking-wider">{s.code}</span>
+                          )}
                           {active && (
                             <Icon name="check" className="ml-auto w-3.5 h-3.5 text-[#62F2C0]" />
                           )}

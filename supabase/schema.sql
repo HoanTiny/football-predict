@@ -6,8 +6,12 @@
 -- Phòng chơi
 create table if not exists rooms (
   code text primary key,
+  name text,
   created_at timestamptz not null default now()
 );
+
+-- Migration: thêm tên phòng (hiển thị để dễ nhận biết) nếu DB đã tồn tại
+alter table rooms add column if not exists name text;
 
 -- Người chơi trong phòng (kèm cược vô địch theo vòng)
 create table if not exists players (

@@ -26,6 +26,7 @@ export default function RoomScreen({
     return "";
   });
   const [code, setCode] = useState(initialCode || "");
+  const [roomName, setRoomName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -178,7 +179,7 @@ export default function RoomScreen({
     setError(null);
     try {
       let roomCode = code.trim().toUpperCase();
-      if (view === "create") roomCode = await createRoom();
+      if (view === "create") roomCode = await createRoom(roomName);
       const me = await joinRoom(roomCode, name.trim(), session?.user?.id);
 
       // Lưu tên cuối cùng vào localStorage thiết bị
@@ -537,6 +538,15 @@ export default function RoomScreen({
                 placeholder="Mã phòng (VD: WC-X7K2)"
                 className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-center font-mono tracking-widest text-xs focus:outline-none focus:border-[#334BFF] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#334BFF] transition-all duration-200"
                 disabled={Boolean(initialCode)}
+              />
+            )}
+            {view === "create" && (
+              <input
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
+                maxLength={40}
+                placeholder="Tên phòng (VD: Phòng công ty) — tuỳ chọn"
+                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-center font-semibold text-xs placeholder-slate-600 focus:outline-none focus:border-[#334BFF] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#334BFF] transition-all duration-200"
               />
             )}
             <input

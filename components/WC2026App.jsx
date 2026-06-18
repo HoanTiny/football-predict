@@ -242,7 +242,7 @@ export default function WC2026App() {
     removeLeftRoom(code); // vào lại phòng đã rời → bỏ ẩn để khôi phục
     const next = [
       ...sessions.filter((s) => s.code !== code),
-      { code, playerId: me.id, name: me.name },
+      { code, playerId: me.id, name: me.name, roomName: me.room_name || null },
     ];
     persistSessions(next);
     setActiveCode(code);
@@ -294,6 +294,24 @@ export default function WC2026App() {
         setActiveCode(null);
         setMode("solo");
       }
+    }
+  };
+
+  // Đổi tên phòng đang mở (lưu DB, mọi thành viên thấy) + cập nhật session local.
+  const renameRoom = async (newName) => {
+    if (!session?.code) return;
+    const label = (newName || "").trim().slice(0, 40);
+    try {
+      const { updateRoomName } = await import("@/lib/roomApi");
+      await updateRoomName(session.code, label);
+      persistSessions(
+        sessions.map((s) =>
+          s.code === session.code ? { ...s, roomName: label || null } : s
+        )
+      );
+      pushToast("Đã đổi tên phòng.", "info");
+    } catch (e) {
+      pushToast(`Không đổi được tên phòng: ${e.message}`, "lose");
     }
   };
 
@@ -693,6 +711,8 @@ export default function WC2026App() {
                 onReset={resetPredictions}
                 onShare={shareLink}
                 roomCode={inRoom ? session.code : null}
+                roomName={inRoom ? session.roomName : null}
+                onRenameRoom={renameRoom}
                 onLeaveRoom={leaveRoom}
                 authSession={authSession}
               />

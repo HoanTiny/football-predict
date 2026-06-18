@@ -41,6 +41,29 @@ function PlayerNameEditor({ current, onSwitch }) {
   );
 }
 
+function RoomNameEditor({ current, onSave }) {
+  const [name, setName] = useState(current || "");
+  const trimmed = name.trim();
+  return (
+    <div className="flex gap-2">
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={40}
+        placeholder="VD: Phòng công ty"
+        className="glass-input flex-1 px-3 py-2 text-xs font-semibold"
+      />
+      <button
+        onClick={() => onSave(trimmed)}
+        disabled={trimmed === (current || "")}
+        className="px-4 py-2 rounded-lg font-bold text-xs btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Lưu
+      </button>
+    </div>
+  );
+}
+
 /** TAB 5 — Cài đặt — Compact editorial panels */
 export default function SettingsTab({
   player,
@@ -49,6 +72,8 @@ export default function SettingsTab({
   onReset,
   onShare,
   roomCode,
+  roomName,
+  onRenameRoom,
   onLeaveRoom,
   authSession,
 }) {
@@ -95,6 +120,14 @@ export default function SettingsTab({
               {roomCode}
             </span>
           </div>
+          {onRenameRoom && (
+            <div className="space-y-1.5">
+              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                Tên phòng (mọi người trong phòng đều thấy)
+              </label>
+              <RoomNameEditor current={roomName} onSave={onRenameRoom} />
+            </div>
+          )}
           <button
             onClick={() => setConfirmLeave(true)}
             className="btn-secondary w-full py-2.5 rounded-lg text-xs font-bold cursor-pointer"
