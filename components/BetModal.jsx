@@ -229,17 +229,34 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
 
   const referee = match.referees?.[0]?.name || null;
 
+  // Tỉ số để gộp thẳng vào header (tránh lặp tên đội ở thẻ riêng).
+  const ft = match.score?.fullTime || {};
+  const hasScore =
+    ft.home != null && ft.away != null && (liveNow || match.status === "FINISHED");
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className={`w-full glass-strong rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all duration-300 ${
-          modalTab === "stats" ? "max-w-4xl" : "max-w-lg"
+        className={`w-full glass-strong rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all duration-300 flex flex-col max-h-[92vh] ${
+          modalTab === "stats" ? "max-w-6xl" : "max-w-lg"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Đóng"
+          className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white transition-colors"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M2 2 L12 12 M12 2 L2 12" />
+          </svg>
+        </button>
+
         {/* Header */}
         <div className="text-center mb-4 relative z-10 border-b border-white/5 pb-4">
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
@@ -250,7 +267,22 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
               <span className="truncate">{homeName}</span>
               {renderModalFlag(homeName)}
             </div>
-            <span className="text-xs font-black text-[#334BFF] px-2 shrink-0">VS</span>
+            {hasScore ? (
+              <div className="flex flex-col items-center shrink-0 px-2 normal-case tracking-normal">
+                <span className="text-xl sm:text-2xl font-black text-white tabular-nums leading-none">
+                  {ft.home} - {ft.away}
+                </span>
+                <span className={`text-[9px] font-bold uppercase tracking-wider mt-1 ${liveNow ? "text-[#ff5a5a]" : "text-slate-500"}`}>
+                  {match.status === "FINISHED"
+                    ? "Kết thúc"
+                    : match.minute
+                      ? `🔴 Trực tiếp ${match.minute}'`
+                      : "🔴 Trực tiếp"}
+                </span>
+              </div>
+            ) : (
+              <span className="text-xs font-black text-[#334BFF] px-2 shrink-0">VS</span>
+            )}
             <div className="flex items-center justify-start gap-2 text-left min-w-0">
               {renderModalFlag(awayName)}
               <span className="truncate">{awayName}</span>
@@ -520,35 +552,8 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
 
         {/* Tab 3: Stats Details */}
         {modalTab === "stats" && (
-          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin text-xs text-slate-300">
-            {/* Live score + phút (kiểu Google) */}
-            {(liveNow || match.status === "FINISHED") &&
-              match.score?.fullTime?.home != null && (
-                <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-4">
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-                      <span className="font-bold text-white truncate text-sm text-right">{homeName}</span>
-                      {renderModalFlag(homeName)}
-                    </div>
-                    <div className="text-center shrink-0">
-                      <div className="text-2xl font-black text-white tabular-nums">
-                        {match.score.fullTime.home} - {match.score.fullTime.away}
-                      </div>
-                      <div className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${liveNow ? "text-[#ff5a5a]" : "text-slate-500"}`}>
-                        {match.status === "FINISHED"
-                          ? "Kết thúc"
-                          : match.minute
-                            ? `🔴 Trực tiếp ${match.minute}'`
-                            : "🔴 Trực tiếp"}
-                      </div>
-                    </div>
-                    <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
-                      {renderModalFlag(awayName)}
-                      <span className="font-bold text-white truncate text-sm">{awayName}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+          <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin text-xs text-slate-300">
+            {/* Tỉ số đã gộp vào header modal (xem khối Header) — không lặp lại ở đây. */}
 
             {/* Đội hình ra sân — chỉ có khi đội đã công bố (thường ~30–60' trước trận) */}
             {stats?.lineups && <LineupPitch lineups={stats.lineups} />}

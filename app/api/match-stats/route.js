@@ -9,6 +9,7 @@ import {
   fixtureEvents,
   fixtureLineups,
 } from "@/lib/apiFootball";
+import { fotmobMatchData } from "@/lib/fotmob";
 import { getWeather } from "@/lib/weather";
 
 export const runtime = "nodejs";
@@ -81,6 +82,30 @@ export async function GET(request) {
       result.statsAvailable = true;
     } catch (e) {
       result.statsError = e.message;
+    }
+  }
+
+  // 1b) Fallback MIỄN PHÍ (FotMob, không cần key): bù đội hình + thống kê + phong độ + H2H +
+  // sân/thành phố khi API-Football thiếu key / hết quota / chưa có data. Gói free của
+  // API-Football & football-data KHÔNG có những thứ này cho World Cup 2026 — đây là nguồn $0
+  // thực tế duy nhất còn lấy được. Chỉ điền vào ô nào còn trống (ưu tiên API-Football nếu có).
+  const noForm = !result.form.home.length && !result.form.away.length;
+  if (!result.lineups || !result.matchStats || !result.h2h.length || noForm || !result.venue || !result.city) {
+    try {
+      const fm = await fotmobMatchData(home, away, date);
+      if (!result.lineups && fm.lineups) result.lineups = fm.lineups;
+      if (!result.matchStats && fm.matchStats) result.matchStats = fm.matchStats;
+      if (noForm && (fm.form.home.length || fm.form.away.length)) result.form = fm.form;
+      if (!result.h2h.length && fm.h2h.length) result.h2h = fm.h2h;
+      if (!result.venue && fm.venue) result.venue = fm.venue;
+      if (!result.city && fm.city) result.city = fm.city;
+      if (fm.lineups || fm.matchStats || fm.h2h.length || fm.venue) {
+        result.statsAvailable = true;
+        if (!result.fixtureId) result.fixtureId = fm.fixtureId;
+        result.statsSource = "fotmob";
+      }
+    } catch (e) {
+      result.statsError = result.statsError || e.message;
     }
   }
 
