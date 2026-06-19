@@ -230,9 +230,12 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
   const referee = match.referees?.[0]?.name || null;
 
   // Tỉ số để gộp thẳng vào header (tránh lặp tên đội ở thẻ riêng).
+  // Khi đang đá, tỉ số football-data thường trễ 1-2' → ưu tiên liveScore từ FotMob nếu có.
   const ft = match.score?.fullTime || {};
+  const dispHome = stats?.liveScore?.home ?? ft.home;
+  const dispAway = stats?.liveScore?.away ?? ft.away;
   const hasScore =
-    ft.home != null && ft.away != null && (liveNow || match.status === "FINISHED");
+    dispHome != null && dispAway != null && (liveNow || match.status === "FINISHED");
 
   return (
     <div
@@ -270,7 +273,7 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
             {hasScore ? (
               <div className="flex flex-col items-center shrink-0 px-2 normal-case tracking-normal">
                 <span className="text-xl sm:text-2xl font-black text-white tabular-nums leading-none">
-                  {ft.home} - {ft.away}
+                  {dispHome} - {dispAway}
                 </span>
                 <span className={`text-[9px] font-bold uppercase tracking-wider mt-1 ${liveNow ? "text-[#ff5a5a]" : "text-slate-500"}`}>
                   {match.status === "FINISHED"

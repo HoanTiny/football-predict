@@ -127,7 +127,7 @@ export default function MatchDetailSheet({ match, onClose }) {
             <div className="flex flex-col items-center gap-0.5 px-2">
               {match.finished || isLive ? (
                 <span className="text-2xl font-black text-white tabular-nums">
-                  {match.home.score ?? 0}<span className="text-slate-600 mx-1">–</span>{match.away.score ?? 0}
+                  {stats?.liveScore?.home ?? match.home.score ?? 0}<span className="text-slate-600 mx-1">–</span>{stats?.liveScore?.away ?? match.away.score ?? 0}
                 </span>
               ) : (
                 <span className="text-base font-black text-white tabular-nums">{vnShortDateTime(match.utcTime)}</span>

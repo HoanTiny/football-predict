@@ -41,17 +41,14 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
         ? "IN_PLAY"
         : status;
   const canBet = !live && (status === "SCHEDULED" || status === "TIMED");
-  const scoreText =
-    ft.home == null || ft.away == null ? "–  –" : `${ft.home}  ${ft.away}`;
-
-  // Dữ liệu trực tiếp cho thẻ trận đang đá: phút + người ghi bàn (FotMob bù khi feed thiếu).
+  // Dữ liệu trực tiếp cho thẻ trận đang đá: phút + tỉ số + người ghi bàn (FotMob bù khi feed thiếu).
   // Chỉ fetch khi trận đang diễn ra; poll 30s.
-  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [] });
+  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [], score: null });
   const homeName = match.homeTeam?.name;
   const awayName = match.awayTeam?.name;
   useEffect(() => {
     if (!live) {
-      setLiveDetail({ minute: null, events: [] });
+      setLiveDetail({ minute: null, events: [], score: null });
       return;
     }
     let active = true;
@@ -64,7 +61,7 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
       });
       fetch(`/api/match-stats?${qs}`)
         .then((r) => r.json())
-        .then((d) => active && setLiveDetail({ minute: d.liveMinute || null, events: d.events || [] }))
+        .then((d) => active && setLiveDetail({ minute: d.liveMinute || null, events: d.events || [], score: d.liveScore || null }))
         .catch(() => {});
     };
     load();
@@ -74,6 +71,12 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
       clearInterval(timer);
     };
   }, [live, homeName, awayName, match.venue, match.utcDate]);
+
+  // Tỉ số: ưu tiên LIVE từ FotMob (football-data hay trễ 1-2' khi đang đá).
+  const sHome = liveDetail.score?.home ?? ft.home;
+  const sAway = liveDetail.score?.away ?? ft.away;
+  const scoreText =
+    sHome == null || sAway == null ? "–  –" : `${sHome}  ${sAway}`;
 
   const liveText = live
     ? liveStatusVN(match.minute != null ? String(match.minute) : liveDetail.minute)
