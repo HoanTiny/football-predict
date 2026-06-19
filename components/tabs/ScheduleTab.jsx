@@ -70,14 +70,14 @@ export default function ScheduleTab({
 
   // Dữ liệu trực tiếp cho hero (phút + người ghi bàn) — lấy từ /api/match-stats (FotMob
   // bù khi feed không có). Chỉ fetch khi có trận đang đá; poll 30s.
-  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [] });
+  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [], score: null });
   const liveHome = liveMatch?.homeTeam?.name;
   const liveAway = liveMatch?.awayTeam?.name;
   const liveVenue = liveMatch?.venue;
   const liveDate = liveMatch?.utcDate;
   useEffect(() => {
     if (!isHeroLive) {
-      setLiveDetail({ minute: null, events: [] });
+      setLiveDetail({ minute: null, events: [], score: null });
       return;
     }
     let active = true;
@@ -90,7 +90,7 @@ export default function ScheduleTab({
       });
       fetch(`/api/match-stats?${qs}`)
         .then((r) => r.json())
-        .then((d) => active && setLiveDetail({ minute: d.liveMinute || null, events: d.events || [] }))
+        .then((d) => active && setLiveDetail({ minute: d.liveMinute || null, events: d.events || [], score: d.liveScore || null }))
         .catch(() => {});
     };
     load();
@@ -141,8 +141,9 @@ export default function ScheduleTab({
   const heroMatchPrediction = heroMatch
     ? predictionByMatch?.get(heroMatch.id)
     : null;
-  const heroHomeScore = heroMatch?.score?.fullTime?.home ?? 0;
-  const heroAwayScore = heroMatch?.score?.fullTime?.away ?? 0;
+  // Ưu tiên tỉ số LIVE từ FotMob (football-data thường trễ 1-2 phút khi đang đá).
+  const heroHomeScore = liveDetail.score?.home ?? heroMatch?.score?.fullTime?.home ?? 0;
+  const heroAwayScore = liveDetail.score?.away ?? heroMatch?.score?.fullTime?.away ?? 0;
 
   const matchesByDate = useMemo(() => {
     let list = matches;

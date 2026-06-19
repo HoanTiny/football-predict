@@ -35,6 +35,7 @@ export async function GET(request) {
     events: [], // diễn biến (bàn thắng, thẻ)
     lineups: null, // đội hình xuất phát (có khi đội đã công bố, thường ~30–60' trước trận)
     liveMinute: null, // phút thi đấu hiện tại khi đang đá ("67'", "HT"…)
+    liveScore: null, // tỉ số trực tiếp từ FotMob (football-data hay trễ → ưu tiên cái này)
   };
 
   // Có nên xin lineup không? Chỉ khi trận sắp đá (≤120') hoặc đã đá xong gần đây — tiết kiệm quota.
@@ -100,6 +101,7 @@ export async function GET(request) {
       if (!result.h2h.length && fm.h2h.length) result.h2h = fm.h2h;
       if (!result.events.length && fm.events?.length) result.events = fm.events;
       if (!result.liveMinute && fm.liveMinute) result.liveMinute = fm.liveMinute;
+      if (fm.liveScore) result.liveScore = fm.liveScore;
       if (!result.venue && fm.venue) result.venue = fm.venue;
       if (!result.city && fm.city) result.city = fm.city;
       if (fm.lineups || fm.matchStats || fm.h2h.length || fm.venue || fm.events?.length) {
