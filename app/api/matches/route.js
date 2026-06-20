@@ -1,6 +1,7 @@
 // Nguồn danh sách trận. Ưu tiên API-Football (live tốt: HT/phút/cập nhật ~15s)
 // khi có RAPIDAPI_KEY; nếu không có key hoặc lỗi thì fallback football-data.org.
 import { wcSourceReady, fetchWorldCupMatches } from "@/lib/wcMatches";
+import { enrichLiveScores } from "@/lib/liveEnrich";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export async function GET(request) {
     try {
       const matches = await fetchWorldCupMatches();
       if (matches && matches.length) {
+        await enrichLiveScores(matches);
         return Response.json({ matches, source: "api-football" });
       }
     } catch {
@@ -41,7 +43,11 @@ export async function GET(request) {
       );
     }
 
-    return Response.json(await res.json());
+    const body = await res.json();
+    if (body && Array.isArray(body.matches)) {
+      await enrichLiveScores(body.matches);
+    }
+    return Response.json(body);
   } catch {
     return Response.json(
       { error: "Không kết nối được football-data.org" },
