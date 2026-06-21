@@ -505,6 +505,13 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
               <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wide block border-b border-white/5 pb-2 mb-2">
                 Danh sách dự đoán trong phòng ({roomBets?.length || 0} người)
               </span>
+              {/* Còn đặt cược được → ẩn dự đoán + chip của người khác để tránh đoán theo. */}
+              {canEdit && (
+                <div className="flex items-center gap-1.5 text-[10px] text-amber-400/90 bg-amber-400/5 border border-amber-400/15 rounded-lg px-2.5 py-1.5">
+                  <span>🔒</span>
+                  <span>Dự đoán của người khác được ẩn đến khi khóa cược (bóng lăn).</span>
+                </div>
+              )}
               {roomBets && roomBets.length > 0 ? (
                 <div className="space-y-3 divide-y divide-white/5">
                   {roomBets.map((b, idx) => (
@@ -527,25 +534,44 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                         )}
                       </div>
 
-                      {/* Right: Score Predict & Wager badges */}
-                      <div className="flex items-center gap-2 pl-3.5 sm:pl-0 self-start sm:self-auto flex-wrap">
-                        {/* Score Predict Pill */}
-                        <div className="flex items-center gap-1.5 bg-[#334BFF]/10 border border-[#334BFF]/20 px-2 py-0.5 rounded text-[10px] sm:text-xs">
-                          <span className="text-slate-400 text-[9px] sm:text-[10px]">Dự đoán:</span>
-                          <strong className="text-white font-extrabold tabular-nums font-mono">
-                            {b.homeGoals}–{b.awayGoals}
-                          </strong>
-                        </div>
+                      {/* Right: Score Predict & Wager badges.
+                          Còn đặt cược được (canEdit) → chỉ chính mình (b.isMe) thấy giá trị thật;
+                          dự đoán của người khác bị ẩn (giá trị thật KHÔNG render ra DOM). */}
+                      {(() => {
+                        const reveal = b.isMe || !canEdit;
+                        return (
+                          <div className="flex items-center gap-2 pl-3.5 sm:pl-0 self-start sm:self-auto flex-wrap">
+                            {/* Score Predict Pill */}
+                            <div className="flex items-center gap-1.5 bg-[#334BFF]/10 border border-[#334BFF]/20 px-2 py-0.5 rounded text-[10px] sm:text-xs">
+                              <span className="text-slate-400 text-[9px] sm:text-[10px]">Dự đoán:</span>
+                              {reveal ? (
+                                <strong className="text-white font-extrabold tabular-nums font-mono">
+                                  {b.homeGoals}–{b.awayGoals}
+                                </strong>
+                              ) : (
+                                <strong className="text-slate-500 font-extrabold font-mono blur-[3px] select-none" aria-label="đã ẩn">
+                                  ?–?
+                                </strong>
+                              )}
+                            </div>
 
-                        {/* Wager Pill */}
-                        <div className="flex items-center gap-1 bg-[#62F2C0]/10 border border-[#62F2C0]/20 px-2 py-0.5 rounded text-[10px] sm:text-xs">
-                          <span className="text-slate-400 text-[9px] sm:text-[10px]">Cược:</span>
-                          <span className="font-bold text-[#62F2C0] tabular-nums font-mono flex items-center gap-0.5">
-                            <span>💎</span>
-                            {fmt(b.wager)}
-                          </span>
-                        </div>
-                      </div>
+                            {/* Wager Pill */}
+                            <div className="flex items-center gap-1 bg-[#62F2C0]/10 border border-[#62F2C0]/20 px-2 py-0.5 rounded text-[10px] sm:text-xs">
+                              <span className="text-slate-400 text-[9px] sm:text-[10px]">Cược:</span>
+                              <span className="font-bold text-[#62F2C0] tabular-nums font-mono flex items-center gap-0.5">
+                                <span>💎</span>
+                                {reveal ? (
+                                  fmt(b.wager)
+                                ) : (
+                                  <span className="text-slate-500 blur-[3px] select-none" aria-label="đã ẩn">
+                                    ???
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>

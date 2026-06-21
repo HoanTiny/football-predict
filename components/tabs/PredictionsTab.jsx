@@ -53,6 +53,9 @@ function RoomPredictions({ betsByMatch, matchById }) {
       {matchGroups.map(({ matchId, match, bets }) => {
         const home = match?.homeTeam?.name || "?";
         const away = match?.awayTeam?.name || "?";
+        // Trận còn đặt cược được → ẩn dự đoán + chip của người khác để tránh đoán theo.
+        const matchOpen =
+          !match || match.status === "SCHEDULED" || match.status === "TIMED";
         return (
           <div key={matchId} className="rounded-xl border border-white/5 bg-[#0B1735]/40 overflow-hidden">
             {/* Match header */}
@@ -70,10 +73,19 @@ function RoomPredictions({ betsByMatch, matchById }) {
               </div>
             </div>
 
+            {matchOpen && (
+              <div className="flex items-center gap-1.5 text-[10px] text-amber-400/90 bg-amber-400/[0.06] border-b border-amber-400/15 px-4 py-1.5">
+                <span>🔒</span>
+                <span>Dự đoán của người khác được ẩn đến khi khóa cược (bóng lăn).</span>
+              </div>
+            )}
+
             {/* Bets — sorted by placed time, earliest first */}
             <div className="divide-y divide-white/[0.04]">
               {bets.map((b, i) => {
                 const sc = STATUS_CONFIG[b.status] || STATUS_CONFIG.pending;
+                // Lộ giá trị khi: là mình / trận đã khóa / cược đã quyết toán.
+                const reveal = b.isMe || !matchOpen || b.status !== "pending";
                 return (
                   <div
                     key={b.id || `${b.playerName}_${i}`}
@@ -92,10 +104,20 @@ function RoomPredictions({ betsByMatch, matchById }) {
 
                     {/* Line 2 — predicted score / wager / payout / placed time */}
                     <div className="flex items-center flex-wrap gap-x-2.5 gap-y-1 text-[10px]">
-                      <span className="score-capsule px-2 py-0.5 text-[11px] font-bold tabular-nums bg-white/5 border border-white/10 text-white shrink-0">
-                        {b.homeGoals} – {b.awayGoals}
-                      </span>
-                      <span className="text-slate-400 font-medium tabular-nums shrink-0">💎{fmt(b.wager)}</span>
+                      {reveal ? (
+                        <span className="score-capsule px-2 py-0.5 text-[11px] font-bold tabular-nums bg-white/5 border border-white/10 text-white shrink-0">
+                          {b.homeGoals} – {b.awayGoals}
+                        </span>
+                      ) : (
+                        <span className="score-capsule px-2 py-0.5 text-[11px] font-bold bg-white/5 border border-white/10 text-slate-500 shrink-0 blur-[3px] select-none" aria-label="đã ẩn">
+                          ? – ?
+                        </span>
+                      )}
+                      {reveal ? (
+                        <span className="text-slate-400 font-medium tabular-nums shrink-0">💎{fmt(b.wager)}</span>
+                      ) : (
+                        <span className="text-slate-500 font-medium shrink-0">💎<span className="blur-[3px] select-none" aria-label="đã ẩn">???</span></span>
+                      )}
                       {b.status !== "pending" && b.payout !== 0 && (
                         <span className={`font-bold tabular-nums shrink-0 ${b.payout > 0 ? "text-[#62F2C0]" : "text-[#ff5a5a]"}`}>
                           ({b.payout > 0 ? "+" : ""}{fmt(b.payout)})
