@@ -18,12 +18,12 @@ import { createRoom, joinRoom } from "@/lib/roomApi";
 import { supabaseReady, supabase } from "@/lib/supabase";
 
 /** Các tab hợp lệ — dùng để sync tab hiện tại với URL hash (#predictions, #leaderboard…). */
-const VALID_TABS = ["schedule", "groups", "bracket", "predictions", "leaderboard", "statistics", "champion", "settings"];
+const VALID_TABS = ["home", "schedule", "groups", "bracket", "leagues", "predictions", "leaderboard", "statistics", "champion", "settings"];
 
 /** Đọc tab từ URL hash, fallback về "schedule" nếu hash không hợp lệ. */
 function tabFromHash() {
   const h = window.location.hash.replace("#", "");
-  return VALID_TABS.includes(h) ? h : "schedule";
+  return VALID_TABS.includes(h) ? h : "home";
 }
 
 /** Danh sách mã phòng đã rời (ẩn trên thiết bị này) — chặn syncRooms thêm lại sau F5. */
@@ -77,6 +77,7 @@ import ChampionTab from "./tabs/ChampionTab";
 import SettingsTab from "./tabs/SettingsTab";
 import StatisticsTab from "./tabs/StatisticsTab";
 import LeaguesTab from "./leagues/LeaguesTab";
+import ForYouTab from "./home/ForYouTab";
 import LeaderboardSidebar from "./LeaderboardSidebar";
 
 export default function WC2026App() {
@@ -269,7 +270,7 @@ export default function WC2026App() {
   const goViewer = () => {
     setMode("viewer");
     setForceRoomPicker(false);
-    setTab("schedule");
+    setTab("home");
   };
 
   // Rời một phòng (mặc định phòng đang mở).
@@ -481,6 +482,7 @@ export default function WC2026App() {
           <span className="text-xs font-black text-white uppercase tracking-wider shrink-0">📅 Lịch &amp; Kết quả</span>
           <div className="flex gap-1 overflow-x-auto">
             {[
+              { key: "home", label: "Trang chủ" },
               { key: "schedule", label: "Lịch" },
               { key: "groups", label: "Bảng" },
               { key: "bracket", label: "Sơ đồ" },
@@ -506,6 +508,7 @@ export default function WC2026App() {
         </header>
 
         <main className="max-w-[1280px] mx-auto px-4 pt-20 pb-6">
+          {tab === "home" && <ForYouTab />}
           {tab === "schedule" && (
             <ScheduleTab
               matches={matches}
@@ -530,6 +533,7 @@ export default function WC2026App() {
           style={{ background: "rgba(8,20,45,0.95)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", height: "60px" }}
         >
           {[
+            { key: "home", label: "Trang chủ", icon: "🏠" },
             { key: "schedule", label: "Lịch", icon: "📅" },
             { key: "groups", label: "Bảng", icon: "📋" },
             { key: "bracket", label: "Sơ đồ", icon: "🗺️" },
@@ -672,6 +676,7 @@ export default function WC2026App() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Main content column */}
           <div className={`${fullWidth ? "lg:col-span-12" : "lg:col-span-8"} space-y-6 tab-fade`}>
+            {tab === "home" && <ForYouTab />}
             {tab === "schedule" && (
               <ScheduleTab
                 matches={matches}

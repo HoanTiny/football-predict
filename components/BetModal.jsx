@@ -10,6 +10,8 @@ import {
 } from "@/lib/standings";
 import { getFifaRank } from "@/lib/fifaRankings";
 import LineupPitch from "./LineupPitch";
+// Khối dựng dùng chung với MatchDetailSheet — một nguồn sự thật để không lệch nhau.
+import { STAT_ROWS, statPct, FormPips, eventIcon } from "./match/MatchDetailView";
 
 /** Phong độ thật trong giải: lấy từ các trận ĐÃ ĐÁ của đội trong dataset. */
 function localForm(matches, teamName) {
@@ -42,56 +44,6 @@ function groupRank(matches, teamName) {
   const idx = standings.findIndex((t) => normalizeTeamName(t.name) === norm);
   return idx >= 0 ? { group, pos: idx + 1 } : null;
 }
-
-const FormPips = ({ form, align = "start" }) => (
-  <div className={`flex gap-1 ${align === "end" ? "justify-end" : "justify-start"}`}>
-    {form.length === 0 ? (
-      <span className="text-[10px] text-slate-500">—</span>
-    ) : (
-      form.map((char, idx) => (
-        <span
-          key={idx}
-          className={`w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-black text-white ${
-            char === "W" ? "bg-emerald-500" : char === "L" ? "bg-rose-500" : "bg-slate-500"
-          }`}
-        >
-          {char}
-        </span>
-      ))
-    )}
-  </div>
-);
-
-// Icon cho diễn biến trận
-const eventIcon = (e) => {
-  if (e.type === "Goal") return "⚽";
-  if (e.type === "Card") return (e.detail || "").includes("Red") ? "🟥" : "🟨";
-  if (e.type === "subst") return "🔁";
-  return "•";
-};
-
-// Thống kê hiển thị (theo thứ tự) → nhãn tiếng Việt
-const STAT_ROWS = [
-  ["Ball Possession", "Kiểm soát bóng"],
-  ["Total Shots", "Tổng số cú sút"],
-  ["Shots on Goal", "Sút trúng đích"],
-  ["Corner Kicks", "Phạt góc"],
-  ["Offsides", "Việt vị"],
-  ["Fouls", "Lỗi"],
-  ["Yellow Cards", "Thẻ vàng"],
-  ["Red Cards", "Thẻ đỏ"],
-  ["Goalkeeper Saves", "Cứu thua"],
-  ["Total passes", "Đường chuyền"],
-  ["Passes %", "Chính xác chuyền"],
-];
-
-// % cho thanh so sánh (xử lý cả "55%" lẫn số)
-const statPct = (h, a) => {
-  const num = (v) => (typeof v === "string" ? parseFloat(v) : v) || 0;
-  const H = num(h),
-    A = num(a);
-  return H + A ? Math.round((H / (H + A)) * 100) : 50;
-};
 
 const renderModalFlag = (teamName) => {
   const imgUrl = flagImgOf(teamName);

@@ -5,6 +5,7 @@ import { FILTERS, GROUPS, flagOf, flagImgOf, matchIsLive, liveStatusVN } from "@
 import { vnDateKey, vnDateHeader, vnNowKey, vnTomorrowKey, vnTime } from "@/lib/time";
 import { calculateGroupStandings, getTeamGroup } from "@/lib/standings";
 import { getFifaRank } from "@/lib/fifaRankings";
+import { useLiveMatch } from "@/lib/liveStore";
 import MatchCard from "../MatchCard";
 import SkeletonCard from "../SkeletonCard";
 import Icon from "../Icon";
@@ -68,38 +69,16 @@ export default function ScheduleTab({
   const heroMatch = liveMatch || nextMatch;
   const isHeroLive = !!liveMatch;
 
-  // Dữ liệu trực tiếp cho hero (phút + người ghi bàn) — lấy từ /api/match-stats (FotMob
-  // bù khi feed không có). Chỉ fetch khi có trận đang đá; poll 30s.
-  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [], score: null });
-  const liveHome = liveMatch?.homeTeam?.name;
-  const liveAway = liveMatch?.awayTeam?.name;
-  const liveVenue = liveMatch?.venue;
-  const liveDate = liveMatch?.utcDate;
-  useEffect(() => {
-    if (!isHeroLive) {
-      setLiveDetail({ minute: null, events: [], score: null });
-      return;
-    }
-    let active = true;
-    const load = () => {
-      const qs = new URLSearchParams({
-        home: liveHome || "",
-        away: liveAway || "",
-        venue: liveVenue || "",
-        date: liveDate || "",
-      });
-      fetch(`/api/match-stats?${qs}`)
-        .then((r) => r.json())
-        .then((d) => active && setLiveDetail({ minute: d.liveMinute || null, events: d.events || [], score: d.liveScore || null }))
-        .catch(() => {});
-    };
-    load();
-    const timer = setInterval(load, 30000);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, [isHeroLive, liveHome, liveAway, liveVenue, liveDate]);
+  // Dữ liệu trực tiếp cho hero (phút + người ghi bàn + tỉ số) — DÙNG CHUNG qua liveStore.
+  const liveDetail = useLiveMatch(
+    {
+      home: liveMatch?.homeTeam?.name,
+      away: liveMatch?.awayTeam?.name,
+      venue: liveMatch?.venue,
+      date: liveMatch?.utcDate,
+    },
+    isHeroLive
+  );
 
   // Người ghi bàn của hero, tách theo đội (để xếp bên trái/phải như Google Sports).
   const heroGoals = (liveDetail.events || []).filter((e) => e.type === "Goal");

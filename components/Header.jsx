@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { pad } from "@/lib/time";
-import { fmt } from "@/lib/constants";
+import { fmt, APP_NAME } from "@/lib/constants";
 import AnimatedNumber from "./AnimatedNumber";
 import Icon from "./Icon";
 
@@ -29,6 +29,7 @@ export default function Header({
   const activeRoomName = sessions.find((s) => s.code === activeCode)?.roomName || null;
 
   const navTabs = [
+    { key: "home", label: "Trang chủ", icon: "calendar" },
     { key: "schedule", label: "Lịch đấu", icon: "calendar" },
     { key: "groups", label: "Bảng đấu", icon: "table" },
     { key: "bracket", label: "Sơ đồ", icon: "bracket" },
@@ -66,7 +67,7 @@ export default function Header({
             </div>
             <div className="hidden lg:block text-left">
               <div className="text-[13px] font-extrabold tracking-[0.18em] leading-tight uppercase bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent whitespace-nowrap">
-                Tiny Football
+                {APP_NAME}
               </div>
               <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 whitespace-nowrap">
                 {demoMode ? (

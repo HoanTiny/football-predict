@@ -9,14 +9,15 @@ export default function BottomNav({ tab, onTabChange }) {
 
   // Top 4 main tabs visible directly in the navigation bar
   const mainTabs = [
+    { key: "home",        label: "Trang chủ", icon: "calendar" },
     { key: "schedule",    label: "Lịch",    icon: "calendar" },
-    { key: "groups",      label: "Bảng",    icon: "table" },
     { key: "predictions", label: "Dự đoán", icon: "history" },
     { key: "leaderboard", label: "BXH",     icon: "chart" },
   ];
 
   // Hidden tabs collapsed into the "More" overlay menu
   const moreTabs = [
+    { key: "groups",      label: "Bảng",    icon: "table" },
     { key: "bracket",     label: "Sơ đồ",   icon: "bracket" },
     { key: "statistics",  label: "Thống kê", icon: "activity" },
     { key: "champion",    label: "Vô địch", icon: "trophy" },

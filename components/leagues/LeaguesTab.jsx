@@ -5,6 +5,7 @@ import { LEAGUES, leagueById, leagueLogo, DEFAULT_LEAGUE_ID } from "@/lib/league
 import LeagueMatches from "./LeagueMatches";
 import LeagueTable from "./LeagueTable";
 import MatchDetailSheet from "./MatchDetailSheet";
+import FollowButton from "../FollowButton";
 
 const LeagueChipLogo = ({ league }) => {
   const [err, setErr] = useState(false);
@@ -57,9 +58,10 @@ export default function LeaguesTab() {
 
       {/* Tiêu đề giải + chuyển Lịch / BXH */}
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-black text-white truncate flex items-center gap-2">
+        <h2 className="text-sm font-black text-white truncate flex items-center gap-2 min-w-0">
           <LeagueChipLogo league={league} />
-          {league.name}
+          <span className="truncate">{league.name}</span>
+          <FollowButton kind="league" id={league.id} name={league.name} size="sm" />
         </h2>
         <div className="flex bg-white/[0.03] border border-white/[0.06] p-0.5 rounded-lg gap-0.5 shrink-0">
           {[

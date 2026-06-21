@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { flagOf, flagImgOf, isLiveStatus, matchIsLive, liveStatusVN } from "@/lib/constants";
 import { vnTime } from "@/lib/time";
 import { getTeamGroup } from "@/lib/standings";
+import { useLiveMatch } from "@/lib/liveStore";
 import StatusBadge from "./StatusBadge";
 
 const renderFlag = (teamName) => {
@@ -41,36 +41,13 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
         ? "IN_PLAY"
         : status;
   const canBet = !live && (status === "SCHEDULED" || status === "TIMED");
-  // Dữ liệu trực tiếp cho thẻ trận đang đá: phút + tỉ số + người ghi bàn (FotMob bù khi feed thiếu).
-  // Chỉ fetch khi trận đang diễn ra; poll 30s.
-  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [], score: null });
+  // Dữ liệu trực tiếp (phút + tỉ số + người ghi bàn) — DÙNG CHUNG qua liveStore (gộp fetch/poll).
   const homeName = match.homeTeam?.name;
   const awayName = match.awayTeam?.name;
-  useEffect(() => {
-    if (!live) {
-      setLiveDetail({ minute: null, events: [], score: null });
-      return;
-    }
-    let active = true;
-    const load = () => {
-      const qs = new URLSearchParams({
-        home: homeName || "",
-        away: awayName || "",
-        venue: match.venue || "",
-        date: match.utcDate || "",
-      });
-      fetch(`/api/match-stats?${qs}`)
-        .then((r) => r.json())
-        .then((d) => active && setLiveDetail({ minute: d.liveMinute || null, events: d.events || [], score: d.liveScore || null }))
-        .catch(() => {});
-    };
-    load();
-    const timer = setInterval(load, 30000);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, [live, homeName, awayName, match.venue, match.utcDate]);
+  const liveDetail = useLiveMatch(
+    { home: homeName, away: awayName, venue: match.venue, date: match.utcDate },
+    live
+  );
 
   // Tỉ số: ưu tiên LIVE từ FotMob (football-data hay trễ 1-2' khi đang đá).
   const sHome = liveDetail.score?.home ?? ft.home;
