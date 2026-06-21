@@ -69,7 +69,19 @@ create policy "auth modify players" on players for all using (auth.role() = 'aut
 drop policy if exists "anon all predictions" on predictions;
 drop policy if exists "auth read predictions" on predictions;
 drop policy if exists "auth modify predictions" on predictions;
-create policy "auth read predictions" on predictions for select using (auth.role() = 'authenticated');
+-- Đọc dự đoán: luôn thấy kèo của CHÍNH MÌNH; kèo người khác chỉ lộ khi trận đã khoá
+-- (lock_at <= now()) hoặc kèo cũ chưa có lock_at. Realtime cũng tuân theo policy này,
+-- nên DevTools/Network KHÔNG tải được dự đoán người khác trước giờ bóng lăn.
+create policy "auth read predictions" on predictions for select using (
+  auth.role() = 'authenticated' and (
+    exists (
+      select 1 from players p
+      where p.id = predictions.player_id and p.user_id = auth.uid()
+    )
+    or predictions.lock_at is null
+    or predictions.lock_at <= now()
+  )
+);
 create policy "auth modify predictions" on predictions for all using (
   auth.role() = 'authenticated' and exists (
     select 1 from players where players.id = predictions.player_id and players.user_id = auth.uid()
@@ -115,12 +127,19 @@ alter table players alter column chips set default 5000;
 -- Giúp việc rời phòng bền vững: xoá localStorage / đổi thiết bị vẫn không hiện lại.
 alter table players add column if not exists left_at timestamptz;
 
+-- Thời điểm KHOÁ CƯỢC của trận (= giờ bóng lăn). Dùng để RLS ẩn dự đoán của người
+-- khác cho tới khi trận khoá → tránh đoán theo. null (kèo cũ) coi như đã lộ.
+alter table predictions add column if not exists lock_at timestamptz;
+
 -- Không cho client gọi hàm cộng/trừ chip tuỳ ý nữa
 revoke execute on function adjust_chips(uuid, int) from public, anon, authenticated;
 
 -- 1) Đặt kèo nguyên tử (xác định người chơi qua auth.uid())
+--    p_kickoff = giờ bóng lăn (ISO) → lưu vào lock_at để RLS ẩn kèo người khác tới khi khoá.
+drop function if exists place_bet(text, bigint, int, int, int);
 create or replace function place_bet(
-  p_room text, p_match bigint, p_home int, p_away int, p_wager int
+  p_room text, p_match bigint, p_home int, p_away int, p_wager int,
+  p_kickoff timestamptz default null
 ) returns int
 language plpgsql security definer set search_path = public as $$
 declare v_player uuid; v_chips int;
@@ -132,8 +151,8 @@ begin
   update players set chips = chips - p_wager
     where id = v_player and chips >= p_wager returning chips into v_chips;
   if v_chips is null then raise exception 'INSUFFICIENT_CHIPS'; end if;
-  insert into predictions (player_id, room_code, match_id, home_goals, away_goals, wager)
-    values (v_player, p_room, p_match, p_home, p_away, p_wager);
+  insert into predictions (player_id, room_code, match_id, home_goals, away_goals, wager, lock_at)
+    values (v_player, p_room, p_match, p_home, p_away, p_wager, p_kickoff);
   return v_chips;
 end; $$;
 
@@ -172,7 +191,7 @@ begin
   update players set chips = 5000, champion_picks = '[]'::jsonb where id = v_player;
 end; $$;
 
-grant execute on function place_bet(text, bigint, int, int, int) to authenticated;
+grant execute on function place_bet(text, bigint, int, int, int, timestamptz) to authenticated;
 grant execute on function place_champion_bet(text, text, text, int, numeric) to authenticated;
 grant execute on function reset_my_data(text) to authenticated;
 

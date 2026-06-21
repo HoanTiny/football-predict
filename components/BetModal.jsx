@@ -481,7 +481,7 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                     Huỷ
                   </button>
                   <button
-                    onClick={() => valid && onConfirm({ matchId: match.id, homeGoals: home, awayGoals: away, wager })}
+                    onClick={() => valid && onConfirm({ matchId: match.id, homeGoals: home, awayGoals: away, wager, kickoff: match.utcDate })}
                     disabled={!valid}
                     className={`flex-1 py-2.5 rounded-lg font-bold text-xs ${valid ? "btn-primary" : "bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5"}`}
                   >
