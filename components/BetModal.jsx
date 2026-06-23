@@ -145,7 +145,15 @@ function ScoreButton({ value, onChange, label }) {
 }
 
 export default function BetModal({ match, chips, onConfirm, onClose, roomBets, prediction, initialTab, matches }) {
-  const canEdit = match.status === "SCHEDULED" || match.status === "TIMED";
+  // Khoá cược: trạng thái cho phép + CHƯA tới giờ bóng lăn. Modal mở sẵn sẽ tự khoá đúng
+  // giờ kickoff (không cần F5) nhờ timer bên dưới — vì `match` là bản chụp lúc mở, không
+  // tự cập nhật theo feed.
+  const kickoffMs = new Date(match.utcDate).getTime();
+  const baseEditable = match.status === "SCHEDULED" || match.status === "TIMED";
+  const [lockedByTime, setLockedByTime] = useState(
+    () => !isNaN(kickoffMs) && Date.now() >= kickoffMs
+  );
+  const canEdit = baseEditable && !lockedByTime;
   const [modalTab, setModalTab] = useState(
     (initialTab === "friends" && (!roomBets || roomBets.length === 0))
       ? (canEdit ? "predict" : "stats")
@@ -153,6 +161,15 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
   );
   const homeName = match.homeTeam?.name;
   const awayName = match.awayTeam?.name;
+
+  // Tự khoá khi tới giờ bóng lăn dù modal vẫn đang mở.
+  useEffect(() => {
+    if (isNaN(kickoffMs) || lockedByTime) return undefined;
+    const ms = kickoffMs - Date.now();
+    if (ms <= 0) { setLockedByTime(true); return undefined; }
+    const t = setTimeout(() => setLockedByTime(true), Math.min(ms, 2147483647));
+    return () => clearTimeout(t);
+  }, [kickoffMs, lockedByTime]);
 
   const firstPred = Array.isArray(prediction) ? prediction[0] : prediction;
   const [home, setHome] = useState(firstPred?.homeGoals ?? 0);
@@ -481,8 +498,8 @@ export default function BetModal({ match, chips, onConfirm, onClose, roomBets, p
                     Huỷ
                   </button>
                   <button
-                    onClick={() => valid && onConfirm({ matchId: match.id, homeGoals: home, awayGoals: away, wager, kickoff: match.utcDate })}
-                    disabled={!valid}
+                    onClick={() => valid && canEdit && onConfirm({ matchId: match.id, homeGoals: home, awayGoals: away, wager, kickoff: match.utcDate })}
+                    disabled={!valid || !canEdit}
                     className={`flex-1 py-2.5 rounded-lg font-bold text-xs ${valid ? "btn-primary" : "bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5"}`}
                   >
                     Xác nhận
