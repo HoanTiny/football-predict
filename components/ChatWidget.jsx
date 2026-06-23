@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { vnTime } from "@/lib/time";
 import Icon from "./Icon";
 
@@ -141,7 +141,10 @@ export default function ChatWidget({
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
-  const [seenCount, setSeenCount] = useState(0);
+  // Mốc "đã đọc" theo PHÒNG, lưu localStorage (theo thời gian, không theo số lượng — bền với
+  // phân trang tin cũ). Trước đây dùng seenCount=0 không lưu → mỗi lần vào lại đếm hết là chưa đọc.
+  const [lastSeenAt, setLastSeenAt] = useState(null);
+  const seenKey = roomCode ? `wc2026_chat_seen_${roomCode}` : "wc2026_chat_seen";
   const [keyboardH, setKeyboardH] = useState(0);
   const [muted, setMuted] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -152,7 +155,17 @@ export default function ChatWidget({
   const atBottomRef = useRef(true);
   const loadingOlderRef = useRef(false);
 
-  const unread = open ? 0 : Math.max(0, messages.length - seenCount);
+  const newestAt = messages.length ? messages[messages.length - 1].created_at : null;
+  // Chưa đọc = tin của NGƯỜI KHÁC mới hơn mốc đã đọc.
+  const unread = useMemo(() => {
+    if (open) return 0;
+    const seen = lastSeenAt ? new Date(lastSeenAt) : null;
+    return messages.reduce((n, m) => {
+      if (m.user_id === myUserId) return n;
+      if (seen && new Date(m.created_at) <= seen) return n;
+      return n + 1;
+    }, 0);
+  }, [open, messages, myUserId, lastSeenAt]);
   const onlineCount = online.length;
 
   // Văn bản "đang gõ…"
@@ -206,9 +219,24 @@ export default function ChatWidget({
     };
   }, []);
 
+  // Khôi phục mốc đã đọc của phòng hiện tại (đổi phòng → đọc lại).
   useEffect(() => {
-    if (open) setSeenCount(messages.length);
-  }, [open, messages.length]);
+    try {
+      setLastSeenAt(localStorage.getItem(seenKey));
+    } catch {
+      setLastSeenAt(null);
+    }
+  }, [seenKey]);
+
+  // Khi mở (hoặc có tin mới lúc đang mở) → đánh dấu đã đọc tới tin mới nhất + lưu localStorage.
+  useEffect(() => {
+    if (open && newestAt) {
+      setLastSeenAt(newestAt);
+      try {
+        localStorage.setItem(seenKey, newestAt);
+      } catch {}
+    }
+  }, [open, newestAt, seenKey]);
 
   // Chỉ tự cuộn xuống đáy khi người dùng đang ở gần đáy (không giật khi đọc tin cũ)
   useEffect(() => {
