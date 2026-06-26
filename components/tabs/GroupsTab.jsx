@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { flagImgOf } from "@/lib/constants";
 import { allGroupStandings } from "@/lib/bracket";
 
@@ -101,6 +101,85 @@ function GroupCard({ letter, standings }) {
   );
 }
 
+/** Bảng xếp hạng các đội HẠNG 3 — 8 đội tốt nhất giành suất Vòng 32. */
+function ThirdPlaceTable({ rows }) {
+  if (!rows.length) return null;
+  return (
+    <div className="max-w-2xl mx-auto bg-[#0B1735] border border-white/5 rounded-xl overflow-hidden shadow-lg">
+      <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between bg-slate-900/20">
+        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+          <span className="text-[#334BFF] font-black">Hạng 3</span> xuất sắc
+        </h4>
+        <span className="text-[8px] text-[#62F2C0] font-bold uppercase tracking-widest">
+          8 đội đi tiếp
+        </span>
+      </div>
+      <table className="w-full text-xs text-left text-slate-300 table-fixed border-collapse">
+        <colgroup>
+          <col className="w-6" />
+          <col />
+          <col className="w-10" />
+          <col className="w-8" />
+          <col className="w-7" />
+          <col className="w-9" />
+        </colgroup>
+        <thead className="text-[9px] font-bold text-slate-500 uppercase tracking-wider border-b border-white/5">
+          <tr>
+            <th className="py-1.5 px-2 text-center">#</th>
+            <th className="py-1.5 px-1 text-left">Đội</th>
+            <th className="py-1.5 px-1 text-center">Bảng</th>
+            <th className="py-1.5 px-1 text-center text-white" title="Điểm">Đ</th>
+            <th className="py-1.5 px-1 text-center" title="Số trận">Tr</th>
+            <th className="py-1.5 px-1 text-center" title="Hiệu số">HS</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-white/5">
+          {rows.map((team, idx) => {
+            const pos = idx + 1;
+            const qualified = pos <= 8;
+            return (
+              <tr
+                key={team.name}
+                className={`standings-row h-9 ${qualified ? "standings-row-qualified" : ""} ${
+                  pos === 8 ? "border-b-2 border-[#62F2C0]/30" : ""
+                }`}
+              >
+                <td className="py-1 px-2 text-center font-bold">
+                  <span className={qualified ? "text-[#62F2C0] font-black" : "text-slate-600"}>{pos}</span>
+                </td>
+                <td className="py-1 px-1 font-semibold text-white">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {renderFlag(team)}
+                    <span className={`truncate text-[11px] ${qualified ? "text-white" : "text-slate-500"}`}>
+                      {team.name}
+                    </span>
+                    {team.live && (
+                      <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#ff5a5a] animate-pulse" title="Đang đá" />
+                    )}
+                  </div>
+                </td>
+                <td className="py-1 px-1 text-center text-[10px] font-black text-[#7b8fff]">{team.group}</td>
+                <td className="py-1 px-1 text-center font-extrabold text-white tabular-nums">{team.pts}</td>
+                <td className="py-1 px-1 text-center text-slate-400 font-medium tabular-nums">{team.pj}</td>
+                <td
+                  className={`py-1 px-1 text-center font-bold tabular-nums ${
+                    team.dg > 0 ? "text-[#62F2C0]" : team.dg < 0 ? "text-[#ff5a5a]" : "text-slate-400"
+                  }`}
+                >
+                  {team.dg > 0 ? `+${team.dg}` : team.dg}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className="px-3 py-1.5 text-[9px] text-slate-500 text-center border-t border-white/5">
+        Xếp theo Điểm → Hiệu số → Bàn thắng · 8 đội trên vạch xanh giành vé Vòng 32
+      </div>
+    </div>
+  );
+}
+
 /** TAB — Bảng đấu — lưới BXH toàn bộ 12 bảng A→L */
 export default function GroupsTab({ matches, predictionByMatch }) {
   // BXH chỉ phản ánh kết quả THẬT: trận đã đá xong + trận đang đá (tỉ số realtime).
@@ -110,8 +189,25 @@ export default function GroupsTab({ matches, predictionByMatch }) {
     [matches, predictionByMatch]
   );
 
+  const [view, setView] = useState("groups"); // "groups" | "third"
+
   const hasLive = useMemo(
     () => groups.some(({ standings }) => standings.some((t) => t.live)),
+    [groups]
+  );
+
+  // Xếp hạng các đội đứng thứ 3 ở mỗi bảng (Điểm → Hiệu số → Bàn thắng) — 8 đội đầu đi tiếp.
+  const thirdRanking = useMemo(
+    () =>
+      groups
+        .map(({ letter, standings }) =>
+          standings[2] ? { ...standings[2], group: letter } : null
+        )
+        .filter(Boolean)
+        .sort(
+          (a, b) =>
+            b.pts - a.pts || b.dg - a.dg || b.gf - a.gf || a.name.localeCompare(b.name)
+        ),
     [groups]
   );
 
@@ -136,12 +232,39 @@ export default function GroupsTab({ matches, predictionByMatch }) {
         )}
       </div>
 
-      {/* Grid of all 12 groups */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {groups.map(({ letter, standings }) => (
-          <GroupCard key={letter} letter={letter} standings={standings} />
-        ))}
+      {/* Toggle: 12 bảng / Hạng 3 xuất sắc */}
+      <div className="flex justify-center">
+        <div className="inline-flex gap-1 p-1 rounded-full bg-black/25 border border-white/5">
+          {[
+            { key: "groups", label: "12 bảng đấu" },
+            { key: "third", label: "Hạng 3 xuất sắc" },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setView(t.key)}
+              className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                view === t.key
+                  ? "bg-gradient-to-b from-[#4257ff] to-[#2a3ad9] text-white shadow-lg shadow-[#334BFF]/30"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {view === "groups" ? (
+        /* Grid of all 12 groups */
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {groups.map(({ letter, standings }) => (
+            <GroupCard key={letter} letter={letter} standings={standings} />
+          ))}
+        </div>
+      ) : (
+        /* Bảng xếp hạng các đội hạng 3 xuất sắc */
+        <ThirdPlaceTable rows={thirdRanking} />
+      )}
     </div>
   );
 }

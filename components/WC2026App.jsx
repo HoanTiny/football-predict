@@ -7,7 +7,7 @@
    ============================================================ */
 
 import { useState, useMemo, useEffect } from "react";
-import { LS_TOKEN, LS_DEMO, LS_MODE, LS_ROOM_CODE, LS_ROOM_PLAYER_ID, LS_ROOM_SESSIONS, LS_ROOM_ACTIVE, LS_LEFT_ROOMS, START_CHIPS, fmt } from "@/lib/constants";
+import { LS_TOKEN, LS_DEMO, LS_MODE, LS_ROOM_CODE, LS_ROOM_PLAYER_ID, LS_ROOM_SESSIONS, LS_ROOM_ACTIVE, LS_LEFT_ROOMS, START_CHIPS, fmt, betLabel } from "@/lib/constants";
 import { useToasts } from "@/hooks/useToasts";
 import { useLocalStore } from "@/hooks/useLocalStore";
 import { useRoomStore } from "@/hooks/useRoomStore";
@@ -333,7 +333,7 @@ export default function WC2026App() {
     if (!player || bet.wager > player.chips) return;
     store.placeBet(bet);
     setBetMatch(null);
-    pushToast(`Đã đặt cược ${bet.homeGoals}-${bet.awayGoals} với ${fmt(bet.wager)} 💎. Chúc may mắn! 🍀`, "info");
+    pushToast(`Đã đặt cược ${betLabel(bet)} với ${fmt(bet.wager)} 💎. Chúc may mắn! 🍀`, "info");
   };
 
   const placeChampionBet = (stage, team, wager, multiplier) => {
@@ -688,7 +688,7 @@ export default function WC2026App() {
               <GroupsTab matches={matches} predictionByMatch={predictionByMatch} />
             )}
             {tab === "bracket" && (
-              <BracketTab matches={matches} />
+              <BracketTab matches={matches} onBet={handleBet} />
             )}
             {tab === "predictions" && (
               <PredictionsTab

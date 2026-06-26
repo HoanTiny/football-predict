@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { flagOf, flagImgOf, isLiveStatus, matchIsLive, liveStatusVN } from "@/lib/constants";
+import { flagOf, flagImgOf, isLiveStatus, matchIsLive, liveStatusVN, betLabel } from "@/lib/constants";
 import { vnTime } from "@/lib/time";
 import { getTeamGroup } from "@/lib/standings";
 import StatusBadge from "./StatusBadge";
@@ -199,7 +199,7 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
                   <div key={pIdx} className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#334BFF]/10 border border-[#334BFF]/20 text-[9px] text-[#7b8fff] font-bold shrink-0">
                     {outcome && <span className="text-[10px]">{outcome}</span>}
                     <span>
-                      {p.homeGoals}–{p.awayGoals} · 💎{p.wager}
+                      {betLabel(p)} · 💎{p.wager}
                     </span>
                   </div>
                 );

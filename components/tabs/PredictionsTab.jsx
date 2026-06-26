@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { flagOf, flagImgOf, fmt } from "@/lib/constants";
+import { flagOf, flagImgOf, fmt, betLabel } from "@/lib/constants";
 import { vnTime, vnDateHeader, vnShortDateTime } from "@/lib/time";
 
 const renderTeamFlag = (teamName) => {
@@ -106,7 +106,7 @@ function RoomPredictions({ betsByMatch, matchById }) {
                     <div className="flex items-center flex-wrap gap-x-2.5 gap-y-1 text-[10px]">
                       {reveal ? (
                         <span className="score-capsule px-2 py-0.5 text-[11px] font-bold tabular-nums bg-white/5 border border-white/10 text-white shrink-0">
-                          {b.homeGoals} – {b.awayGoals}
+                          {betLabel(b)}
                         </span>
                       ) : (
                         <span className="score-capsule px-2 py-0.5 text-[11px] font-bold bg-white/5 border border-white/10 text-slate-500 shrink-0 blur-[3px] select-none" aria-label="đã ẩn">
@@ -274,7 +274,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
 
                 {/* Predicted score capsule */}
                 <div className="score-capsule px-3 py-1 text-sm font-bold shrink-0 min-w-[56px] text-center tabular-nums bg-white/5 border border-white/10 text-white">
-                  {p.homeGoals} – {p.awayGoals}
+                  {betLabel(p)}
                 </div>
 
                 {/* Team 2 */}

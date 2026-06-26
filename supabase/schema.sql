@@ -260,3 +260,51 @@ create policy "auth insert messages" on messages
 
 -- Realtime để tin nhắn hiện ngay cho cả phòng
 alter publication supabase_realtime add table messages;
+
+-- ============================================================
+-- ĐA DẠNG LOẠI KÈO: Tài/Xỉu (ou), Cả 2 đội ghi bàn (btts), Chẵn/Lẻ (oe)
+-- ⚠️ CHẠY KHỐI NÀY TRONG SUPABASE SQL EDITOR TRƯỚC KHI DEPLOY CODE MỚI.
+-- Quyết toán mọi loại đều dựa trên TỈ SỐ CUỐI (lib/settlement.js evaluateBet).
+-- ============================================================
+-- bet_type: 'score' (mặc định, kèo cũ) | 'ou' | 'btts' | 'oe'
+alter table predictions add column if not exists bet_type text not null default 'score';
+-- selection: lựa chọn của kèo không-phải-tỉ-số ('OVER'/'UNDER'/'YES'/'NO'/'ODD'/'EVEN')
+alter table predictions add column if not exists selection text;
+-- Kèo không phải tỉ số không dùng home/away → cho phép NULL
+alter table predictions alter column home_goals drop not null;
+alter table predictions alter column away_goals drop not null;
+
+-- place_bet mở rộng: thêm p_type + p_selection (giữ tương thích — gọi 6 tham số cũ vẫn chạy)
+drop function if exists place_bet(text, bigint, int, int, int, timestamptz);
+create or replace function place_bet(
+  p_room text, p_match bigint, p_home int, p_away int, p_wager int,
+  p_kickoff timestamptz default null,
+  p_type text default 'score', p_selection text default null
+) returns int
+language plpgsql security definer set search_path = public as $$
+declare v_player uuid; v_chips int;
+begin
+  if p_wager < 10 then raise exception 'WAGER_TOO_SMALL'; end if;
+  if p_type not in ('score','1x2','ou','btts','oe') then raise exception 'BAD_BET_TYPE'; end if;
+  if p_type = 'score' then
+    if p_home is null or p_away is null or p_home < 0 or p_away < 0 then raise exception 'BAD_SCORE'; end if;
+  else
+    if p_selection is null then raise exception 'BAD_SELECTION'; end if;
+  end if;
+  select id into v_player from players where room_code = p_room and user_id = auth.uid();
+  if v_player is null then raise exception 'PLAYER_NOT_FOUND'; end if;
+  update players set chips = chips - p_wager
+    where id = v_player and chips >= p_wager returning chips into v_chips;
+  if v_chips is null then raise exception 'INSUFFICIENT_CHIPS'; end if;
+  insert into predictions (player_id, room_code, match_id, home_goals, away_goals, wager, lock_at, bet_type, selection)
+    values (
+      v_player, p_room, p_match,
+      case when p_type = 'score' then p_home end,
+      case when p_type = 'score' then p_away end,
+      p_wager, p_kickoff, p_type, p_selection
+    );
+  return v_chips;
+end; $$;
+
+grant execute on function place_bet(text, bigint, int, int, int, timestamptz, text, text) to authenticated;
+-- Cột mới được ghi qua hàm SECURITY DEFINER nên không cần cấp thêm grant cho client.

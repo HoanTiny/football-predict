@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { FILTERS, GROUPS, flagOf, flagImgOf, matchIsLive, liveStatusVN } from "@/lib/constants";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { FILTERS, GROUPS, flagOf, flagImgOf, matchIsLive, liveStatusVN, betLabel } from "@/lib/constants";
 import { vnDateKey, vnDateHeader, vnNowKey, vnTomorrowKey, vnTime } from "@/lib/time";
 import { calculateGroupStandings, getTeamGroup } from "@/lib/standings";
 import { getFifaRank } from "@/lib/fifaRankings";
@@ -58,35 +58,46 @@ export default function ScheduleTab({
     )[0];
   }, [matches]);
 
-  // Trận đang diễn ra (nếu có) — ưu tiên hiển thị ở khu hero thay cho đếm ngược.
-  const liveMatch = useMemo(() => {
-    if (!matches || matches.length === 0) return null;
-    return matches.find((m) => matchIsLive(m)) || null;
+  // TẤT CẢ trận đang diễn ra (có thể nhiều) — hero dạng slide chuyển qua từng trận.
+  const liveMatches = useMemo(() => {
+    if (!matches || matches.length === 0) return [];
+    return matches
+      .filter((m) => matchIsLive(m))
+      .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
   }, [matches]);
 
-  // Hero ưu tiên trận live; nếu không có thì đếm ngược trận kế tiếp.
-  const heroMatch = liveMatch || nextMatch;
-  const isHeroLive = !!liveMatch;
-
-  // Dữ liệu trực tiếp cho hero (phút + người ghi bàn) — lấy từ /api/match-stats (FotMob
-  // bù khi feed không có). Chỉ fetch khi có trận đang đá; poll 30s.
-  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [], score: null });
-  const liveHome = liveMatch?.homeTeam?.name;
-  const liveAway = liveMatch?.awayTeam?.name;
-  const liveVenue = liveMatch?.venue;
-  const liveDate = liveMatch?.utcDate;
+  // Vị trí slide hiện tại; kẹp lại khi số trận live thay đổi.
+  const [heroIdx, setHeroIdx] = useState(0);
   useEffect(() => {
-    if (!isHeroLive) {
+    setHeroIdx((i) => (i > liveMatches.length - 1 ? 0 : i));
+  }, [liveMatches.length]);
+
+  const isHeroLive = liveMatches.length > 0;
+  // Hero ưu tiên trận live (theo slide); nếu không có thì đếm ngược trận kế tiếp.
+  const heroMatch = isHeroLive
+    ? liveMatches[Math.min(heroIdx, liveMatches.length - 1)]
+    : nextMatch;
+
+  // Dữ liệu trực tiếp cho hero (phút + người ghi bàn + tỉ số) — của ĐÚNG trận đang slide.
+  // Lấy từ /api/match-stats (FotMob bù khi feed không có). Poll 30s.
+  const [liveDetail, setLiveDetail] = useState({ minute: null, events: [], score: null });
+  const detailHome = isHeroLive ? heroMatch?.homeTeam?.name : null;
+  const detailAway = isHeroLive ? heroMatch?.awayTeam?.name : null;
+  const detailVenue = isHeroLive ? heroMatch?.venue : null;
+  const detailDate = isHeroLive ? heroMatch?.utcDate : null;
+  useEffect(() => {
+    if (!detailHome) {
       setLiveDetail({ minute: null, events: [], score: null });
       return;
     }
     let active = true;
+    setLiveDetail({ minute: null, events: [], score: null }); // xoá dữ liệu trận cũ khi đổi slide
     const load = () => {
       const qs = new URLSearchParams({
-        home: liveHome || "",
-        away: liveAway || "",
-        venue: liveVenue || "",
-        date: liveDate || "",
+        home: detailHome || "",
+        away: detailAway || "",
+        venue: detailVenue || "",
+        date: detailDate || "",
       });
       fetch(`/api/match-stats?${qs}`)
         .then((r) => r.json())
@@ -99,7 +110,7 @@ export default function ScheduleTab({
       active = false;
       clearInterval(timer);
     };
-  }, [isHeroLive, liveHome, liveAway, liveVenue, liveDate]);
+  }, [detailHome, detailAway, detailVenue, detailDate]);
 
   // Người ghi bàn của hero, tách theo đội (để xếp bên trái/phải như Google Sports).
   const heroGoals = (liveDetail.events || []).filter((e) => e.type === "Goal");
@@ -193,6 +204,24 @@ export default function ScheduleTab({
     );
   }, [matches, selectedGroup, predictionByMatch, filter]);
 
+  // Điều hướng slide giữa các trận đang trực tiếp (vòng tròn) + vuốt trên mobile.
+  const multiLive = liveMatches.length > 1;
+  const goLive = (delta) =>
+    setHeroIdx((i) => {
+      const n = liveMatches.length;
+      return n ? (i + delta + n) % n : 0;
+    });
+  const touchStartX = useRef(null);
+  const onHeroTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const onHeroTouchEnd = (e) => {
+    if (touchStartX.current == null || !multiLive) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 50) goLive(dx < 0 ? 1 : -1);
+    touchStartX.current = null;
+  };
+
   return (
     <div className="space-y-6">
       {/* Hero — trận đang diễn ra (live) hoặc đếm ngược trận kế tiếp */}
@@ -204,6 +233,8 @@ export default function ScheduleTab({
               : "border-white/5"
           }`}
           style={{ minHeight: 280 }}
+          onTouchStart={onHeroTouchStart}
+          onTouchEnd={onHeroTouchEnd}
           {...(isHeroLive && onBet
             ? {
                 role: "button",
@@ -222,6 +253,34 @@ export default function ScheduleTab({
           <div className="absolute inset-0 bg-radial-gradient from-[#334BFF]/10 via-transparent to-transparent pointer-events-none" />
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#334BFF]/5 rounded-bl-full pointer-events-none blur-3xl" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#FFA07A]/5 rounded-tr-full pointer-events-none blur-2xl" />
+
+          {/* Điều hướng slide khi có nhiều trận trực tiếp — pill gọn góc trên-trái */}
+          {multiLive && (
+            <div
+              className="absolute top-3 left-3 z-30 flex items-center gap-1 px-1 py-0.5 rounded-lg bg-white/[0.06] border border-white/10 backdrop-blur-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                aria-label="Trận trước"
+                onClick={() => goLive(-1)}
+                className="w-6 h-6 rounded-md flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <span className="text-[10px] font-black tabular-nums text-white px-0.5">
+                {heroIdx + 1}<span className="text-slate-500">/{liveMatches.length}</span>
+              </span>
+              <button
+                type="button"
+                aria-label="Trận sau"
+                onClick={() => goLive(1)}
+                className="w-6 h-6 rounded-md flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+          )}
 
           {/* Hint: nhấn để xem chi tiết */}
           {onBet && (
@@ -428,7 +487,7 @@ export default function ScheduleTab({
                         >
                           <span>Dự đoán:</span>
                           <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
-                            {p.homeGoals}–{p.awayGoals}
+                            {betLabel(p)}
                           </strong>
                           <span className="text-[10px] text-slate-400">
                             💎{p.wager}

@@ -1,11 +1,10 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { fetchWorldCupMatches } from "@/lib/wcMatches";
 import { normalizeTeamName } from "@/lib/standings";
+import { evaluateBet } from "@/lib/settlement";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const sign = (x, y) => (x > y ? 1 : x < y ? -1 : 0);
 
 // Lấy trận từ ĐÚNG nguồn mà client dùng (api-football nếu có key, fallback football-data)
 // để khớp match_id đã lưu trong kèo.
@@ -52,7 +51,7 @@ export async function GET(request) {
   // 1) Quyết toán kèo từng trận (mọi người chơi, mọi phòng)
   const { data: pending } = await supabaseAdmin
     .from("predictions")
-    .select("id, player_id, match_id, home_goals, away_goals, wager")
+    .select("id, player_id, match_id, home_goals, away_goals, wager, bet_type, selection")
     .eq("status", "pending");
 
   for (const p of pending || []) {
@@ -60,20 +59,20 @@ export async function GET(request) {
     if (!m) continue;
     const h = m.score.fullTime.home;
     const a = m.score.fullTime.away;
-    let status, payout, gain;
-    if (p.home_goals === h && p.away_goals === a) {
-      status = "won_exact";
-      payout = p.wager * 3;
-      gain = p.wager * 4;
-    } else if (sign(p.home_goals, p.away_goals) === sign(h, a)) {
-      status = "won_outcome";
-      payout = p.wager;
-      gain = p.wager * 2;
-    } else {
-      status = "lost";
-      payout = -p.wager;
-      gain = 0;
-    }
+    const { status, profitMult } = evaluateBet(
+      {
+        betType: p.bet_type || "score",
+        selection: p.selection,
+        homeGoals: p.home_goals,
+        awayGoals: p.away_goals,
+      },
+      h,
+      a,
+      { homeTeam: m.homeTeam?.name, awayTeam: m.awayTeam?.name }
+    );
+    const won = status !== "lost";
+    const payout = won ? p.wager * profitMult : -p.wager;
+    const gain = won ? p.wager * (1 + profitMult) : 0;
     const { error: e1 } = await supabaseAdmin
       .from("predictions")
       .update({ status, payout, final_score: `${h}-${a}` })

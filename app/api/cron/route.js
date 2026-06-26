@@ -1,5 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { pushReady, sendToAll, sendToUserIds } from "@/lib/push";
+import { evaluateBet } from "@/lib/settlement";
+import { betLabel } from "@/lib/constants";
 
 // Chạy trên Node runtime (web-push cần crypto của Node).
 export const runtime = "nodejs";
@@ -8,15 +10,13 @@ export const dynamic = "force-dynamic";
 // Nhắc trước giờ bóng lăn (phút). Chỉnh qua env KICKOFF_REMINDER_MIN (mặc định 15).
 const KICKOFF_WINDOW_MIN = Number(process.env.KICKOFF_REMINDER_MIN) || 15;
 
-const sign = (x, y) => (x > y ? 1 : x < y ? -1 : 0);
-
 /** Lấy danh sách user_id đã cược một số trận (chỉ chế độ phòng — lưu ở Supabase). */
 async function bettorsByMatch(matchIds) {
   const map = new Map(); // matchId -> [{ userId, homeGoals, awayGoals, wager }]
   if (!matchIds.length) return map;
   const { data } = await supabaseAdmin
     .from("predictions")
-    .select("match_id, home_goals, away_goals, wager, players(user_id)")
+    .select("match_id, home_goals, away_goals, wager, bet_type, selection, players(user_id)")
     .in("match_id", matchIds);
   (data || []).forEach((p) => {
     const userId = p.players?.user_id;
@@ -24,6 +24,8 @@ async function bettorsByMatch(matchIds) {
     if (!map.has(p.match_id)) map.set(p.match_id, []);
     map.get(p.match_id).push({
       userId,
+      betType: p.bet_type || "score",
+      selection: p.selection,
       homeGoals: p.home_goals,
       awayGoals: p.away_goals,
       wager: p.wager,
@@ -183,13 +185,14 @@ export async function GET(request) {
     const a = m.score?.fullTime?.away ?? 0;
     const label = `${m.homeTeam?.name} ${h}-${a} ${m.awayTeam?.name}`;
     for (const b of list) {
+      const { status, profitMult } = evaluateBet(b, h, a, { homeTeam: m.homeTeam?.name, awayTeam: m.awayTeam?.name });
       let body;
-      if (b.homeGoals === h && b.awayGoals === a) {
-        body = `🎯 ${label} — Bạn đoán ĐÚNG TỈ SỐ! +${b.wager * 3} 💎`;
-      } else if (sign(b.homeGoals, b.awayGoals) === sign(h, a)) {
-        body = `✅ ${label} — Đúng kết quả! +${b.wager} 💎`;
+      if (status === "won_exact") {
+        body = `🎯 ${label} — Bạn đoán ĐÚNG TỈ SỐ! +${b.wager * profitMult} 💎`;
+      } else if (status !== "lost") {
+        body = `✅ ${label} — Thắng kèo (${betLabel(b)})! +${b.wager * profitMult} 💎`;
       } else {
-        body = `😢 ${label} — Sai rồi! -${b.wager} 💎`;
+        body = `😢 ${label} — Thua kèo (${betLabel(b)}). -${b.wager} 💎`;
       }
       tasks.push(
         sendToUserIds([b.userId], {

@@ -2,7 +2,7 @@
 // Mục tiêu: cài được lên màn hình chính + offline cơ bản cho app shell.
 // LƯU Ý: KHÔNG cache /api/* để tỉ số trận luôn lấy mới (live/realtime).
 
-const CACHE = "tiny-football-v1";
+const CACHE = "tiny-football-v2"; // bump version → activate sẽ xoá cache cũ (v1)
 const APP_SHELL = [
   "/",
   "/icon-192.png",
@@ -77,6 +77,11 @@ self.addEventListener("fetch", (event) => {
     url.origin !== self.location.origin ||
     url.pathname.startsWith("/api/")
   ) {
+    return;
+  }
+
+  // DEV (localhost): không cache asset → luôn thấy code mới, tránh kẹt CSS/JS cũ.
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
     return;
   }
 

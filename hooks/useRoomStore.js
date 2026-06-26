@@ -13,6 +13,8 @@ import {
 const mapPrediction = (row) => ({
   id: row.id,
   matchId: Number(row.match_id),
+  betType: row.bet_type || "score",
+  selection: row.selection || null,
   homeGoals: row.home_goals,
   awayGoals: row.away_goals,
   wager: row.wager,
