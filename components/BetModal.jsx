@@ -510,7 +510,7 @@ export default function BetModal({
                         {prediction.map((p, pIdx) => (
                           <div
                             key={pIdx}
-                            className="inline-flex flex-col items-center gap-1 bg-[#334BFF]/10 border border-[#334BFF]/25 rounded-xl px-4 py-2 shrink-0"
+                            className="inline-flex flex-col items-center gap-1  border border-[#334BFF]/25 rounded-xl px-4 py-2 shrink-0"
                           >
                             <span className="text-sm font-black text-white">
                               {betLabel(p)}
@@ -536,26 +536,29 @@ export default function BetModal({
                 </div>
               ) : (
                 <>
-                  {/* Chọn loại kèo — segmented control */}
-                  <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-black/25 border border-white/5">
-                    {Object.entries(BET_TYPES)
-                      .filter(([key]) => key !== "ou")
-                      .map(([key, cfg]) => (
-                        <button
-                          key={key}
-                          onClick={() => {
-                            setBetType(key);
-                            setSelection(null);
-                          }}
-                          className={`py-2 rounded-xl text-[10px] font-bold transition-all ${
-                            betType === key
-                              ? "bg-gradient-to-b from-[#4257ff] to-[#2a3ad9] text-white shadow-lg shadow-[#334BFF]/30"
-                              : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
-                          }`}
-                        >
-                          {cfg.short}
-                        </button>
-                      ))}
+                  {/* Chọn loại kèo — segmented control (co theo số loại đang bật) */}
+                  <div
+                    className="grid gap-1 p-1 rounded-2xl bg-black/25 border border-white/5"
+                    style={{
+                      gridTemplateColumns: `repeat(${Object.keys(BET_TYPES).length}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {Object.entries(BET_TYPES).map(([key, cfg]) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setBetType(key);
+                          setSelection(null);
+                        }}
+                        className={`py-2 rounded-xl text-[11px] font-bold transition-all ${
+                          betType === key
+                            ? "bg-gradient-to-b from-[#4257ff] to-[#2a3ad9] text-white shadow-lg shadow-[#334BFF]/30"
+                            : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+                        }`}
+                      >
+                        {cfg.short}
+                      </button>
+                    ))}
                   </div>
 
                   {/* Picker theo loại kèo */}
