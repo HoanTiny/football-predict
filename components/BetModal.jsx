@@ -754,32 +754,15 @@ export default function BetModal({
                     ) : (
                       (() => {
                         const mult = betType === "1x2" ? wdlMult : 1;
-                        const upset = betType === "1x2" && mult > 1;
                         return (
-                          <div
-                            className={`p-3 rounded-2xl relative overflow-hidden flex flex-col gap-1.5 bg-gradient-to-b ${
-                              upset
-                                ? "from-[#FFB454]/15 to-[#FFB454]/[0.02] border border-[#FFB454]/30"
-                                : "from-[#62F2C0]/10 to-[#62F2C0]/[0.02] border border-[#62F2C0]/15"
-                            }`}
-                          >
-                            <div
-                              className={`absolute top-1.5 right-2.5 text-[9px] font-black tracking-widest ${upset ? "text-[#FFB454]/35" : "text-[#62F2C0]/20"}`}
-                            >
+                          <div className="p-3 rounded-2xl relative overflow-hidden flex flex-col gap-1.5 bg-gradient-to-b from-[#62F2C0]/10 to-[#62F2C0]/[0.02] border border-[#62F2C0]/15">
+                            <div className="absolute top-1.5 right-2.5 text-[9px] font-black tracking-widest text-[#62F2C0]/20">
                               X{mult} REWARD
                             </div>
-                            <span className="text-slate-300 font-medium text-[11px] flex items-center gap-1.5 flex-wrap">
+                            <span className="text-slate-300 font-medium text-[11px] flex items-center gap-1">
                               <span>✅</span> Đoán đúng
-                              {upset && (
-                                <span className="text-[8px] font-black text-[#FFB454] bg-[#FFB454]/15 border border-[#FFB454]/30 px-1.5 py-0.5 rounded uppercase tracking-wide">
-                                  {selection === "DRAW" ? "Hòa" : "Cửa dưới"} ×
-                                  {mult}
-                                </span>
-                              )}
                             </span>
-                            <span
-                              className={`text-lg font-black tabular-nums mt-0.5 ${upset ? "text-[#FFB454]" : "text-[#62F2C0]"}`}
-                            >
+                            <span className="text-lg font-black tabular-nums mt-0.5 text-[#62F2C0]">
                               +{fmt(wager * mult)}{" "}
                               <span className="text-xs font-bold">💎</span>
                             </span>

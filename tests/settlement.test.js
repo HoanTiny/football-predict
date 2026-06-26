@@ -90,11 +90,11 @@ describe("evaluateBet", () => {
     expect(evaluateBet({ betType: "1x2", selection: "HOME" }, 2, 0).status).toBe("won");
     expect(evaluateBet({ betType: "1x2", selection: "AWAY" }, 2, 0).status).toBe("lost");
     expect(evaluateBet({ betType: "1x2", selection: "DRAW" }, 1, 1).status).toBe("won");
+    // Tạm thời ×2 cho mọi lựa chọn (kể cả cửa dưới / hoà).
     expect(evaluateBet({ betType: "1x2", selection: "DRAW" }, 1, 1).profitMult).toBe(2);
-    // Cửa dưới thắng: Qatar (#56) thắng Switzerland (#19) → ×3
     expect(
       evaluateBet({ betType: "1x2", selection: "HOME" }, 1, 0, { homeTeam: "Qatar", awayTeam: "Switzerland" }).profitMult
-    ).toBe(3);
+    ).toBe(2);
   });
   it("Odd/Even total", () => {
     expect(evaluateBet({ betType: "oe", selection: "ODD" }, 2, 1).status).toBe("won"); // 3 lẻ
