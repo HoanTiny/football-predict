@@ -231,6 +231,12 @@ export default function BetModal({
     match.awayTeam?.name ||
     formatSlotName(match.code?.away || match.slot?.away);
 
+  // Mốc giờ bóng lăn để chốt khoá cược (NaN nếu không có utcDate, vd trận TBD knockout).
+  const kickoffMs = match.utcDate ? new Date(match.utcDate).getTime() : NaN;
+  const [lockedByTime, setLockedByTime] = useState(
+    !isNaN(kickoffMs) && kickoffMs <= Date.now(),
+  );
+
   // Tự khoá khi tới giờ bóng lăn dù modal vẫn đang mở.
   useEffect(() => {
     if (isNaN(kickoffMs) || lockedByTime) return undefined;
