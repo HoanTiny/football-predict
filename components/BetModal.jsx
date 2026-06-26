@@ -231,6 +231,18 @@ export default function BetModal({
     match.awayTeam?.name ||
     formatSlotName(match.code?.away || match.slot?.away);
 
+  // Tự khoá khi tới giờ bóng lăn dù modal vẫn đang mở.
+  useEffect(() => {
+    if (isNaN(kickoffMs) || lockedByTime) return undefined;
+    const ms = kickoffMs - Date.now();
+    if (ms <= 0) {
+      setLockedByTime(true);
+      return undefined;
+    }
+    const t = setTimeout(() => setLockedByTime(true), Math.min(ms, 2147483647));
+    return () => clearTimeout(t);
+  }, [kickoffMs, lockedByTime]);
+
   const firstPred = Array.isArray(prediction) ? prediction[0] : prediction;
   const [home, setHome] = useState(firstPred?.homeGoals ?? 0);
   const [away, setAway] = useState(firstPred?.awayGoals ?? 0);
@@ -473,312 +485,312 @@ export default function BetModal({
         {modalTab === "predict" && (
           <div className="flex flex-col flex-1 min-h-0">
             <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 space-y-3.5 pb-2">
-            {!canEdit ? (
-              <div className="bg-[#0B1735]/40 border border-white/5 rounded-xl p-6 text-center space-y-4">
-                <span className="text-3xl block">🔒</span>
-                <div className="text-sm font-bold text-white">
-                  Đã Khóa Dự Đoán
+              {!canEdit ? (
+                <div className="bg-[#0B1735]/40 border border-white/5 rounded-xl p-6 text-center space-y-4">
+                  <span className="text-3xl block">🔒</span>
+                  <div className="text-sm font-bold text-white">
+                    Đã Khóa Dự Đoán
+                  </div>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                    Trận đấu này đã bắt đầu hoặc kết thúc. Bạn không thể tạo
+                    hoặc chỉnh sửa dự đoán nữa.
+                  </p>
+                  {prediction && prediction.length > 0 ? (
+                    <div className="space-y-2.5 max-w-xs mx-auto w-full">
+                      <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wider block">
+                        Dự đoán của bạn ({prediction.length})
+                      </span>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {prediction.map((p, pIdx) => (
+                          <div
+                            key={pIdx}
+                            className="inline-flex flex-col items-center gap-1 bg-[#334BFF]/10 border border-[#334BFF]/25 rounded-xl px-4 py-2 shrink-0"
+                          >
+                            <span className="text-sm font-black text-white">
+                              {betLabel(p)}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-bold">
+                              Đặt cược: 💎{p.wager}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-500 italic py-2">
+                      Bạn đã không đặt cược cho trận đấu này.
+                    </div>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="btn-secondary w-full py-2.5 rounded-lg text-xs font-bold mt-2"
+                  >
+                    Đóng
+                  </button>
                 </div>
-                <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                  Trận đấu này đã bắt đầu hoặc kết thúc. Bạn không thể tạo hoặc
-                  chỉnh sửa dự đoán nữa.
-                </p>
-                {prediction && prediction.length > 0 ? (
-                  <div className="space-y-2.5 max-w-xs mx-auto w-full">
-                    <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wider block">
-                      Dự đoán của bạn ({prediction.length})
-                    </span>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {prediction.map((p, pIdx) => (
-                        <div
-                          key={pIdx}
-                          className="inline-flex flex-col items-center gap-1 bg-[#334BFF]/10 border border-[#334BFF]/25 rounded-xl px-4 py-2 shrink-0"
+              ) : (
+                <>
+                  {/* Chọn loại kèo — segmented control */}
+                  <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-black/25 border border-white/5">
+                    {Object.entries(BET_TYPES)
+                      .filter(([key]) => key !== "ou")
+                      .map(([key, cfg]) => (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            setBetType(key);
+                            setSelection(null);
+                          }}
+                          className={`py-2 rounded-xl text-[10px] font-bold transition-all ${
+                            betType === key
+                              ? "bg-gradient-to-b from-[#4257ff] to-[#2a3ad9] text-white shadow-lg shadow-[#334BFF]/30"
+                              : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+                          }`}
                         >
-                          <span className="text-sm font-black text-white">
-                            {betLabel(p)}
-                          </span>
-                          <span className="text-[9px] text-slate-400 font-bold">
-                            Đặt cược: 💎{p.wager}
-                          </span>
-                        </div>
+                          {cfg.short}
+                        </button>
                       ))}
-                    </div>
                   </div>
-                ) : (
-                  <div className="text-xs text-slate-500 italic py-2">
-                    Bạn đã không đặt cược cho trận đấu này.
-                  </div>
-                )}
-                <button
-                  onClick={onClose}
-                  className="btn-secondary w-full py-2.5 rounded-lg text-xs font-bold mt-2"
-                >
-                  Đóng
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* Chọn loại kèo — segmented control */}
-                <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-black/25 border border-white/5">
-                  {Object.entries(BET_TYPES)
-                    .filter(([key]) => key !== "ou")
-                    .map(([key, cfg]) => (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        setBetType(key);
-                        setSelection(null);
-                      }}
-                      className={`py-2 rounded-xl text-[10px] font-bold transition-all ${
-                        betType === key
-                          ? "bg-gradient-to-b from-[#4257ff] to-[#2a3ad9] text-white shadow-lg shadow-[#334BFF]/30"
-                          : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
-                      }`}
-                    >
-                      {cfg.short}
-                    </button>
-                  ))}
-                </div>
 
-                {/* Picker theo loại kèo */}
-                {betType === "score" ? (
-                  <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/[0.03] border border-white/5 py-4 px-2">
-                    <ScoreButton
-                      value={home}
-                      onChange={setHome}
-                      label={homeName}
-                      renderFlag={renderModalFlag}
-                    />
-                    <div className="text-2xl font-black text-slate-600 self-center mt-5">
-                      :
+                  {/* Picker theo loại kèo */}
+                  {betType === "score" ? (
+                    <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/[0.03] border border-white/5 py-4 px-2">
+                      <ScoreButton
+                        value={home}
+                        onChange={setHome}
+                        label={homeName}
+                        renderFlag={renderModalFlag}
+                      />
+                      <div className="text-2xl font-black text-slate-600 self-center mt-5">
+                        :
+                      </div>
+                      <ScoreButton
+                        value={away}
+                        onChange={setAway}
+                        label={awayName}
+                        renderFlag={renderModalFlag}
+                      />
                     </div>
-                    <ScoreButton
-                      value={away}
-                      onChange={setAway}
-                      label={awayName}
-                      renderFlag={renderModalFlag}
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    <div className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      {BET_TYPES[betType].label}
+                  ) : (
+                    <div className="space-y-2.5">
+                      <div className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        {BET_TYPES[betType].label}
+                      </div>
+                      <div
+                        className={`grid gap-3 ${betType === "1x2" ? "grid-cols-3" : "grid-cols-2"}`}
+                      >
+                        {BET_TYPES[betType].options.map((opt) => {
+                          const active = selection === opt.value;
+                          // 1X2: thay nhãn "Đội nhà/khách" bằng tên đội thật cho dễ hiểu
+                          const label =
+                            betType === "1x2" && opt.value === "HOME"
+                              ? homeName
+                              : betType === "1x2" && opt.value === "AWAY"
+                                ? awayName
+                                : opt.label;
+                          return (
+                            <button
+                              key={opt.value}
+                              onClick={() => setSelection(opt.value)}
+                              className={`relative py-4 px-1 rounded-2xl text-sm font-bold transition-all border-2 truncate ${
+                                active
+                                  ? "bg-gradient-to-b from-[#334BFF]/30 to-[#334BFF]/[0.06] border-[#334BFF] text-white shadow-lg shadow-[#334BFF]/20"
+                                  : "bg-white/[0.03] border-white/10 text-slate-300 hover:border-white/25 hover:text-white"
+                              }`}
+                            >
+                              {active && (
+                                <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#62F2C0] shadow-[0_0_8px_#62F2C0]" />
+                              )}
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div
-                      className={`grid gap-3 ${betType === "1x2" ? "grid-cols-3" : "grid-cols-2"}`}
-                    >
-                      {BET_TYPES[betType].options.map((opt) => {
-                        const active = selection === opt.value;
-                        // 1X2: thay nhãn "Đội nhà/khách" bằng tên đội thật cho dễ hiểu
-                        const label =
-                          betType === "1x2" && opt.value === "HOME"
-                            ? homeName
-                            : betType === "1x2" && opt.value === "AWAY"
-                              ? awayName
-                              : opt.label;
+                  )}
+
+                  {/* Existing predictions list */}
+                  {prediction && prediction.length > 0 && (
+                    <div className="bg-[#0B1735]/40 border border-white/5 rounded-xl p-3.5 space-y-2">
+                      <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wide block">
+                        Các cược đã chốt cho trận này ({prediction.length})
+                      </span>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {prediction.map((p, pIdx) => (
+                          <div
+                            key={pIdx}
+                            className="inline-flex items-center gap-2 bg-[#334BFF]/10 border border-[#334BFF]/25 px-3 py-1 rounded-lg text-xs font-semibold text-white shrink-0"
+                          >
+                            <span>{betLabel(p)}</span>
+                            <span className="text-slate-400">·</span>
+                            <span className="text-[#62F2C0] font-bold">
+                              💎{fmt(p.wager)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Khối tiền cược */}
+                  <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-4 space-y-3.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-slate-400 uppercase tracking-wider">
+                        Tiền cược
+                      </span>
+                      <span className="text-slate-400">
+                        Số dư{" "}
+                        <span className="font-bold text-[#62F2C0]">
+                          💎 {fmt(chips)}
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Ô nhập số tiền cược */}
+                    <div className="relative flex items-center justify-between rounded-2xl bg-black/40 border border-white/10 px-4 py-3 focus-within:border-[#334BFF] focus-within:shadow-[0_0_15px_rgba(51,75,255,0.2)] transition-all">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl animate-pulse">💎</span>
+                        <input
+                          type="number"
+                          min="10"
+                          max={chips}
+                          value={wager || ""}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            setWager(isNaN(val) ? 0 : val);
+                          }}
+                          onBlur={() =>
+                            setWager(Math.max(10, Math.min(chips, wager || 10)))
+                          }
+                          className="w-28 bg-transparent text-left text-3xl font-black text-white tabular-nums focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setWager(chips)}
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-widest text-[#62F2C0] bg-[#62F2C0]/10 hover:bg-[#62F2C0]/20 border border-[#62F2C0]/20 transition-all uppercase"
+                      >
+                        Tối đa
+                      </button>
+                    </div>
+
+                    <input
+                      type="range"
+                      min="10"
+                      max={maxWager}
+                      step="10"
+                      value={wager}
+                      onChange={(e) => setWager(parseInt(e.target.value, 10))}
+                      className="premium-slider my-2"
+                      style={{
+                        background: `linear-gradient(to right, #62F2C0 0%, #62F2C0 ${maxWager > 10 ? ((wager - 10) / (maxWager - 10)) * 100 : 0}%, rgba(255, 255, 255, 0.1) ${maxWager > 10 ? ((wager - 10) / (maxWager - 10)) * 100 : 0}%, rgba(255, 255, 255, 0.1) 100%)`,
+                      }}
+                    />
+
+                    <div className="grid grid-cols-4 gap-2">
+                      {[25, 50, 100, 200].map((v) => {
+                        const disabled = v > chips;
+                        const active = wager === v;
                         return (
                           <button
-                            key={opt.value}
-                            onClick={() => setSelection(opt.value)}
-                            className={`relative py-4 px-1 rounded-2xl text-sm font-bold transition-all border-2 truncate ${
+                            key={v}
+                            disabled={disabled}
+                            type="button"
+                            onClick={() => setWager(Math.min(chips, v))}
+                            className={`py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
                               active
-                                ? "bg-gradient-to-b from-[#334BFF]/30 to-[#334BFF]/[0.06] border-[#334BFF] text-white shadow-lg shadow-[#334BFF]/20"
-                                : "bg-white/[0.03] border-white/10 text-slate-300 hover:border-white/25 hover:text-white"
+                                ? "bg-[#334BFF]/20 border border-[#334BFF] text-[#7b8fff] shadow-[0_0_10px_rgba(51,75,255,0.25)]"
+                                : disabled
+                                  ? "bg-white/[0.01] border border-white/5 text-slate-700 cursor-not-allowed"
+                                  : "bg-white/[0.04] border border-white/5 text-slate-400 hover:text-white hover:bg-white/[0.08]"
                             }`}
                           >
-                            {active && (
-                              <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#62F2C0] shadow-[0_0_8px_#62F2C0]" />
-                            )}
-                            {label}
+                            {fmt(v)}
                           </button>
                         );
                       })}
                     </div>
                   </div>
-                )}
 
-                {/* Existing predictions list */}
-                {prediction && prediction.length > 0 && (
-                  <div className="bg-[#0B1735]/40 border border-white/5 rounded-xl p-3.5 space-y-2">
-                    <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wide block">
-                      Các cược đã chốt cho trận này ({prediction.length})
-                    </span>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {prediction.map((p, pIdx) => (
-                        <div
-                          key={pIdx}
-                          className="inline-flex items-center gap-2 bg-[#334BFF]/10 border border-[#334BFF]/25 px-3 py-1 rounded-lg text-xs font-semibold text-white shrink-0"
-                        >
-                          <span>{betLabel(p)}</span>
-                          <span className="text-slate-400">·</span>
-                          <span className="text-[#62F2C0] font-bold">
-                            💎{fmt(p.wager)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Khối tiền cược */}
-                <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-4 space-y-3.5">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-slate-400 uppercase tracking-wider">
-                      Tiền cược
-                    </span>
-                    <span className="text-slate-400">
-                      Số dư{" "}
-                      <span className="font-bold text-[#62F2C0]">
-                        💎 {fmt(chips)}
-                      </span>
-                    </span>
-                  </div>
-
-                  {/* Ô nhập số tiền cược */}
-                  <div className="relative flex items-center justify-between rounded-2xl bg-black/40 border border-white/10 px-4 py-3 focus-within:border-[#334BFF] focus-within:shadow-[0_0_15px_rgba(51,75,255,0.2)] transition-all">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-2xl animate-pulse">💎</span>
-                      <input
-                        type="number"
-                        min="10"
-                        max={chips}
-                        value={wager || ""}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value, 10);
-                          setWager(isNaN(val) ? 0 : val);
-                        }}
-                        onBlur={() =>
-                          setWager(Math.max(10, Math.min(chips, wager || 10)))
-                        }
-                        className="w-28 bg-transparent text-left text-3xl font-black text-white tabular-nums focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setWager(chips)}
-                      className="px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-widest text-[#62F2C0] bg-[#62F2C0]/10 hover:bg-[#62F2C0]/20 border border-[#62F2C0]/20 transition-all uppercase"
-                    >
-                      Tối đa
-                    </button>
-                  </div>
-
-                  <input
-                    type="range"
-                    min="10"
-                    max={maxWager}
-                    step="10"
-                    value={wager}
-                    onChange={(e) => setWager(parseInt(e.target.value, 10))}
-                    className="premium-slider my-2"
-                    style={{
-                      background: `linear-gradient(to right, #62F2C0 0%, #62F2C0 ${maxWager > 10 ? ((wager - 10) / (maxWager - 10)) * 100 : 0}%, rgba(255, 255, 255, 0.1) ${maxWager > 10 ? ((wager - 10) / (maxWager - 10)) * 100 : 0}%, rgba(255, 255, 255, 0.1) 100%)`,
-                    }}
-                  />
-
-                  <div className="grid grid-cols-4 gap-2">
-                    {[25, 50, 100, 200].map((v) => {
-                      const disabled = v > chips;
-                      const active = wager === v;
-                      return (
-                        <button
-                          key={v}
-                          disabled={disabled}
-                          type="button"
-                          onClick={() => setWager(Math.min(chips, v))}
-                          className={`py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                            active
-                              ? "bg-[#334BFF]/20 border border-[#334BFF] text-[#7b8fff] shadow-[0_0_10px_rgba(51,75,255,0.25)]"
-                              : disabled
-                                ? "bg-white/[0.01] border border-white/5 text-slate-700 cursor-not-allowed"
-                                : "bg-white/[0.04] border border-white/5 text-slate-400 hover:text-white hover:bg-white/[0.08]"
-                          }`}
-                        >
-                          {fmt(v)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Bảng thưởng */}
-                <div className="space-y-2">
-                  {betType === "score" ? (
-                    <div
-                      className={`p-3 rounded-2xl relative overflow-hidden flex flex-col gap-1.5 bg-gradient-to-b ${
-                        scoreMult > 3
-                          ? "from-[#FFB454]/15 to-[#FFB454]/[0.02] border border-[#FFB454]/30"
-                          : "from-[#62F2C0]/10 to-[#62F2C0]/[0.02] border border-[#62F2C0]/15"
-                      }`}
-                    >
+                  {/* Bảng thưởng */}
+                  <div className="space-y-2">
+                    {betType === "score" ? (
                       <div
-                        className={`absolute top-1.5 right-2.5 text-[9px] font-black tracking-widest ${scoreMult > 3 ? "text-[#FFB454]/35" : "text-[#62F2C0]/20"}`}
+                        className={`p-3 rounded-2xl relative overflow-hidden flex flex-col gap-1.5 bg-gradient-to-b ${
+                          scoreMult > 3
+                            ? "from-[#FFB454]/15 to-[#FFB454]/[0.02] border border-[#FFB454]/30"
+                            : "from-[#62F2C0]/10 to-[#62F2C0]/[0.02] border border-[#62F2C0]/15"
+                        }`}
                       >
-                        X{scoreMult} REWARD
+                        <div
+                          className={`absolute top-1.5 right-2.5 text-[9px] font-black tracking-widest ${scoreMult > 3 ? "text-[#FFB454]/35" : "text-[#62F2C0]/20"}`}
+                        >
+                          X{scoreMult} REWARD
+                        </div>
+                        <span className="text-slate-300 font-medium text-[11px] flex items-center gap-1.5 flex-wrap">
+                          <span>🎯</span> Đúng chính xác tỉ số
+                          {scoreMult > 3 && (
+                            <span className="text-[8px] font-black text-[#FFB454] bg-[#FFB454]/15 border border-[#FFB454]/30 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                              Cửa dưới ×{scoreMult}
+                            </span>
+                          )}
+                        </span>
+                        <span
+                          className={`text-lg font-black tabular-nums mt-0.5 ${scoreMult > 3 ? "text-[#FFB454]" : "text-[#62F2C0]"}`}
+                        >
+                          +{fmt(wager * scoreMult)}{" "}
+                          <span className="text-xs font-bold">💎</span>
+                        </span>
                       </div>
-                      <span className="text-slate-300 font-medium text-[11px] flex items-center gap-1.5 flex-wrap">
-                        <span>🎯</span> Đúng chính xác tỉ số
-                        {scoreMult > 3 && (
-                          <span className="text-[8px] font-black text-[#FFB454] bg-[#FFB454]/15 border border-[#FFB454]/30 px-1.5 py-0.5 rounded uppercase tracking-wide">
-                            Cửa dưới ×{scoreMult}
-                          </span>
-                        )}
+                    ) : (
+                      (() => {
+                        const mult = betType === "1x2" ? wdlMult : 1;
+                        const upset = betType === "1x2" && mult > 1;
+                        return (
+                          <div
+                            className={`p-3 rounded-2xl relative overflow-hidden flex flex-col gap-1.5 bg-gradient-to-b ${
+                              upset
+                                ? "from-[#FFB454]/15 to-[#FFB454]/[0.02] border border-[#FFB454]/30"
+                                : "from-[#62F2C0]/10 to-[#62F2C0]/[0.02] border border-[#62F2C0]/15"
+                            }`}
+                          >
+                            <div
+                              className={`absolute top-1.5 right-2.5 text-[9px] font-black tracking-widest ${upset ? "text-[#FFB454]/35" : "text-[#62F2C0]/20"}`}
+                            >
+                              X{mult} REWARD
+                            </div>
+                            <span className="text-slate-300 font-medium text-[11px] flex items-center gap-1.5 flex-wrap">
+                              <span>✅</span> Đoán đúng
+                              {upset && (
+                                <span className="text-[8px] font-black text-[#FFB454] bg-[#FFB454]/15 border border-[#FFB454]/30 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                  {selection === "DRAW" ? "Hòa" : "Cửa dưới"} ×
+                                  {mult}
+                                </span>
+                              )}
+                            </span>
+                            <span
+                              className={`text-lg font-black tabular-nums mt-0.5 ${upset ? "text-[#FFB454]" : "text-[#62F2C0]"}`}
+                            >
+                              +{fmt(wager * mult)}{" "}
+                              <span className="text-xs font-bold">💎</span>
+                            </span>
+                          </div>
+                        );
+                      })()
+                    )}
+
+                    {/* Đoán sai */}
+                    <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[11px]">
+                      <span className="text-slate-400 font-medium flex items-center gap-1">
+                        <span>❌</span> Đoán sai
                       </span>
-                      <span
-                        className={`text-lg font-black tabular-nums mt-0.5 ${scoreMult > 3 ? "text-[#FFB454]" : "text-[#62F2C0]"}`}
-                      >
-                        +{fmt(wager * scoreMult)}{" "}
-                        <span className="text-xs font-bold">💎</span>
+                      <span className="font-bold text-[#ff5a5a] tabular-nums">
+                        -{fmt(wager)} 💎
                       </span>
                     </div>
-                  ) : (
-                    (() => {
-                      const mult = betType === "1x2" ? wdlMult : 1;
-                      const upset = betType === "1x2" && mult > 1;
-                      return (
-                        <div
-                          className={`p-3 rounded-2xl relative overflow-hidden flex flex-col gap-1.5 bg-gradient-to-b ${
-                            upset
-                              ? "from-[#FFB454]/15 to-[#FFB454]/[0.02] border border-[#FFB454]/30"
-                              : "from-[#62F2C0]/10 to-[#62F2C0]/[0.02] border border-[#62F2C0]/15"
-                          }`}
-                        >
-                          <div
-                            className={`absolute top-1.5 right-2.5 text-[9px] font-black tracking-widest ${upset ? "text-[#FFB454]/35" : "text-[#62F2C0]/20"}`}
-                          >
-                            X{mult} REWARD
-                          </div>
-                          <span className="text-slate-300 font-medium text-[11px] flex items-center gap-1.5 flex-wrap">
-                            <span>✅</span> Đoán đúng
-                            {upset && (
-                              <span className="text-[8px] font-black text-[#FFB454] bg-[#FFB454]/15 border border-[#FFB454]/30 px-1.5 py-0.5 rounded uppercase tracking-wide">
-                                {selection === "DRAW" ? "Hòa" : "Cửa dưới"} ×
-                                {mult}
-                              </span>
-                            )}
-                          </span>
-                          <span
-                            className={`text-lg font-black tabular-nums mt-0.5 ${upset ? "text-[#FFB454]" : "text-[#62F2C0]"}`}
-                          >
-                            +{fmt(wager * mult)}{" "}
-                            <span className="text-xs font-bold">💎</span>
-                          </span>
-                        </div>
-                      );
-                    })()
-                  )}
-
-                  {/* Đoán sai */}
-                  <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[11px]">
-                    <span className="text-slate-400 font-medium flex items-center gap-1">
-                      <span>❌</span> Đoán sai
-                    </span>
-                    <span className="font-bold text-[#ff5a5a] tabular-nums">
-                      -{fmt(wager)} 💎
-                    </span>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
             </div>
 
             {canEdit && (

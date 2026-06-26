@@ -146,6 +146,8 @@ declare v_player uuid; v_chips int;
 begin
   if p_wager < 10 then raise exception 'WAGER_TOO_SMALL'; end if;
   if p_home < 0 or p_away < 0 then raise exception 'BAD_SCORE'; end if;
+  -- Khoá cược khi trận đã bắt đầu (chống đặt kèo sau giờ bóng lăn, kể cả client cũ/nghịch DevTools).
+  if p_kickoff is not null and p_kickoff <= now() then raise exception 'MATCH_LOCKED'; end if;
   select id into v_player from players where room_code = p_room and user_id = auth.uid();
   if v_player is null then raise exception 'PLAYER_NOT_FOUND'; end if;
   update players set chips = chips - p_wager
