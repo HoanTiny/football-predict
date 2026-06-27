@@ -262,7 +262,7 @@ export default function BetModal({
   const valid = chips >= 10 && wager >= 10 && wager <= chips && selectionOk;
   // Hệ số thưởng kèo tỉ số theo tỉ số đang chọn (cược cửa dưới thắng → ×cao hơn).
   const scoreMult = scoreMultiplier(home, away, homeName, awayName);
-  // Hệ số kèo 1X2 theo lựa chọn (Hòa ×2, cửa dưới ×3, cửa trên ×1).
+  // Hệ số LÃI kèo 1X2: ×1 ("1 ăn 1") cho mọi lựa chọn.
   const wdlMult = selection ? wdlMultiplier(selection, homeName, awayName) : 1;
 
   // Hạng FIFA thế giới (bảng tĩnh cập nhật tay) + hạng trong bảng World Cup
