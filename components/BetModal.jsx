@@ -16,7 +16,7 @@ import {
   normalizeTeamName,
 } from "@/lib/standings";
 import { getFifaRank } from "@/lib/fifaRankings";
-import { scoreMultiplier, wdlMultiplier } from "@/lib/settlement";
+import { scoreMultiplier, wdlMultiplier, wdlOdds } from "@/lib/settlement";
 import LineupPitch from "./LineupPitch";
 
 function formatSlotName(code) {
@@ -262,7 +262,12 @@ export default function BetModal({
   const valid = chips >= 10 && wager >= 10 && wager <= chips && selectionOk;
   // Hệ số thưởng kèo tỉ số theo tỉ số đang chọn (cược cửa dưới thắng → ×cao hơn).
   const scoreMult = scoreMultiplier(home, away, homeName, awayName);
-  // Hệ số LÃI kèo 1X2: ×1 ("1 ăn 1") cho mọi lựa chọn.
+  // Decimal odds 1X2 theo FIFA rank (tự suy ra cửa trên/dưới). profit = wager × (odds−1).
+  const wdlOddsAll = {
+    HOME: wdlOdds("HOME", homeName, awayName),
+    DRAW: wdlOdds("DRAW", homeName, awayName),
+    AWAY: wdlOdds("AWAY", homeName, awayName),
+  };
   const wdlMult = selection ? wdlMultiplier(selection, homeName, awayName) : 1;
 
   // Hạng FIFA thế giới (bảng tĩnh cập nhật tay) + hạng trong bảng World Cup
@@ -597,6 +602,9 @@ export default function BetModal({
                               : betType === "1x2" && opt.value === "AWAY"
                                 ? awayName
                                 : opt.label;
+                          // Decimal odds kiểu nhà cái cho riêng kèo 1X2 (suy từ FIFA rank).
+                          const optOdds =
+                            betType === "1x2" ? wdlOddsAll[opt.value] : null;
                           return (
                             <button
                               key={opt.value}
@@ -610,7 +618,16 @@ export default function BetModal({
                               {active && (
                                 <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#62F2C0] shadow-[0_0_8px_#62F2C0]" />
                               )}
-                              {label}
+                              <span className="block truncate">{label}</span>
+                              {optOdds != null && (
+                                <span
+                                  className={`block mt-1 text-[11px] font-black tabular-nums ${
+                                    active ? "text-[#62F2C0]" : "text-[#FFB454]"
+                                  }`}
+                                >
+                                  {optOdds.toFixed(2)}
+                                </span>
+                              )}
                             </button>
                           );
                         })}
@@ -656,28 +673,27 @@ export default function BetModal({
                     </div>
 
                     {/* Ô nhập số tiền cược */}
-                    <div className="relative flex items-center justify-between rounded-2xl bg-black/40 border border-white/10 px-4 py-3 focus-within:border-[#334BFF] focus-within:shadow-[0_0_15px_rgba(51,75,255,0.2)] transition-all">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-2xl animate-pulse">💎</span>
-                        <input
-                          type="number"
-                          min="10"
-                          max={chips}
-                          value={wager || ""}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value, 10);
-                            setWager(isNaN(val) ? 0 : val);
-                          }}
-                          onBlur={() =>
-                            setWager(Math.max(10, Math.min(chips, wager || 10)))
-                          }
-                          className="w-28 bg-transparent text-left text-3xl font-black text-white tabular-nums focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </div>
+                    <div className="relative flex items-center gap-2 rounded-2xl bg-black/40 border border-white/10 px-4 py-3 focus-within:border-[#334BFF] focus-within:shadow-[0_0_15px_rgba(51,75,255,0.2)] transition-all">
+                      <span className="text-2xl animate-pulse shrink-0">💎</span>
+                      {/* Input co giãn theo khoảng trống còn lại; số lớn vẫn vào lọt, không bị cắt. */}
+                      <input
+                        type="number"
+                        min="10"
+                        max={chips}
+                        value={wager || ""}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setWager(isNaN(val) ? 0 : val);
+                        }}
+                        onBlur={() =>
+                          setWager(Math.max(10, Math.min(chips, wager || 10)))
+                        }
+                        className="flex-1 min-w-0 bg-transparent text-left text-3xl font-black text-white tabular-nums focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
                       <button
                         type="button"
                         onClick={() => setWager(chips)}
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-widest text-[#62F2C0] bg-[#62F2C0]/10 hover:bg-[#62F2C0]/20 border border-[#62F2C0]/20 transition-all uppercase"
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-widest text-[#62F2C0] bg-[#62F2C0]/10 hover:bg-[#62F2C0]/20 border border-[#62F2C0]/20 transition-all uppercase"
                       >
                         Tối đa
                       </button>
@@ -754,16 +770,21 @@ export default function BetModal({
                     ) : (
                       (() => {
                         const mult = betType === "1x2" ? wdlMult : 1;
+                        // Nhãn tỉ lệ: 1X2 hiện decimal odds (1.50/4.50/7.50); kèo khác giữ ×1.
+                        const oddsLabel =
+                          betType === "1x2" && selection
+                            ? `×${(mult + 1).toFixed(2)}`
+                            : `×${mult}`;
                         return (
                           <div className="p-3 rounded-2xl relative overflow-hidden flex flex-col gap-1.5 bg-gradient-to-b from-[#62F2C0]/10 to-[#62F2C0]/[0.02] border border-[#62F2C0]/15">
                             <div className="absolute top-1.5 right-2.5 text-[9px] font-black tracking-widest text-[#62F2C0]/20">
-                              X{mult} REWARD
+                              {oddsLabel} REWARD
                             </div>
                             <span className="text-slate-300 font-medium text-[11px] flex items-center gap-1">
                               <span>✅</span> Đoán đúng
                             </span>
                             <span className="text-lg font-black tabular-nums mt-0.5 text-[#62F2C0]">
-                              +{fmt(wager * mult)}{" "}
+                              +{fmt(Math.round(wager * mult))}{" "}
                               <span className="text-xs font-bold">💎</span>
                             </span>
                           </div>
