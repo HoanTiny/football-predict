@@ -86,15 +86,18 @@ describe("evaluateBet", () => {
     expect(evaluateBet({ betType: "btts", selection: "YES" }, 1, 0).status).toBe("lost");
     expect(evaluateBet({ betType: "btts", selection: "NO" }, 3, 0).status).toBe("won");
   });
-  it("1X2 win/draw/lose + hệ số", () => {
+  it("1X2 win/draw/lose + hệ số (decimal odds theo FIFA rank)", () => {
     expect(evaluateBet({ betType: "1x2", selection: "HOME" }, 2, 0).status).toBe("won");
     expect(evaluateBet({ betType: "1x2", selection: "AWAY" }, 2, 0).status).toBe("lost");
     expect(evaluateBet({ betType: "1x2", selection: "DRAW" }, 1, 1).status).toBe("won");
-    // Tạm thời ×2 cho mọi lựa chọn (kể cả cửa dưới / hoà).
-    expect(evaluateBet({ betType: "1x2", selection: "DRAW" }, 1, 1).profitMult).toBe(2);
-    expect(
-      evaluateBet({ betType: "1x2", selection: "HOME" }, 1, 0, { homeTeam: "Qatar", awayTeam: "Switzerland" }).profitMult
-    ).toBe(2);
+    // Thiếu ctx (không có tên 2 đội) → fallback cân bằng: hoà odds 3.30 → profitMult 2.30.
+    expect(evaluateBet({ betType: "1x2", selection: "DRAW" }, 1, 1).profitMult).toBeCloseTo(2.30, 2);
+    // Cửa dưới thắng (Qatar #56 vs Switzerland #19 — chênh rõ) → odds dog cao hơn cửa trên.
+    const upsetMult = evaluateBet(
+      { betType: "1x2", selection: "HOME" }, 1, 0,
+      { homeTeam: "Qatar", awayTeam: "Switzerland" }
+    ).profitMult;
+    expect(upsetMult).toBeGreaterThan(1); // dog odds > 2
   });
   it("Odd/Even total", () => {
     expect(evaluateBet({ betType: "oe", selection: "ODD" }, 2, 1).status).toBe("won"); // 3 lẻ

@@ -8,6 +8,7 @@ import {
   matchIsLive,
   BET_TYPES,
   betLabel,
+  realScore,
 } from "@/lib/constants";
 import { vnTime, vnDateHeader } from "@/lib/time";
 import {
@@ -361,10 +362,12 @@ export default function BetModal({
   const referee = match.referees?.[0]?.name || null;
 
   // Tỉ số để gộp thẳng vào header (tránh lặp tên đội ở thẻ riêng).
-  // Khi đang đá, tỉ số football-data thường trễ 1-2' → ưu tiên liveScore từ FotMob nếu có.
+  // Khi đang đá → ưu tiên liveScore FotMob (feed football-data trễ 1-2').
+  // Khi FT → realScore (tỉ số 90'+ET, KHÔNG cộng pen) + tách pen ra dòng riêng.
   const ft = match.score?.fullTime || {};
-  const dispHome = stats?.liveScore?.home ?? ft.home;
-  const dispAway = stats?.liveScore?.away ?? ft.away;
+  const rs = match.status === "FINISHED" ? realScore(match) : null;
+  const dispHome = stats?.liveScore?.home ?? rs?.home ?? ft.home;
+  const dispAway = stats?.liveScore?.away ?? rs?.away ?? ft.away;
   const hasScore =
     dispHome != null &&
     dispAway != null &&
@@ -422,6 +425,11 @@ export default function BetModal({
                 <span className="text-xl sm:text-2xl font-black text-white tabular-nums leading-none">
                   {dispHome} - {dispAway}
                 </span>
+                {rs?.isPen && (
+                  <span className="text-[10px] font-bold text-[#FFB454] tabular-nums leading-none mt-1">
+                    PĐ {rs.pen.home} - {rs.pen.away}
+                  </span>
+                )}
                 <span
                   className={`text-[9px] font-bold uppercase tracking-wider mt-1 ${liveNow ? "text-[#ff5a5a]" : "text-slate-500"}`}
                 >

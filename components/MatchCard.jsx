@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { flagOf, flagImgOf, isLiveStatus, matchIsLive, liveStatusVN, betLabel } from "@/lib/constants";
+import { flagOf, flagImgOf, isLiveStatus, matchIsLive, liveStatusVN, betLabel, realScore } from "@/lib/constants";
 import { vnTime } from "@/lib/time";
 import { getTeamGroup } from "@/lib/standings";
 import StatusBadge from "./StatusBadge";
@@ -73,8 +73,10 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
   }, [live, homeName, awayName, match.venue, match.utcDate]);
 
   // Tỉ số: ưu tiên LIVE từ FotMob (football-data hay trễ 1-2' khi đang đá).
-  const sHome = liveDetail.score?.home ?? ft.home;
-  const sAway = liveDetail.score?.away ?? ft.away;
+  // Trận FT đi pen: dùng tỉ số THẬT (regular + extra), KHÔNG cộng pen → đúng tỉ số "1-1" thay vì "4-5".
+  const rs = finished ? realScore(match) : null;
+  const sHome = liveDetail.score?.home ?? rs?.home ?? ft.home;
+  const sAway = liveDetail.score?.away ?? rs?.away ?? ft.away;
   const scoreText =
     sHome == null || sAway == null ? "–  –" : `${sHome}  ${sAway}`;
 
@@ -124,9 +126,19 @@ export default function MatchCard({ match, prediction, onBet, roomBets }) {
           {renderFlag(match.homeTeam?.name)}
         </div>
 
-        {/* Score Capsule */}
-        <div className="score-capsule px-3 py-1.5 text-xs font-bold shrink-0 min-w-[56px] text-center tabular-nums bg-[#334BFF]/10 border border-[#334BFF]/25 text-white">
-          {scoreText}
+        {/* Score Capsule (+ pen score nhỏ phía dưới nếu trận đi loạt 11m) */}
+        <div className="flex flex-col items-center shrink-0">
+          <div className="score-capsule px-3 py-1.5 text-xs font-bold min-w-[56px] text-center tabular-nums bg-[#334BFF]/10 border border-[#334BFF]/25 text-white">
+            {scoreText}
+          </div>
+          {rs?.isPen && (
+            <span className="text-[9px] font-bold text-[#FFB454] tabular-nums mt-0.5">
+              PĐ {rs.pen.home}-{rs.pen.away}
+            </span>
+          )}
+          {rs?.isAet && !rs?.isPen && (
+            <span className="text-[9px] font-bold text-slate-400 tracking-wider mt-0.5">HP</span>
+          )}
         </div>
 
         {/* Team 2 */}

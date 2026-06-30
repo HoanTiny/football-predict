@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { flagImgOf, GROUPS } from "@/lib/constants";
+import { flagImgOf, GROUPS, realScore } from "@/lib/constants";
 import { vnTime, vnDateKey } from "@/lib/time";
 import { organizeBracket } from "@/lib/bracket";
-import { calculateGroupStandings } from "@/lib/standings";
+import { calculateGroupStandings, normalizeTeamName } from "@/lib/standings";
 
 /**
  * Liệt kê các đội CÓ THỂ vào 1 suất theo mã FotMob (chỉ vòng 32 — mã theo bảng).
@@ -79,10 +79,27 @@ function BracketMatch({ match, accent, stByGroup, onBet }) {
   const home = match?.homeTeam;
   const away = match?.awayTeam;
   const finished = match?.status === "FINISHED";
-  const hs = finished ? match?.score?.fullTime?.home : null;
-  const as = finished ? match?.score?.fullTime?.away : null;
-  const homeWins = finished && hs != null && as != null && hs > as;
-  const awayWins = finished && hs != null && as != null && as > hs;
+  // Tỉ số THẬT (không cộng pen) cho trận đi luân lưu — pen tách dòng riêng "PĐ x-y".
+  const rs = finished ? realScore(match) : null;
+  const hs = finished ? rs?.home ?? match?.score?.fullTime?.home : null;
+  const as = finished ? rs?.away ?? match?.score?.fullTime?.away : null;
+  // Người thắng knockout: ưu tiên pen (nếu có), không thì hơn bàn ở 90'+ET.
+  const winnerSide =
+    finished && rs?.isPen
+      ? rs.pen.home > rs.pen.away
+        ? "home"
+        : rs.pen.away > rs.pen.home
+          ? "away"
+          : null
+      : finished && hs != null && as != null
+        ? hs > as
+          ? "home"
+          : as > hs
+            ? "away"
+            : null
+        : null;
+  const homeWins = winnerSide === "home";
+  const awayWins = winnerSide === "away";
 
   const isClickable = !!(match && onBet);
 
@@ -124,6 +141,16 @@ function BracketMatch({ match, accent, stByGroup, onBet }) {
             candidates={slotCandidates(match?.code?.away, stByGroup)}
           />
         </div>
+        {rs?.isPen && (
+          <div className="text-[8px] font-bold text-[#FFB454] tabular-nums text-center bg-slate-900/30 border-t border-white/5 py-0.5">
+            PĐ {rs.pen.home}-{rs.pen.away}
+          </div>
+        )}
+        {rs?.isAet && !rs?.isPen && (
+          <div className="text-[8px] font-bold text-slate-400 tracking-wider text-center bg-slate-900/30 border-t border-white/5 py-0.5">
+            HP
+          </div>
+        )}
       </div>
     </div>
   );
@@ -169,11 +196,50 @@ export default function BracketTab({ matches, onBet }) {
     return out;
   }, [matches]);
 
-  const bracket = fmData
+  // FotMob bracket chỉ trả `score.fullTime` 90' (vd 1-1) — THIẾU `regularTime`, `duration`,
+  // `penalties`. Để hiển thị "PĐ x-y" cho trận đi luân lưu, mình tra cứu match tương ứng
+  // trong feed football-data/api-football (đã có đầy đủ score) theo cặp đội đã chuẩn hoá.
+  const scoreByPair = useMemo(() => {
+    const out = new Map();
+    for (const m of matches || []) {
+      const h = normalizeTeamName(m.homeTeam?.name || "");
+      const a = normalizeTeamName(m.awayTeam?.name || "");
+      if (!h || !a || !m.score) continue;
+      out.set(`${h}|${a}`, m.score);
+      out.set(`${a}|${h}`, m.score); // cùng cặp, hoán đổi vị trí
+    }
+    return out;
+  }, [matches]);
+
+  const enrich = (m) => {
+    if (!m?.homeTeam?.name || !m?.awayTeam?.name) return m;
+    const k = `${normalizeTeamName(m.homeTeam.name)}|${normalizeTeamName(m.awayTeam.name)}`;
+    const src = scoreByPair.get(k);
+    return src ? { ...m, score: src } : m;
+  };
+  const enrichSide = (side) => {
+    if (!side) return side;
+    return {
+      r32: (side.r32 || []).map(enrich),
+      r16: (side.r16 || []).map(enrich),
+      qf: (side.qf || []).map(enrich),
+      sf: (side.sf || []).map(enrich),
+    };
+  };
+
+  const rawBracket = fmData
     ? view === "confirmed"
       ? fmData.confirmed
       : fmData.asItStands
     : fallback;
+  const bracket = rawBracket && {
+    left: enrichSide(rawBracket.left),
+    right: enrichSide(rawBracket.right),
+    final: enrich(rawBracket.final),
+    third: enrich(rawBracket.third),
+    source: rawBracket.source,
+    hasData: rawBracket.hasData,
+  };
   const { left, right, final, third } = bracket || {};
   const hasData = !!bracket && (fmData?.hasData || fallback.hasData);
 
