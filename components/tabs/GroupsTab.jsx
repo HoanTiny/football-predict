@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { flagImgOf } from "@/lib/constants";
 import { allGroupStandings } from "@/lib/bracket";
 
@@ -180,6 +180,78 @@ function ThirdPlaceTable({ rows }) {
   );
 }
 
+/** Bảng vua phá lưới / vua kiến tạo (từ FotMob). */
+function TopStatsTable({ rows, statLabel, loading, empty }) {
+  if (loading) {
+    return (
+      <div className="text-center py-10 text-xs text-slate-500">
+        Đang tải bảng xếp hạng...
+      </div>
+    );
+  }
+  if (!rows.length) {
+    return (
+      <div className="text-center py-10 text-xs text-slate-500">
+        {empty || "Chưa có dữ liệu."}
+      </div>
+    );
+  }
+  return (
+    <div className="max-w-2xl mx-auto bg-[#0B1735] border border-white/5 rounded-xl overflow-hidden shadow-lg">
+      <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between bg-slate-900/20">
+        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+          Top <span className="text-[#334BFF] font-black">{statLabel}</span>
+        </h4>
+        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
+          Nguồn: FotMob
+        </span>
+      </div>
+      <ul className="m-0 p-0 list-none divide-y divide-white/5">
+        {rows.slice(0, 20).map((p, idx) => {
+          const rank = idx + 1;
+          const teamFlag = flagImgOf(p.teamName);
+          return (
+            <li key={p.id || rank} className="flex items-center gap-3 px-3 py-2 hover:bg-white/[0.02] transition-colors">
+              <span
+                className={`w-5 text-center text-[11px] font-black tabular-nums ${
+                  rank <= 3 ? "text-[#62F2C0]" : "text-slate-500"
+                }`}
+              >
+                {rank}
+              </span>
+              {p.photo ? (
+                <img
+                  src={p.photo}
+                  alt={p.name}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                  className="w-7 h-7 rounded-full object-cover bg-slate-800 border border-white/10 shrink-0"
+                />
+              ) : (
+                <span className="w-7 h-7 rounded-full bg-slate-800 border border-white/10 shrink-0" />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="text-[12px] font-bold text-white truncate">{p.name}</div>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 truncate">
+                  {teamFlag && (
+                    <img src={teamFlag} alt={p.teamName} className="w-3.5 h-3.5 rounded-full object-cover" />
+                  )}
+                  <span className="truncate">{p.teamName}</span>
+                </div>
+              </div>
+              <span className="text-lg font-black text-white tabular-nums shrink-0">{p.value}</span>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="px-3 py-1.5 text-[9px] text-slate-500 text-center border-t border-white/5">
+        Cập nhật theo lịch trận đã đá · Top 20
+      </div>
+    </div>
+  );
+}
+
 /** TAB — Bảng đấu — lưới BXH toàn bộ 12 bảng A→L */
 export default function GroupsTab({ matches, predictionByMatch }) {
   // BXH chỉ phản ánh kết quả THẬT: trận đã đá xong + trận đang đá (tỉ số realtime).
@@ -189,7 +261,24 @@ export default function GroupsTab({ matches, predictionByMatch }) {
     [matches, predictionByMatch]
   );
 
-  const [view, setView] = useState("groups"); // "groups" | "third"
+  const [view, setView] = useState("groups"); // "groups" | "third" | "scorers" | "assists"
+
+  // Top thống kê cá nhân — fetch 1 lần cho cả 2 tab; cache server-side 30 phút.
+  const [topStats, setTopStats] = useState(null); // { scorers, assists } | null
+  const [topLoading, setTopLoading] = useState(false);
+  useEffect(() => {
+    if ((view !== "scorers" && view !== "assists") || topStats) return;
+    let active = true;
+    setTopLoading(true);
+    fetch("/api/top-stats")
+      .then((r) => r.json())
+      .then((d) => active && setTopStats(d || { scorers: [], assists: [] }))
+      .catch(() => active && setTopStats({ scorers: [], assists: [] }))
+      .finally(() => active && setTopLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [view, topStats]);
 
   const hasLive = useMemo(
     () => groups.some(({ standings }) => standings.some((t) => t.live)),
@@ -232,17 +321,19 @@ export default function GroupsTab({ matches, predictionByMatch }) {
         )}
       </div>
 
-      {/* Toggle: 12 bảng / Hạng 3 xuất sắc */}
+      {/* Toggle: 12 bảng / Hạng 3 / Vua phá lưới / Vua kiến tạo */}
       <div className="flex justify-center">
-        <div className="inline-flex gap-1 p-1 rounded-full bg-black/25 border border-white/5">
+        <div className="inline-flex flex-wrap gap-1 p-1 rounded-2xl bg-black/25 border border-white/5">
           {[
             { key: "groups", label: "12 bảng đấu" },
             { key: "third", label: "Hạng 3 xuất sắc" },
+            { key: "scorers", label: "Vua phá lưới" },
+            { key: "assists", label: "Vua kiến tạo" },
           ].map((t) => (
             <button
               key={t.key}
               onClick={() => setView(t.key)}
-              className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+              className={`px-3 sm:px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${
                 view === t.key
                   ? "bg-gradient-to-b from-[#4257ff] to-[#2a3ad9] text-white shadow-lg shadow-[#334BFF]/30"
                   : "text-slate-400 hover:text-white"
@@ -254,16 +345,29 @@ export default function GroupsTab({ matches, predictionByMatch }) {
         </div>
       </div>
 
-      {view === "groups" ? (
-        /* Grid of all 12 groups */
+      {view === "groups" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {groups.map(({ letter, standings }) => (
             <GroupCard key={letter} letter={letter} standings={standings} />
           ))}
         </div>
-      ) : (
-        /* Bảng xếp hạng các đội hạng 3 xuất sắc */
-        <ThirdPlaceTable rows={thirdRanking} />
+      )}
+      {view === "third" && <ThirdPlaceTable rows={thirdRanking} />}
+      {view === "scorers" && (
+        <TopStatsTable
+          rows={topStats?.scorers || []}
+          statLabel="ghi bàn"
+          loading={topLoading}
+          empty="Chưa có bàn thắng nào — giải mới bắt đầu."
+        />
+      )}
+      {view === "assists" && (
+        <TopStatsTable
+          rows={topStats?.assists || []}
+          statLabel="kiến tạo"
+          loading={topLoading}
+          empty="Chưa có kiến tạo nào — giải mới bắt đầu."
+        />
       )}
     </div>
   );
