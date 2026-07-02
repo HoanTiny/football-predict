@@ -214,7 +214,7 @@ export default function RoomScreen({
   };
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center p-4 relative overflow-hidden bg-[#08142D]">
+    <div className="min-h-[100dvh] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background spotlights & radial glows */}
       <div className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none z-0">
         <div className="w-[500px] h-[500px] bg-gradient-to-b from-[#334BFF]/20 to-transparent rounded-full blur-[120px] absolute -top-[250px] left-1/2 -translate-x-1/2" />
@@ -224,13 +224,13 @@ export default function RoomScreen({
       {onExit && view === "menu" && (
         <button
           onClick={onExit}
-          className="fixed top-4 left-4 z-20 flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="fixed top-4 left-4 z-20 flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-white transition-colors cursor-pointer"
         >
           ← Trang chủ bóng đá
         </button>
       )}
 
-      <div className="relative z-10 w-full max-w-md backdrop-blur-xl bg-[#091124]/80 border border-white/[0.08] rounded-2xl p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden">
+      <div className="relative z-10 w-full max-w-md backdrop-blur-2xl bg-white/10 border border-white/20 rounded-[24px] p-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_20px_50px_rgba(0,0,0,0.35)] overflow-hidden">
         {/* Top reflective glow */}
         <div
           aria-hidden
@@ -243,7 +243,7 @@ export default function RoomScreen({
           <div className="trophy-orbit orbit-2 absolute" />
 
           <img
-            src="/wc2026-emblem.png"
+            src="/logo.png"
             alt="Tiny Football"
             className="h-44 w-auto object-contain z-10 drop-shadow-[0_8px_24px_rgba(245,197,24,0.35)]"
           />
@@ -260,7 +260,7 @@ export default function RoomScreen({
         {view === "menu" && (
           <div className="relative z-10 space-y-4">
             {session?.user?.email && (
-              <div className="text-[10px] text-slate-400 font-semibold bg-white/[0.02] border border-white/5 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2 mb-1 text-left">
+              <div className="text-[10px] text-white/60 font-semibold bg-white/[0.02] border border-white/10 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2 mb-1 text-left">
                 <span className="flex items-center gap-1.5 truncate">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                   <span className="truncate">
@@ -312,7 +312,7 @@ export default function RoomScreen({
                       <div className="text-xs font-bold text-[#62F2C0] uppercase tracking-wider flex items-center gap-1.5">
                         <span>🔑</span> Vào phòng bằng mã
                       </div>
-                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                      <div className="text-[10px] text-white/60 font-medium mt-0.5">
                         Nhập mã phòng đã được chia sẻ để tham gia
                       </div>
                     </div>
@@ -323,7 +323,7 @@ export default function RoomScreen({
                 </button>
               </>
             ) : (
-              <div className="text-xs rounded-xl p-4 text-left bg-slate-900/40 border border-white/5 text-slate-400 font-medium">
+              <div className="text-xs rounded-xl p-4 text-left bg-white/[0.06] border border-white/10 text-white/60 font-medium">
                 Chế độ phòng chưa bật: cần cấu hình NEXT_PUBLIC_SUPABASE_URL và
                 NEXT_PUBLIC_SUPABASE_ANON_KEY.
               </div>
@@ -331,18 +331,18 @@ export default function RoomScreen({
 
             <button
               onClick={onSolo}
-              className="w-full text-left p-4 rounded-xl bg-transparent border border-white/5 hover:bg-white/[0.03] hover:border-white/10 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group cursor-pointer"
+              className="w-full text-left p-4 rounded-xl bg-transparent border border-white/10 hover:bg-white/[0.03] hover:border-white/10 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group cursor-pointer"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="text-xs font-bold text-white/75 uppercase tracking-wider flex items-center gap-1.5">
                     <span>🙋</span> Chơi cá nhân (Solo)
                   </div>
-                  <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                  <div className="text-[10px] text-white/50 font-medium mt-0.5">
                     Tự dự đoán tỉ số, lưu trữ cục bộ trên máy này
                   </div>
                 </div>
-                <span className="text-slate-400 group-hover:translate-x-1 transition-transform duration-200 text-sm font-bold">
+                <span className="text-white/60 group-hover:translate-x-1 transition-transform duration-200 text-sm font-bold">
                   →
                 </span>
               </div>
@@ -351,7 +351,7 @@ export default function RoomScreen({
             {onCancel && (
               <button
                 onClick={onCancel}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors block mx-auto pt-1 cursor-pointer"
+                className="text-xs font-semibold text-white/50 hover:text-white/75 transition-colors block mx-auto pt-1 cursor-pointer"
               >
                 ← Để sau, quay lại phòng hiện tại
               </button>
@@ -376,7 +376,7 @@ export default function RoomScreen({
                 className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   authMode === "login"
                     ? "bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white shadow-[0_2px_12px_rgba(51,75,255,0.3)]"
-                    : "text-slate-400 hover:text-white"
+                    : "text-white/60 hover:text-white"
                 }`}
               >
                 Đăng nhập
@@ -390,7 +390,7 @@ export default function RoomScreen({
                 className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   authMode === "signup"
                     ? "bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white shadow-[0_2px_12px_rgba(51,75,255,0.3)]"
-                    : "text-slate-400 hover:text-white"
+                    : "text-white/60 hover:text-white"
                 }`}
               >
                 Đăng ký
@@ -399,7 +399,7 @@ export default function RoomScreen({
 
             {/* Email input */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider pl-1">
+              <label className="text-[10px] text-white/60 font-bold uppercase tracking-wider pl-1">
                 Email
               </label>
               <input
@@ -414,7 +414,7 @@ export default function RoomScreen({
 
             {/* Password input */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider pl-1">
+              <label className="text-[10px] text-white/60 font-bold uppercase tracking-wider pl-1">
                 Mật khẩu
               </label>
               <input
@@ -456,7 +456,7 @@ export default function RoomScreen({
               {/* Divider */}
               <div className="flex items-center gap-3 py-1">
                 <span className="h-px flex-grow bg-white/5" />
-                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest">
                   Hoặc
                 </span>
                 <span className="h-px flex-grow bg-white/5" />
@@ -496,7 +496,7 @@ export default function RoomScreen({
                   setView("menu");
                   setError(null);
                 }}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors block mx-auto text-center pt-2 cursor-pointer"
+                className="text-xs font-semibold text-white/50 hover:text-white/75 transition-colors block mx-auto text-center pt-2 cursor-pointer"
               >
                 ← Quay lại
               </button>
@@ -508,7 +508,7 @@ export default function RoomScreen({
         {view !== "menu" && view !== "auth" && (
           <div className="relative z-10 space-y-4">
             {session?.user?.email && (
-              <div className="text-[10px] text-slate-400 font-semibold bg-white/[0.02] border border-white/5 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2 mb-1 text-left">
+              <div className="text-[10px] text-white/60 font-semibold bg-white/[0.02] border border-white/10 rounded-xl py-2.5 px-3 flex items-center justify-between gap-2 mb-1 text-left">
                 <span className="flex items-center gap-1.5 truncate">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                   <span className="truncate">
@@ -535,7 +535,7 @@ export default function RoomScreen({
             {view === "create" && (
               <>
                 <div className="space-y-1.5 text-left">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider pl-1">
+                  <label className="text-[10px] text-white/60 font-bold uppercase tracking-wider pl-1">
                     Giải đấu cho phòng này
                   </label>
                   <select
@@ -591,7 +591,7 @@ export default function RoomScreen({
                 setView("menu");
                 setError(null);
               }}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors block mx-auto cursor-pointer"
+              className="text-xs font-semibold text-white/50 hover:text-white/75 transition-colors block mx-auto cursor-pointer"
             >
               ← Quay lại
             </button>

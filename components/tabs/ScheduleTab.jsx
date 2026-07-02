@@ -13,7 +13,7 @@ const renderStandingsFlag = (team) => {
   const imgUrl = flagImgOf(team.name);
   if (imgUrl) {
     return (
-      <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-slate-900/50">
+      <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-white/10">
         <img
           src={imgUrl}
           alt={team.name}
@@ -23,7 +23,7 @@ const renderStandingsFlag = (team) => {
     );
   }
   return (
-    <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-slate-900/50 text-[13px] leading-none">
+    <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-white/10 text-[13px] leading-none">
       {team.flag}
     </div>
   );
@@ -227,10 +227,10 @@ export default function ScheduleTab({
       {/* Hero — trận đang diễn ra (live) hoặc đếm ngược trận kế tiếp */}
       {heroMatch ? (
         <div
-          className={`relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#08142D] via-[#0B1735] to-[#10204A] border p-6 flex flex-col items-center justify-center text-center shadow-2xl ${
+          className={`relative overflow-hidden rounded-[24px] bg-white/[0.08] border backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_32px_rgba(0,0,0,0.22)] p-6 flex flex-col items-center justify-center text-center ${
             isHeroLive && onBet
-              ? "border-[#ff5a5a]/30 cursor-pointer transition-colors hover:border-[#ff5a5a]/60"
-              : "border-white/5"
+              ? "border-[#ff5a5a]/40 cursor-pointer transition-colors hover:border-[#ff5a5a]/70"
+              : "border-white/15"
           }`}
           style={{ minHeight: 280 }}
           onTouchStart={onHeroTouchStart}
@@ -264,18 +264,18 @@ export default function ScheduleTab({
                 type="button"
                 aria-label="Trận trước"
                 onClick={() => goLive(-1)}
-                className="w-6 h-6 rounded-md flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                className="w-6 h-6 rounded-md flex items-center justify-center text-white/75 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
               </button>
               <span className="text-[10px] font-black tabular-nums text-white px-0.5">
-                {heroIdx + 1}<span className="text-slate-500">/{liveMatches.length}</span>
+                {heroIdx + 1}<span className="text-white/50">/{liveMatches.length}</span>
               </span>
               <button
                 type="button"
                 aria-label="Trận sau"
                 onClick={() => goLive(1)}
-                className="w-6 h-6 rounded-md flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                className="w-6 h-6 rounded-md flex items-center justify-center text-white/75 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </button>
@@ -284,7 +284,7 @@ export default function ScheduleTab({
 
           {/* Hint: nhấn để xem chi tiết */}
           {onBet && (
-            <div className="absolute top-3 right-3 z-20 flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider text-slate-400 bg-white/[0.04] border border-white/[0.06] group-hover:text-white group-hover:border-white/20 transition-all">
+            <div className="absolute top-3 right-3 z-20 flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider text-white/60 bg-white/[0.04] border border-white/[0.06] group-hover:text-white group-hover:border-white/20 transition-all">
               <Icon name="chart" className="w-3 h-3" />
               <span className="hidden sm:inline">Chi tiết</span>
             </div>
@@ -294,7 +294,7 @@ export default function ScheduleTab({
           <div className="relative z-10 w-full flex items-center justify-between gap-6 max-w-3xl">
             {/* Left Home Team (Desktop only) */}
             <div className="hidden md:flex flex-col items-center justify-center gap-2 w-28 shrink-0">
-              <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center border-2 border-white/10 bg-slate-900/40 shadow-lg p-0.5">
+              <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center border-2 border-white/10 bg-white/10 shadow-lg p-0.5">
                 {flagImgOf(heroMatch.homeTeam?.name) ? (
                   <img
                     src={flagImgOf(heroMatch.homeTeam?.name)}
@@ -311,7 +311,7 @@ export default function ScheduleTab({
                 {heroMatch.homeTeam?.name}
               </span>
               {getFifaRank(heroMatch.homeTeam?.name) != null && (
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider">
                   FIFA #{getFifaRank(heroMatch.homeTeam?.name)}
                 </span>
               )}
@@ -350,7 +350,7 @@ export default function ScheduleTab({
                     <div className="w-14 h-16 bg-white/5 border border-[#ff5a5a]/30 rounded-xl flex items-center justify-center text-3xl font-black text-white shadow-inner backdrop-blur-md tabular-nums">
                       {heroHomeScore}
                     </div>
-                    <span className="text-2xl font-black text-slate-500">–</span>
+                    <span className="text-2xl font-black text-white/50">–</span>
                     <div className="w-14 h-16 bg-white/5 border border-[#ff5a5a]/30 rounded-xl flex items-center justify-center text-3xl font-black text-white shadow-inner backdrop-blur-md tabular-nums">
                       {heroAwayScore}
                     </div>
@@ -363,11 +363,11 @@ export default function ScheduleTab({
                       <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-inner backdrop-blur-md">
                         {formatNum(timeLeft.hours)}
                       </div>
-                      <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                      <span className="text-[8px] font-bold text-white/50 mt-1 uppercase tracking-wider">
                         GIỜ
                       </span>
                     </div>
-                    <span className="text-lg font-bold text-slate-600 self-start mt-3">
+                    <span className="text-lg font-bold text-white/40 self-start mt-3">
                       :
                     </span>
 
@@ -376,11 +376,11 @@ export default function ScheduleTab({
                       <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-inner backdrop-blur-md">
                         {formatNum(timeLeft.minutes)}
                       </div>
-                      <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                      <span className="text-[8px] font-bold text-white/50 mt-1 uppercase tracking-wider">
                         PHÚT
                       </span>
                     </div>
-                    <span className="text-lg font-bold text-slate-600 self-start mt-3">
+                    <span className="text-lg font-bold text-white/40 self-start mt-3">
                       :
                     </span>
 
@@ -389,7 +389,7 @@ export default function ScheduleTab({
                       <div className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl font-bold text-[#FFA07A] shadow-inner backdrop-blur-md">
                         {formatNum(timeLeft.seconds)}
                       </div>
-                      <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                      <span className="text-[8px] font-bold text-white/50 mt-1 uppercase tracking-wider">
                         GIÂY
                       </span>
                     </div>
@@ -404,18 +404,18 @@ export default function ScheduleTab({
                     {heroGoals
                       .filter((g) => g.team === heroMatch.homeTeam?.name)
                       .map((g, i) => (
-                        <span key={i} className="text-slate-300 font-semibold truncate max-w-full">
-                          {g.player} <span className="text-slate-500 tabular-nums">{g.minute}'</span>
+                        <span key={i} className="text-white/75 font-semibold truncate max-w-full">
+                          {g.player} <span className="text-white/50 tabular-nums">{g.minute}'</span>
                         </span>
                       ))}
                   </div>
-                  <span className="text-slate-500 shrink-0 pt-0.5">⚽</span>
+                  <span className="text-white/50 shrink-0 pt-0.5">⚽</span>
                   <div className="flex flex-col gap-0.5 items-start text-left min-w-0">
                     {heroGoals
                       .filter((g) => g.team !== heroMatch.homeTeam?.name)
                       .map((g, i) => (
-                        <span key={i} className="text-slate-300 font-semibold truncate max-w-full">
-                          <span className="text-slate-500 tabular-nums">{g.minute}'</span> {g.player}
+                        <span key={i} className="text-white/75 font-semibold truncate max-w-full">
+                          <span className="text-white/50 tabular-nums">{g.minute}'</span> {g.player}
                         </span>
                       ))}
                   </div>
@@ -429,10 +429,10 @@ export default function ScheduleTab({
                     ? `BẢNG ${heroMatchGroup}`
                     : heroMatch.stage}
                 </div>
-                <div className="text-xs font-bold text-slate-300 md:hidden px-3">
+                <div className="text-xs font-bold text-white/75 md:hidden px-3">
                   {heroMatch.homeTeam?.name} vs {heroMatch.awayTeam?.name}
                 </div>
-                <div className="text-[10px] font-semibold text-slate-400">
+                <div className="text-[10px] font-semibold text-white/60">
                   {vnDateHeader(heroMatch.utcDate)} ·{" "}
                   {vnTime(heroMatch.utcDate)} — {heroMatch.venue || "BMO Field"}
                 </div>
@@ -453,14 +453,14 @@ export default function ScheduleTab({
                             <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
                               {p.homeGoals}–{p.awayGoals}
                             </strong>
-                            <span className="text-[10px] text-slate-400">
+                            <span className="text-[10px] text-white/60">
                               💎{p.wager}
                             </span>
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                      <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">
                         🔒 Đã khoá cược — trận đang diễn ra
                       </span>
                     )}
@@ -489,7 +489,7 @@ export default function ScheduleTab({
                           <strong className="text-white font-extrabold bg-[#334BFF]/10 border border-[#334BFF]/35 px-2 py-0.5 rounded text-[10px] tabular-nums">
                             {betLabel(p)}
                           </strong>
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[10px] text-white/60">
                             💎{p.wager}
                           </span>
                         </button>
@@ -515,7 +515,7 @@ export default function ScheduleTab({
 
             {/* Right Away Team (Desktop only) */}
             <div className="hidden md:flex flex-col items-center justify-center gap-2 w-28 shrink-0">
-              <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center border-2 border-white/10 bg-slate-900/40 shadow-lg p-0.5">
+              <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center border-2 border-white/10 bg-white/10 shadow-lg p-0.5">
                 {flagImgOf(heroMatch.awayTeam?.name) ? (
                   <img
                     src={flagImgOf(heroMatch.awayTeam?.name)}
@@ -532,7 +532,7 @@ export default function ScheduleTab({
                 {heroMatch.awayTeam?.name}
               </span>
               {getFifaRank(heroMatch.awayTeam?.name) != null && (
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider">
                   FIFA #{getFifaRank(heroMatch.awayTeam?.name)}
                 </span>
               )}
@@ -542,7 +542,7 @@ export default function ScheduleTab({
       ) : (
         /* Original Text Hero fallback if no upcoming matches exist */
         <div
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B1735] to-[#10204A] border border-white/5 p-6 flex flex-col justify-center"
+          className="relative overflow-hidden rounded-[24px] bg-white/[0.08] border border-white/15 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_32px_rgba(0,0,0,0.22)] p-6 flex flex-col justify-center"
           style={{ minHeight: 200 }}
         >
           {/* Subtle geometric shapes */}
@@ -556,7 +556,7 @@ export default function ScheduleTab({
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">
               Dự đoán. Tranh tài. Bứt phá.
             </h1>
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
+            <p className="text-xs text-white/60 leading-relaxed font-medium">
               Tham gia dự đoán tỉ số các trận đấu chính thức của World Cup 2026.
               Tích lũy điểm số, khẳng định vị thế và leo bảng xếp hạng cùng bạn
               bè.
@@ -577,8 +577,8 @@ export default function ScheduleTab({
                 onClick={() => setFilter(f.key)}
                 className={`shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
                   active
-                    ? "bg-[#334BFF] text-white border border-[#334BFF]"
-                    : "bg-slate-800/40 text-slate-400 border border-white/5 hover:text-white hover:bg-slate-800/60"
+                    ? "bg-white/25 text-white border border-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                    : "bg-white/[0.06] text-white/60 border border-white/10 hover:text-white hover:bg-white/[0.14] backdrop-blur-xl"
                 }`}
               >
                 {f.label}
@@ -598,8 +598,8 @@ export default function ScheduleTab({
                   onClick={() => setSelectedGroup(groupLetter)}
                   className={`shrink-0 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${
                     isActive
-                      ? "bg-[#334BFF] text-white border border-[#334BFF]"
-                      : "bg-slate-800/40 text-slate-400 border border-white/5 hover:text-white hover:bg-slate-800/60"
+                      ? "bg-white/25 text-white border border-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                      : "bg-white/[0.06] text-white/60 border border-white/10 hover:text-white hover:bg-white/[0.14] backdrop-blur-xl"
                   }`}
                 >
                   BẢNG {groupLetter}
@@ -612,20 +612,20 @@ export default function ScheduleTab({
 
       {/* Standings Table for the selected group if GROUP_STAGE is selected */}
       {filter === "GROUP_STAGE" && !loading && !error && (
-        <div className="bg-[#0B1735] border border-white/5 rounded-xl overflow-hidden shadow-xl">
-          <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-slate-900/10">
+        <div className="rounded-[20px] bg-white/[0.08] border border-white/15 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_28px_rgba(0,0,0,0.2)] overflow-hidden">
+          <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <span>Bảng Xếp Hạng</span>
               <span className="text-[#334BFF] font-black">
                 BẢNG {selectedGroup}
               </span>
             </h4>
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+            <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest">
               Top 2 đội đi tiếp
             </span>
           </div>
           <div className="overflow-x-auto scrollbar-thin">
-            <table className="w-full text-xs text-left text-slate-300 min-w-[560px] table-fixed border-collapse">
+            <table className="w-full text-xs text-left text-white/75 min-w-[560px] table-fixed border-collapse">
               <colgroup>
                 <col className="w-12" />
                 <col />
@@ -638,7 +638,7 @@ export default function ScheduleTab({
                 <col className="w-11" />
                 <col className="w-14" />
               </colgroup>
-              <thead className="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-white/5 bg-slate-900/25">
+              <thead className="text-[10px] font-bold text-white/50 uppercase tracking-wider border-b border-white/10 bg-white/[0.04]">
                 <tr>
                   <th className="py-2.5 px-3 text-center">#</th>
                   <th className="py-2.5 px-2 text-left">Đội</th>
@@ -697,7 +697,7 @@ export default function ScheduleTab({
                         isQualified ? "standings-row-qualified" : ""
                       }`}
                     >
-                      <td className="py-2 px-3 text-center font-bold text-slate-400">
+                      <td className="py-2 px-3 text-center font-bold text-white/60">
                         <span
                           className={
                             isQualified ? "text-[#62F2C0] font-black" : ""
@@ -724,22 +724,22 @@ export default function ScheduleTab({
                       <td className="py-2 px-1 text-center font-extrabold text-white text-sm tabular-nums">
                         {team.pts}
                       </td>
-                      <td className="py-2 px-1 text-center text-slate-400 font-medium tabular-nums">
+                      <td className="py-2 px-1 text-center text-white/60 font-medium tabular-nums">
                         {team.pj}
                       </td>
-                      <td className="py-2 px-1 text-center text-slate-300 font-medium tabular-nums">
+                      <td className="py-2 px-1 text-center text-white/75 font-medium tabular-nums">
                         {team.pg}
                       </td>
-                      <td className="py-2 px-1 text-center text-slate-300 font-medium tabular-nums">
+                      <td className="py-2 px-1 text-center text-white/75 font-medium tabular-nums">
                         {team.pe}
                       </td>
-                      <td className="py-2 px-1 text-center text-slate-300 font-medium tabular-nums">
+                      <td className="py-2 px-1 text-center text-white/75 font-medium tabular-nums">
                         {team.pp}
                       </td>
-                      <td className="py-2 px-1 text-center text-slate-400 font-medium tabular-nums">
+                      <td className="py-2 px-1 text-center text-white/60 font-medium tabular-nums">
                         {team.gf}
                       </td>
-                      <td className="py-2 px-1 text-center text-slate-400 font-medium tabular-nums">
+                      <td className="py-2 px-1 text-center text-white/60 font-medium tabular-nums">
                         {team.gc}
                       </td>
                       <td
@@ -748,7 +748,7 @@ export default function ScheduleTab({
                             ? "text-[#62F2C0]"
                             : team.dg < 0
                               ? "text-[#ff5a5a]"
-                              : "text-slate-400"
+                              : "text-white/60"
                         }`}
                       >
                         {team.dg > 0 ? `+${team.dg}` : team.dg}
@@ -768,7 +768,7 @@ export default function ScheduleTab({
           <div className="font-bold mb-1 text-[#ff5a5a] text-sm">
             Không thể tải dữ liệu — kiểm tra API token.
           </div>
-          <div className="text-[11px] text-slate-500 mb-3">({error})</div>
+          <div className="text-[11px] text-white/50 mb-3">({error})</div>
           <button
             onClick={onRetry}
             className="btn-primary px-4 py-2 text-xs font-bold"
@@ -791,7 +791,7 @@ export default function ScheduleTab({
       {!loading && !error && matchesByDate.length === 0 && (
         <div className="text-center py-16">
           <div className="text-4xl mb-3 opacity-30">📅</div>
-          <p className="text-xs text-slate-500 font-medium">
+          <p className="text-xs text-white/50 font-medium">
             Không có trận đấu nào trong mục này.
           </p>
         </div>
@@ -803,7 +803,7 @@ export default function ScheduleTab({
           <div key={g.key} className="space-y-3">
             {/* Date header */}
             <div className="flex items-center gap-2.5 pt-3 pb-1">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">
+              <h3 className="text-[10px] font-bold text-white/60 uppercase tracking-widest shrink-0">
                 {g.header}
               </h3>
               <span className="h-px flex-grow bg-white/5 rounded-full" />

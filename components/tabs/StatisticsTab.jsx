@@ -60,7 +60,7 @@ export default function StatisticsTab({ player }) {
             style={{ minHeight: 140 }}
           >
             <div className="flex justify-between items-start">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-bold text-white/60 uppercase tracking-wider">
                 {kpi.title}
               </span>
               <span className="text-xl opacity-80">{kpi.icon}</span>
@@ -70,7 +70,7 @@ export default function StatisticsTab({ player }) {
               <div className="text-2xl font-bold text-white tracking-tight leading-none">
                 {kpi.value}
               </div>
-              <div className="text-[11px] text-slate-500 mt-2 font-medium">
+              <div className="text-[11px] text-white/50 mt-2 font-medium">
                 {kpi.subtext}
               </div>
             </div>

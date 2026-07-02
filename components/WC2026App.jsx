@@ -461,7 +461,6 @@ export default function WC2026App({ onExit } = {}) {
       <div
         className="min-h-[100dvh] flex items-center justify-center px-6"
         style={{
-          background: "linear-gradient(180deg, #06101e 0%, #08142d 100%)",
           color: "rgba(200,210,255,0.7)",
           fontFamily: "var(--font-jakarta)",
         }}

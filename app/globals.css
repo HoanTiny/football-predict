@@ -24,11 +24,11 @@
   --c-muted: #8aa0c8;
   --c-subtle: rgba(138, 160, 200, 0.2);
 
-  /* Subtle Glassmorphism (Max opacity 8%, max blur 16px) */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-bg-hover: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-blur: blur(16px);
+  /* Liquid Glass (đồng bộ với AppShell/HomeTab — G2 restyle) */
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg-hover: rgba(255, 255, 255, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-blur: blur(20px);
 
   --foreground: var(--c-text);
   --background: var(--c-bg-0);
@@ -60,12 +60,14 @@ button:disabled,
 
 body {
   min-height: 100%;
-  background-color: var(--c-bg-0);
+  /* Nền indigo "liquid glass" — đồng bộ với LiquidGlassBg của AppShell.
+     AppShell còn thêm các glow blobs; body giữ nền tĩnh cho các màn chưa qua AppShell. */
+  background-color: #262a7c;
   background-image: linear-gradient(
-    180deg,
-    #08142d 0%,
-    #0b1735 50%,
-    #10204a 100%
+    165deg,
+    #363b9e 0%,
+    #262a7c 45%,
+    #14163f 100%
   );
   background-attachment: fixed;
   color: var(--c-text);
@@ -83,17 +85,23 @@ body {
 }
 
 .glass-strong {
-  background: rgba(8, 20, 45, 0.65);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 8px 32px rgba(0, 0, 0, 0.28);
 }
 
-/* Compact Flat Cards */
+/* Match Card — glass tone (G2 restyle) */
 .match-card {
-  background: #0b1735;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   transition:
     transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
     background-color 0.2s ease,
@@ -102,17 +110,17 @@ body {
 
 .match-card:hover {
   transform: translateY(-2px);
-  background-color: #10204a;
-  border-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
-/* Score Capsule (Minimal Soft Blue Pill) */
+/* Score Capsule — glass tone (G2) */
 .score-capsule {
-  background: rgba(51, 75, 255, 0.15);
-  border: 1px solid rgba(51, 75, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   color: #ffffff;
   font-weight: 700;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 /* Status Badges - Small Solid Pills (No Gradients, No Glow) */
@@ -145,19 +153,24 @@ body {
   color: #b366ff;
 }
 
-/* Predict Button */
+/* Predict Button — gradient indigo trên nền glass (G2 restyle) */
 .btn-primary {
-  background-color: #334bff;
+  background-image: linear-gradient(180deg, #5b6bff 0%, #3a48d6 100%);
   color: #ffffff;
   font-weight: 700;
-  border-radius: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 4px 14px rgba(58, 72, 214, 0.4);
   transition:
     transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.2s ease;
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #4d60ff;
+  filter: brightness(1.08);
   transform: scale(1.02);
 }
 
@@ -306,23 +319,25 @@ body {
   background-color: #334bff;
 }
 
-/* Glass Inputs */
+/* Glass Inputs — nâng contrast cho theme indigo (G2) */
 .glass-input {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   color: #ffffff;
-  border-radius: 8px;
+  border-radius: 12px;
   outline: none;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 .glass-input:focus {
-  border-color: #334bff;
-  box-shadow: 0 0 0 2px rgba(51, 75, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
 }
 .glass-input::placeholder {
-  color: rgba(138, 160, 200, 0.4);
+  color: rgba(255, 255, 255, 0.35);
 }
 
 /* Shimmer Animation for Loaders */

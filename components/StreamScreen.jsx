@@ -698,7 +698,7 @@ export default function StreamScreen() {
                   {/* Golden Trophy rendering */}
                   <div className="w-20 h-28 relative flex items-center justify-center my-2 select-none">
                     <img
-                      src="/wc2026-emblem.png"
+                      src="/logo.png"
                       alt="World Cup Trophy"
                       className="h-full object-contain filter drop-shadow-[0_0_24px_rgba(245,197,24,0.4)] hover:scale-105 transition-transform duration-300"
                     />

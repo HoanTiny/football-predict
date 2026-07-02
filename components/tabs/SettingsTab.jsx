@@ -8,7 +8,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 
 function Section({ title, children }) {
   return (
-    <div className="bg-[#0B1735] border border-white/5 rounded-xl p-5 space-y-4">
+    <div className="bg-white/[0.08] border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-5 space-y-4">
       <h3 className="text-[10px] font-bold tracking-[0.25em] text-[#334BFF] uppercase">
         {title}
       </h3>
@@ -94,7 +94,7 @@ export default function SettingsTab({
       {authSession && (
         <Section title="TÀI KHOẢN">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400 font-medium">Đã đăng nhập</span>
+            <span className="text-white/60 font-medium">Đã đăng nhập</span>
             <span className="font-bold text-white truncate max-w-[180px]">{authSession.user.email}</span>
           </div>
           <button
@@ -110,19 +110,19 @@ export default function SettingsTab({
 
       {/* Room section */}
       {roomCode && (
-        <div className="bg-[#0B1735] border border-amber-500/20 rounded-xl p-5 space-y-4">
+        <div className="bg-white/[0.08] border border-amber-400/30 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-5 space-y-4">
           <h3 className="text-[10px] font-bold tracking-[0.25em] text-amber-500 uppercase">
             PHÒNG CỦA BẠN
           </h3>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-medium">Mã phòng</span>
+            <span className="text-xs text-white/60 font-medium">Mã phòng</span>
             <span className="font-bold text-xl text-[#F5C518] font-mono tracking-wider">
               {roomCode}
             </span>
           </div>
           {onRenameRoom && (
             <div className="space-y-1.5">
-              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+              <label className="block text-[10px] text-white/50 font-bold uppercase tracking-wider">
                 Tên phòng (mọi người trong phòng đều thấy)
               </label>
               <RoomNameEditor current={roomName} onSave={onRenameRoom} />
@@ -139,8 +139,8 @@ export default function SettingsTab({
 
       {/* Player profile */}
       <Section title="NGƯỜI CHƠI">
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/5 text-xs">
-          <span className="text-slate-400 font-medium">Chế độ chơi</span>
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10 text-xs">
+          <span className="text-white/60 font-medium">Chế độ chơi</span>
           {roomCode ? (
             <span className="font-bold text-[#F5C518] flex items-center gap-1">
               🏟️ Phòng {roomCode} (Online)
@@ -154,12 +154,12 @@ export default function SettingsTab({
 
         {roomCode ? (
           <div className="flex items-center justify-between text-xs pb-1">
-            <span className="text-slate-400 font-medium">Tên trong phòng</span>
+            <span className="text-white/60 font-medium">Tên trong phòng</span>
             <span className="font-bold text-white">{player.playerName}</span>
           </div>
         ) : (
           <div className="space-y-1.5 pb-1">
-            <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+            <label className="block text-[10px] text-white/50 font-bold uppercase tracking-wider">
               Tên hiển thị (đổi tên = chuyển hồ sơ khác)
             </label>
             <PlayerNameEditor
@@ -169,18 +169,18 @@ export default function SettingsTab({
           </div>
         )}
         <div className="flex items-center justify-between pt-1 text-xs">
-          <span className="text-slate-400 font-medium">Chips hiện tại</span>
+          <span className="text-white/60 font-medium">Chips hiện tại</span>
           <span className="font-bold text-white">
             <span className="text-[#62F2C0] font-extrabold">
               💎 {fmt(player.chips)}
             </span>
-            <span className="text-[10px] text-slate-500 font-normal ml-1.5">
+            <span className="text-[10px] text-white/50 font-normal ml-1.5">
               / {fmt(START_CHIPS)} ban đầu
             </span>
           </span>
         </div>
         {!roomCode && (
-          <p className="text-[10px] text-slate-500 italic mt-2 leading-relaxed">
+          <p className="text-[10px] text-white/50 italic mt-2 leading-relaxed">
             * Hồ sơ chơi cá nhân được lưu trên trình duyệt của máy bạn. Khi đăng xuất tài khoản phòng chơi online, hệ thống sẽ khôi phục lại hồ sơ chơi đơn này.
           </p>
         )}
@@ -207,9 +207,9 @@ export default function SettingsTab({
             🗑️ Xoá dự đoán & đặt lại chips
           </button>
         ) : (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-slate-800/30 border border-white/5">
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-white/[0.06] border border-white/10 backdrop-blur-xl">
             <span className="text-sm leading-none mt-0.5">🔒</span>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-white/60 leading-relaxed">
               Không thể xoá dự đoán & đặt lại chips khi chơi thật — để đảm bảo
               công bằng cho bảng xếp hạng. Chỉ khả dụng ở chế độ chơi thử.
             </p>

@@ -8,13 +8,13 @@ const renderFlag = (team) => {
   const imgUrl = flagImgOf(team.name);
   if (imgUrl) {
     return (
-      <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 bg-slate-900/50">
+      <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 bg-white/10">
         <img src={imgUrl} alt={team.name} className="w-full h-full object-cover" />
       </div>
     );
   }
   return (
-    <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 bg-slate-900/50 text-[11px] leading-none">
+    <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 bg-white/10 text-[11px] leading-none">
       {team.flag}
     </div>
   );
@@ -22,18 +22,18 @@ const renderFlag = (team) => {
 
 function GroupCard({ letter, standings }) {
   return (
-    <div className="bg-[#0B1735] border border-white/5 rounded-xl overflow-hidden shadow-lg">
+    <div className="bg-white/[0.08] border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between bg-slate-900/20">
+      <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-white/[0.04]">
         <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
           <span className="text-[#334BFF] font-black">Bảng {letter}</span>
         </h4>
-        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
+        <span className="text-[8px] text-white/50 font-bold uppercase tracking-widest">
           Top 2 đi tiếp
         </span>
       </div>
 
-      <table className="w-full text-xs text-left text-slate-300 table-fixed border-collapse">
+      <table className="w-full text-xs text-left text-white/75 table-fixed border-collapse">
         <colgroup>
           <col className="w-6" />
           <col />
@@ -41,7 +41,7 @@ function GroupCard({ letter, standings }) {
           <col className="w-7" />
           <col className="w-9" />
         </colgroup>
-        <thead className="text-[9px] font-bold text-slate-500 uppercase tracking-wider border-b border-white/5">
+        <thead className="text-[9px] font-bold text-white/50 uppercase tracking-wider border-b border-white/10">
           <tr>
             <th className="py-1.5 px-2 text-center">#</th>
             <th className="py-1.5 px-1 text-left">Đội</th>
@@ -60,7 +60,7 @@ function GroupCard({ letter, standings }) {
                 className={`standings-row h-9 ${isQualified ? "standings-row-qualified" : ""}`}
               >
                 <td className="py-1 px-2 text-center font-bold">
-                  <span className={isQualified ? "text-[#62F2C0] font-black" : "text-slate-500"}>
+                  <span className={isQualified ? "text-[#62F2C0] font-black" : "text-white/50"}>
                     {pos}
                   </span>
                 </td>
@@ -82,12 +82,12 @@ function GroupCard({ letter, standings }) {
                 <td className="py-1 px-1 text-center font-extrabold text-white tabular-nums">
                   {team.pts}
                 </td>
-                <td className="py-1 px-1 text-center text-slate-400 font-medium tabular-nums">
+                <td className="py-1 px-1 text-center text-white/60 font-medium tabular-nums">
                   {team.pj}
                 </td>
                 <td
                   className={`py-1 px-1 text-center font-bold tabular-nums ${
-                    team.dg > 0 ? "text-[#62F2C0]" : team.dg < 0 ? "text-[#ff5a5a]" : "text-slate-400"
+                    team.dg > 0 ? "text-[#62F2C0]" : team.dg < 0 ? "text-[#ff5a5a]" : "text-white/60"
                   }`}
                 >
                   {team.dg > 0 ? `+${team.dg}` : team.dg}
@@ -105,8 +105,8 @@ function GroupCard({ letter, standings }) {
 function ThirdPlaceTable({ rows }) {
   if (!rows.length) return null;
   return (
-    <div className="max-w-2xl mx-auto bg-[#0B1735] border border-white/5 rounded-xl overflow-hidden shadow-lg">
-      <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between bg-slate-900/20">
+    <div className="max-w-2xl mx-auto bg-white/[0.08] border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-2xl overflow-hidden">
+      <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-white/[0.04]">
         <h4 className="text-xs font-bold text-white uppercase tracking-wider">
           <span className="text-[#334BFF] font-black">Hạng 3</span> xuất sắc
         </h4>
@@ -114,7 +114,7 @@ function ThirdPlaceTable({ rows }) {
           8 đội đi tiếp
         </span>
       </div>
-      <table className="w-full text-xs text-left text-slate-300 table-fixed border-collapse">
+      <table className="w-full text-xs text-left text-white/75 table-fixed border-collapse">
         <colgroup>
           <col className="w-6" />
           <col />
@@ -123,7 +123,7 @@ function ThirdPlaceTable({ rows }) {
           <col className="w-7" />
           <col className="w-9" />
         </colgroup>
-        <thead className="text-[9px] font-bold text-slate-500 uppercase tracking-wider border-b border-white/5">
+        <thead className="text-[9px] font-bold text-white/50 uppercase tracking-wider border-b border-white/10">
           <tr>
             <th className="py-1.5 px-2 text-center">#</th>
             <th className="py-1.5 px-1 text-left">Đội</th>
@@ -145,12 +145,12 @@ function ThirdPlaceTable({ rows }) {
                 }`}
               >
                 <td className="py-1 px-2 text-center font-bold">
-                  <span className={qualified ? "text-[#62F2C0] font-black" : "text-slate-600"}>{pos}</span>
+                  <span className={qualified ? "text-[#62F2C0] font-black" : "text-white/40"}>{pos}</span>
                 </td>
                 <td className="py-1 px-1 font-semibold text-white">
                   <div className="flex items-center gap-1.5 min-w-0">
                     {renderFlag(team)}
-                    <span className={`truncate text-[11px] ${qualified ? "text-white" : "text-slate-500"}`}>
+                    <span className={`truncate text-[11px] ${qualified ? "text-white" : "text-white/50"}`}>
                       {team.name}
                     </span>
                     {team.live && (
@@ -160,10 +160,10 @@ function ThirdPlaceTable({ rows }) {
                 </td>
                 <td className="py-1 px-1 text-center text-[10px] font-black text-[#7b8fff]">{team.group}</td>
                 <td className="py-1 px-1 text-center font-extrabold text-white tabular-nums">{team.pts}</td>
-                <td className="py-1 px-1 text-center text-slate-400 font-medium tabular-nums">{team.pj}</td>
+                <td className="py-1 px-1 text-center text-white/60 font-medium tabular-nums">{team.pj}</td>
                 <td
                   className={`py-1 px-1 text-center font-bold tabular-nums ${
-                    team.dg > 0 ? "text-[#62F2C0]" : team.dg < 0 ? "text-[#ff5a5a]" : "text-slate-400"
+                    team.dg > 0 ? "text-[#62F2C0]" : team.dg < 0 ? "text-[#ff5a5a]" : "text-white/60"
                   }`}
                 >
                   {team.dg > 0 ? `+${team.dg}` : team.dg}
@@ -173,7 +173,7 @@ function ThirdPlaceTable({ rows }) {
           })}
         </tbody>
       </table>
-      <div className="px-3 py-1.5 text-[9px] text-slate-500 text-center border-t border-white/5">
+      <div className="px-3 py-1.5 text-[9px] text-white/50 text-center border-t border-white/10">
         Xếp theo Điểm → Hiệu số → Bàn thắng · 8 đội trên vạch xanh giành vé Vòng 32
       </div>
     </div>
@@ -184,25 +184,25 @@ function ThirdPlaceTable({ rows }) {
 function TopStatsTable({ rows, statLabel, loading, empty }) {
   if (loading) {
     return (
-      <div className="text-center py-10 text-xs text-slate-500">
+      <div className="text-center py-10 text-xs text-white/50">
         Đang tải bảng xếp hạng...
       </div>
     );
   }
   if (!rows.length) {
     return (
-      <div className="text-center py-10 text-xs text-slate-500">
+      <div className="text-center py-10 text-xs text-white/50">
         {empty || "Chưa có dữ liệu."}
       </div>
     );
   }
   return (
-    <div className="max-w-2xl mx-auto bg-[#0B1735] border border-white/5 rounded-xl overflow-hidden shadow-lg">
-      <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between bg-slate-900/20">
+    <div className="max-w-2xl mx-auto bg-white/[0.08] border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-2xl overflow-hidden">
+      <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-white/[0.04]">
         <h4 className="text-xs font-bold text-white uppercase tracking-wider">
           Top <span className="text-[#334BFF] font-black">{statLabel}</span>
         </h4>
-        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
+        <span className="text-[8px] text-white/50 font-bold uppercase tracking-widest">
           Nguồn: FotMob
         </span>
       </div>
@@ -214,7 +214,7 @@ function TopStatsTable({ rows, statLabel, loading, empty }) {
             <li key={p.id || rank} className="flex items-center gap-3 px-3 py-2 hover:bg-white/[0.02] transition-colors">
               <span
                 className={`w-5 text-center text-[11px] font-black tabular-nums ${
-                  rank <= 3 ? "text-[#62F2C0]" : "text-slate-500"
+                  rank <= 3 ? "text-[#62F2C0]" : "text-white/50"
                 }`}
               >
                 {rank}
@@ -226,14 +226,14 @@ function TopStatsTable({ rows, statLabel, loading, empty }) {
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                   }}
-                  className="w-7 h-7 rounded-full object-cover bg-slate-800 border border-white/10 shrink-0"
+                  className="w-7 h-7 rounded-full object-cover bg-white/10 border border-white/10 shrink-0"
                 />
               ) : (
-                <span className="w-7 h-7 rounded-full bg-slate-800 border border-white/10 shrink-0" />
+                <span className="w-7 h-7 rounded-full bg-white/10 border border-white/10 shrink-0" />
               )}
               <div className="min-w-0 flex-1">
                 <div className="text-[12px] font-bold text-white truncate">{p.name}</div>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 truncate">
+                <div className="flex items-center gap-1.5 text-[10px] text-white/60 truncate">
                   {teamFlag && (
                     <img src={teamFlag} alt={p.teamName} className="w-3.5 h-3.5 rounded-full object-cover" />
                   )}
@@ -245,7 +245,7 @@ function TopStatsTable({ rows, statLabel, loading, empty }) {
           );
         })}
       </ul>
-      <div className="px-3 py-1.5 text-[9px] text-slate-500 text-center border-t border-white/5">
+      <div className="px-3 py-1.5 text-[9px] text-white/50 text-center border-t border-white/10">
         Cập nhật theo lịch trận đã đá · Top 20
       </div>
     </div>
@@ -310,7 +310,7 @@ export default function GroupsTab({ matches, predictionByMatch }) {
         <h2 className="text-2xl font-bold text-white uppercase tracking-wider">
           BẢNG XẾP HẠNG
         </h2>
-        <p className="text-[11px] text-slate-500 mt-1">
+        <p className="text-[11px] text-white/50 mt-1">
           Tính theo kết quả thật — cập nhật trực tiếp khi trận đang diễn ra
         </p>
         {hasLive && (
@@ -323,7 +323,7 @@ export default function GroupsTab({ matches, predictionByMatch }) {
 
       {/* Toggle: 12 bảng / Hạng 3 / Vua phá lưới / Vua kiến tạo */}
       <div className="flex justify-center">
-        <div className="inline-flex flex-wrap gap-1 p-1 rounded-2xl bg-black/25 border border-white/5">
+        <div className="inline-flex flex-wrap gap-1 p-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
           {[
             { key: "groups", label: "12 bảng đấu" },
             { key: "third", label: "Hạng 3 xuất sắc" },
@@ -335,8 +335,8 @@ export default function GroupsTab({ matches, predictionByMatch }) {
               onClick={() => setView(t.key)}
               className={`px-3 sm:px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${
                 view === t.key
-                  ? "bg-gradient-to-b from-[#4257ff] to-[#2a3ad9] text-white shadow-lg shadow-[#334BFF]/30"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                  : "text-white/60 hover:text-white hover:bg-white/10"
               }`}
             >
               {t.label}

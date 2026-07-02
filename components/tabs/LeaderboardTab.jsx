@@ -47,11 +47,11 @@ function PodiumPillar({ rank, player, isMe }) {
     return (
       <div className={`flex flex-col items-center justify-end w-full ${c.height} opacity-20 select-none`}>
         {/* Placeholder Avatar */}
-        <div className="w-10 h-10 rounded-full border border-dashed border-slate-600 flex items-center justify-center text-slate-600 text-xs mb-3">
+        <div className="w-10 h-10 rounded-full border border-dashed border-white/25 flex items-center justify-center text-white/30 text-xs mb-3">
           ?
         </div>
         {/* Pillar Stand */}
-        <div className="w-full flex-grow max-h-[80px] bg-slate-800/10 border border-dashed border-slate-700/30 rounded-t-2xl flex items-center justify-center text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+        <div className="w-full flex-grow max-h-[80px] bg-white/[0.03] border border-dashed border-white/15 rounded-t-2xl flex items-center justify-center text-[9px] font-bold text-white/40 uppercase tracking-widest">
           TRỐNG
         </div>
       </div>
@@ -69,7 +69,7 @@ function PodiumPillar({ rank, player, isMe }) {
         <div className="text-xl mb-1 filter drop-shadow">{c.medal}</div>
         
         {/* Avatar circle */}
-        <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xs font-bold uppercase ${c.avatarBorder} border-2 bg-slate-900/90 text-white shadow-md relative`}>
+        <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xs font-bold uppercase ${c.avatarBorder} border-2 bg-white/15 text-white shadow-md relative`}>
           {initials}
           {isMe && (
             <span className="absolute -bottom-1 -right-1 flex h-4 w-4 bg-[#62F2C0] rounded-full border border-slate-950 items-center justify-center text-[8px] font-black text-slate-950">
@@ -97,7 +97,7 @@ function PodiumPillar({ rank, player, isMe }) {
           <div className="text-[14px] font-black text-white/20 tracking-tight leading-none uppercase">
             RANK {rank}
           </div>
-          <div className="text-[8px] font-extrabold text-slate-500 uppercase tracking-widest mt-1">
+          <div className="text-[8px] font-extrabold text-white/50 uppercase tracking-widest mt-1">
             {c.title}
           </div>
         </div>
@@ -166,28 +166,28 @@ export default function LeaderboardTab({ player, matches, roomLeaderboard }) {
       </div>
 
       {/* Bento Stats Summary Bar */}
-      <div className="grid grid-cols-3 gap-3 bg-[#0B1735]/40 border border-white/5 rounded-xl p-3.5 text-center">
+      <div className="grid grid-cols-3 gap-3 bg-white/[0.08] border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-3.5 text-center">
         <div>
-          <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+          <div className="text-[8px] font-bold text-white/50 uppercase tracking-widest mb-1">
             VỊ TRÍ CỦA BẠN
           </div>
           <div className="text-sm sm:text-base font-black text-white">
-            #{stats.rank} <span className="text-[10px] text-slate-400 font-semibold">/ {stats.total}</span>
+            #{stats.rank} <span className="text-[10px] text-white/60 font-semibold">/ {stats.total}</span>
           </div>
         </div>
-        <div className="border-x border-white/5">
-          <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+        <div className="border-x border-white/10">
+          <div className="text-[8px] font-bold text-white/50 uppercase tracking-widest mb-1">
             SỐ DƯ CHIPS
           </div>
-          <div className="text-sm sm:text-base font-black text-[#62F2C0] tabular-nums">
+          <div className="text-sm sm:text-base font-black text-[#8fffc9] tabular-nums">
             💎 {fmt(player.chips)}
           </div>
         </div>
         <div>
-          <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+          <div className="text-[8px] font-bold text-white/50 uppercase tracking-widest mb-1">
             TỈ LỆ THẮNG
           </div>
-          <div className="text-sm sm:text-base font-black text-[#7b8fff] tabular-nums">
+          <div className="text-sm sm:text-base font-black text-[#a5b5ff] tabular-nums">
             {stats.winRate}%
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function LeaderboardTab({ player, matches, roomLeaderboard }) {
 
       {/* Podium Structure — top 3 side-by-side columns */}
       {top3.length > 0 && (
-        <div className="bg-[#0B1735]/25 border border-white/[0.03] rounded-2xl p-6 shadow-inner max-w-lg mx-auto">
+        <div className="bg-white/[0.05] border border-white/10 backdrop-blur-xl rounded-2xl p-6 max-w-lg mx-auto">
           <div className="flex gap-4 items-end justify-center">
             {/* 2nd place */}
             <div className="flex-1 min-w-0">
@@ -217,7 +217,7 @@ export default function LeaderboardTab({ player, matches, roomLeaderboard }) {
       {rest.length > 0 && (
         <div className="space-y-2 pt-2">
           {/* Column headers */}
-          <div className="grid grid-cols-12 px-4 py-1 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+          <div className="grid grid-cols-12 px-4 py-1 text-[9px] font-bold text-white/50 uppercase tracking-widest">
             <div className="col-span-1">#</div>
             <div className="col-span-6">Người chơi</div>
             <div className="col-span-2 text-center">Dự đoán</div>
@@ -234,34 +234,34 @@ export default function LeaderboardTab({ player, matches, roomLeaderboard }) {
                   key={p.name}
                   className={`grid grid-cols-12 items-center px-4 py-2.5 rounded-xl border text-xs transition-all duration-200 hover:translate-x-1 ${
                     isMe
-                      ? "bg-[#334BFF]/10 border-[#334BFF]/35 shadow-[0_2px_10px_rgba(51,75,255,0.08)]"
-                      : "bg-[#0B1735]/40 border-white/5 hover:bg-slate-800/20"
-                  }`}
+                      ? "bg-white/15 border-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+                      : "bg-white/[0.06] border-white/10 hover:bg-white/[0.12]"
+                  } backdrop-blur-xl`}
                 >
-                  <div className="col-span-1 font-black text-slate-500">
+                  <div className="col-span-1 font-black text-white/50">
                     {rank}
                   </div>
                   <div className="col-span-6 flex items-center gap-2.5 min-w-0">
                     <span
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 border ${
-                        isMe 
-                          ? "bg-[#334BFF]/15 border-[#334BFF]/35 text-white" 
-                          : "bg-slate-800/60 border-white/5 text-slate-400"
+                        isMe
+                          ? "bg-white/20 border-white/30 text-white"
+                          : "bg-white/10 border-white/15 text-white/70"
                       }`}
                     >
                       {p.name.split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                     </span>
-                    <span className={`font-bold truncate text-white ${isMe ? "text-[#62F2C0]" : ""}`}>
-                      {p.name} {isMe && <span className="text-[9px] text-[#62F2C0] opacity-80 font-normal">(bạn)</span>}
+                    <span className={`font-bold truncate text-white ${isMe ? "text-[#8fffc9]" : ""}`}>
+                      {p.name} {isMe && <span className="text-[9px] text-[#8fffc9] opacity-80 font-normal">(bạn)</span>}
                     </span>
                   </div>
-                  <div className="col-span-2 text-center text-slate-400 font-semibold">
+                  <div className="col-span-2 text-center text-white/60 font-semibold">
                     {p.total}
                   </div>
-                  <div className="col-span-1 text-center text-slate-400 font-semibold">
+                  <div className="col-span-1 text-center text-white/60 font-semibold">
                     {p.winRate}%
                   </div>
-                  <div className="col-span-2 text-right font-extrabold text-[#62F2C0] tabular-nums">
+                  <div className="col-span-2 text-right font-extrabold text-[#8fffc9] tabular-nums">
                     💎 {fmt(p.chips)}
                   </div>
                 </div>
@@ -273,9 +273,9 @@ export default function LeaderboardTab({ player, matches, roomLeaderboard }) {
 
       {/* Empty state */}
       {leaderboard.length === 0 && (
-        <div className="text-center py-16 bg-[#0B1735]/20 border border-white/5 rounded-2xl">
+        <div className="text-center py-16 bg-white/[0.06] border border-white/10 backdrop-blur-xl rounded-2xl">
           <div className="text-4xl mb-3 opacity-30">🏅</div>
-          <p className="text-xs text-slate-500 font-medium">
+          <p className="text-xs text-white/50 font-medium">
             Chưa có người chơi nào tham gia phòng.
           </p>
         </div>

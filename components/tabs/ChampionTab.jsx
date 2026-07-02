@@ -11,7 +11,7 @@ const renderFlag = (name, sizeClass = "w-6 h-6", fontClass = "text-xl") => {
   const img = flagImgOf(name);
   if (img) {
     return (
-      <div className={`${sizeClass} rounded-full overflow-hidden shrink-0 border border-white/10 shadow bg-slate-900/50`}>
+      <div className={`${sizeClass} rounded-full overflow-hidden shrink-0 border border-white/10 shadow bg-white/10`}>
         <img src={img} alt={name} className="w-full h-full object-cover" />
       </div>
     );
@@ -42,13 +42,13 @@ function PickRow({ pick }) {
 
   return (
     <div
-      className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 border bg-[#0B1735] border-white/5 hover:border-white/10 transition-colors"
+      className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 border bg-white/[0.08] border-white/15 backdrop-blur-xl hover:border-white/10 transition-colors"
     >
       <div className="flex items-center gap-3 min-w-0">
         {renderFlag(pick.team, "w-8 h-8 border border-white/10 shadow-sm", "text-2xl")}
         <div className="min-w-0">
           <div className="text-xs font-bold text-white truncate">{pick.team}</div>
-          <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+          <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider mt-0.5">
             {stageInfo?.label || "Vòng đấu"} · ×{pick.multiplier}
           </div>
         </div>
@@ -58,7 +58,7 @@ function PickRow({ pick }) {
         <div>
           <div className="text-xs font-extrabold text-[#62F2C0] font-mono">💎 {fmt(pick.wager)}</div>
           {pick.status === "pending" && (
-            <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+            <div className="text-[8px] text-white/50 font-bold uppercase tracking-wider mt-0.5">
               Nhận: +{fmt(Math.round(pick.wager * pick.multiplier))}
             </div>
           )}
@@ -95,7 +95,7 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
         <h2 className="text-2xl font-black text-white uppercase tracking-wider flex items-center justify-center gap-2">
           <span>🏆</span> Ai sẽ vô địch?
         </h2>
-        <p className="text-[11px] text-slate-400 font-medium max-w-md mx-auto leading-relaxed">
+        <p className="text-[11px] text-white/60 font-medium max-w-md mx-auto leading-relaxed">
           Cược 1 lần mỗi vòng · Cược sớm hệ số cao hơn · Đội yếu hơn hệ số cao hơn
         </p>
       </div>
@@ -103,7 +103,7 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
       {/* My picks summary */}
       {picks.length > 0 && (
         <div className="space-y-2.5">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+          <div className="text-[10px] font-bold text-white/60 uppercase tracking-widest flex items-center gap-1.5">
             <span>👑</span> Cược của tôi ({picks.length}/6)
           </div>
           <div className="grid grid-cols-1 gap-2.5">
@@ -115,8 +115,8 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
       )}
 
       {/* Rules card / multiplier guide */}
-      <div className="bg-[#0B1735]/60 border border-white/5 rounded-2xl p-4.5 space-y-3.5 shadow-xl">
-        <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+      <div className="bg-white/[0.08] border border-white/15 backdrop-blur-xl rounded-2xl p-4.5 space-y-3.5 shadow-xl">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs font-bold text-white">Vòng hiện tại: <span className="text-[#7b8fff]">{stageInfo?.label}</span></span>
@@ -130,9 +130,9 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
             { stars: "⭐⭐⭐", label: "Trung bình", mult: 2 },
             { stars: "⭐⭐", label: "Ngựa ô", mult: 3 },
           ].map((tier) => (
-            <div key={tier.label} className="bg-slate-900/40 rounded-xl p-2.5 text-center border border-white/5 flex flex-col items-center justify-center gap-1">
+            <div key={tier.label} className="bg-white/[0.06] rounded-xl p-2.5 text-center border border-white/10 flex flex-col items-center justify-center gap-1">
               <span className="text-[8px] tracking-tighter leading-none select-none text-amber-500/80">{tier.stars}</span>
-              <span className="text-[9px] text-slate-400 font-bold whitespace-nowrap">{tier.label}</span>
+              <span className="text-[9px] text-white/60 font-bold whitespace-nowrap">{tier.label}</span>
               <span className="text-xs font-black text-white">×{stageMult * tier.mult}</span>
             </div>
           ))}
@@ -163,17 +163,17 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
-              <div className="bg-[#0B1735]/80 border border-white/5 rounded-xl p-3 text-center">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Cược</span>
+              <div className="bg-white/[0.08] border border-white/15 backdrop-blur-xl rounded-xl p-3 text-center">
+                <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider block mb-1">Cược</span>
                 <span className="text-sm font-extrabold text-[#62F2C0]">💎 {fmt(stagePick.wager)}</span>
               </div>
-              <div className="bg-[#0B1735]/80 border border-white/5 rounded-xl p-3 text-center">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Tỷ lệ nhân</span>
+              <div className="bg-white/[0.08] border border-white/15 backdrop-blur-xl rounded-xl p-3 text-center">
+                <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider block mb-1">Tỷ lệ nhân</span>
                 <span className="text-sm font-extrabold text-white">×{stagePick.multiplier}</span>
               </div>
             </div>
 
-            <div className="border-t border-white/5 pt-4">
+            <div className="border-t border-white/10 pt-4">
               {stagePick.status === "pending" ? (
                 <div className="text-xs font-semibold text-emerald-400 bg-emerald-500/5 border border-emerald-500/10 rounded-xl py-2 px-4">
                   ⏳ Thắng nhận: <strong className="text-emerald-300 font-extrabold">+{fmt(Math.round(stagePick.wager * stagePick.multiplier))} 💎</strong>
@@ -193,16 +193,16 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
       ) : (
         /* Team Grid section */
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-white/5 pb-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Danh sách đội bóng</span>
-            <span className="text-[10px] text-slate-500 font-bold">Bấm để chọn đội cược</span>
+          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+            <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Danh sách đội bóng</span>
+            <span className="text-[10px] text-white/50 font-bold">Bấm để chọn đội cược</span>
           </div>
 
           {/* Quick Filter Bar by Group */}
           <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
             <button
               onClick={() => setGroupFilter("ALL")}
-              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer bg-slate-800/40 text-slate-400 hover:text-white"
+              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer bg-white/[0.08] text-white/60 border border-white/10 hover:text-white hover:bg-white/[0.14]"
               style={groupFilter === "ALL" ? { backgroundColor: "#334BFF", color: "#white" } : {}}
             >
               Tất cả
@@ -211,7 +211,7 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
               <button
                 key={g}
                 onClick={() => setGroupFilter(g)}
-                className="shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center cursor-pointer bg-slate-800/40 text-slate-400 hover:text-white"
+                className="shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center cursor-pointer bg-white/[0.08] text-white/60 border border-white/10 hover:text-white hover:bg-white/[0.14]"
                 style={groupFilter === g ? { backgroundColor: "#334BFF", color: "#white" } : {}}
               >
                 {g}
@@ -239,8 +239,8 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
                           : tier === 2
                             ? "text-blue-400"
                             : tier === 3
-                              ? "text-slate-400"
-                              : "text-slate-500";
+                              ? "text-white/60"
+                              : "text-white/50";
                       return (
                         <button
                           key={name}
@@ -248,7 +248,7 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
                           className={`rounded-xl p-3 text-left flex items-center gap-2.5 transition-all duration-200 border cursor-pointer ${
                             sel
                               ? "bg-[#334BFF]/15 border-[#334BFF] text-white shadow-[0_0_15px_rgba(51,75,255,0.25)] scale-[1.02]"
-                              : "bg-[#0B1735] border-white/5 text-slate-400 hover:bg-[#10204A] hover:border-[#334BFF]/30 hover:text-white hover:scale-[1.01]"
+                              : "bg-white/[0.08] border-white/15 backdrop-blur-xl text-white/60 hover:bg-[#10204A] hover:border-[#334BFF]/30 hover:text-white hover:scale-[1.01]"
                           }`}
                         >
                           {renderFlag(name, "w-6 h-6 border border-white/10 shadow-sm", "text-xl")}
@@ -275,16 +275,16 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
 
       {/* Room friends' picks */}
       {roomChampions && roomChampions.filter((c) => c.name !== player.playerName).length > 0 && (
-        <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-5 shadow-inner">
-          <h3 className="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase mb-3.5 flex items-center gap-1.5">
+        <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-5 shadow-inner">
+          <h3 className="text-[10px] font-bold tracking-[0.2em] text-white/60 uppercase mb-3.5 flex items-center gap-1.5">
             <span>👥</span> Bạn bè trong phòng đã chốt
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             {roomChampions
               .filter((c) => c.name !== player.playerName)
               .map((c, i) => (
-                <div key={i} className="flex items-center justify-between py-2 px-3 bg-slate-950/20 border border-white/5 rounded-xl">
-                  <span className="font-semibold text-slate-300">{c.name}</span>
+                <div key={i} className="flex items-center justify-between py-2 px-3 bg-white/[0.05] border border-white/10 rounded-xl">
+                  <span className="font-semibold text-white/75">{c.name}</span>
                   <div className="flex items-center gap-2 font-bold text-amber-400">
                     {renderFlag(c.team, "w-4 h-4 border border-white/10", "text-xs")}
                     <span>{c.team}</span>
@@ -305,7 +305,7 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
                 {renderFlag(team, "w-8 h-8 border border-white/10 shadow", "text-2xl")}
                 <div className="min-w-0">
                   <div className="font-extrabold text-white text-sm truncate leading-snug">{team}</div>
-                  <div className="text-[9px] text-slate-400 font-medium">
+                  <div className="text-[9px] text-white/60 font-medium">
                     Nhân hệ số: <strong className="text-[#62F2C0] font-bold">×{combinedOdds}</strong>
                   </div>
                 </div>
@@ -313,9 +313,9 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
 
               {/* Wager Input */}
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cược:</span>
+                <span className="text-[10px] text-white/60 font-bold uppercase tracking-wider">Cược:</span>
                 <div className="relative flex items-center">
-                  <span className="absolute left-2.5 text-[10px] pointer-events-none text-slate-400">💎</span>
+                  <span className="absolute left-2.5 text-[10px] pointer-events-none text-white/60">💎</span>
                   <input
                     type="number"
                     min="10"
@@ -342,12 +342,12 @@ export default function ChampionTab({ player, onPlaceBet, roomChampions, matches
             </div>
 
             {/* Payout preview */}
-            <div className="flex justify-between items-center text-[10px] font-bold border-t border-white/5 pt-2.5">
+            <div className="flex justify-between items-center text-[10px] font-bold border-t border-white/10 pt-2.5">
               <span className="text-[#62F2C0] flex items-center gap-1">
                 <span>🎯 Trúng nhận:</span>
                 <span className="font-extrabold text-emerald-300">+{fmt(Math.round(wager * combinedOdds))} 💎</span>
               </span>
-              <span className="text-slate-500 font-medium">|</span>
+              <span className="text-white/50 font-medium">|</span>
               <span className="text-[#ff5a5a] flex items-center gap-1">
                 <span>❌ Thua mất:</span>
                 <span className="font-extrabold text-red-300">-{fmt(wager)} 💎</span>

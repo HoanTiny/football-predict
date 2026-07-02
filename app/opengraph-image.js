@@ -10,8 +10,8 @@ export default async function OpengraphImage() {
   // cwd có thể là thư mục cha (dev) hoặc gốc dự án (prod) → thử vài đường dẫn
   let emblemSrc = null;
   const candidates = [
-    join(process.cwd(), "public", "wc2026-emblem.png"),
-    join(process.cwd(), "wc2026", "public", "wc2026-emblem.png"),
+    join(process.cwd(), "public", "logo.png"),
+    join(process.cwd(), "wc2026", "public", "logo.png"),
   ];
   for (const p of candidates) {
     try {

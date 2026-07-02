@@ -42,14 +42,14 @@ function TeamRow({ team, score, isWinner, decided, placeholder, candidates }) {
   return (
     <div
       className={`flex items-center gap-2 px-2 py-1 ${
-        decided && isWinner ? "bg-[#334BFF]/15" : ""
+        decided && isWinner ? "bg-white/15" : ""
       }`}
     >
-      <div className="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 bg-slate-900/60">
+      <div className="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 bg-white/10">
         {imgUrl ? (
           <img src={imgUrl} alt={name} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-[8px] text-slate-500">?</span>
+          <span className="text-[8px] text-white/50">?</span>
         )}
       </div>
       <span
@@ -59,14 +59,14 @@ function TeamRow({ team, score, isWinner, decided, placeholder, candidates }) {
             ? "text-white font-semibold"
             : placeholder
               ? `text-[#7b8fff] font-semibold ${candidates?.length ? "underline decoration-dotted decoration-[#7b8fff]/40 cursor-help" : ""}`
-              : "text-slate-500 italic font-medium"
+              : "text-white/50 italic font-medium"
         } ${decided && isWinner ? "text-[#62F2C0]" : ""}`}
       >
         {name || placeholder || "TBD"}
       </span>
       <span
         className={`shrink-0 w-4 text-center text-[10px] font-bold tabular-nums ${
-          score != null ? "text-white" : "text-slate-600"
+          score != null ? "text-white" : "text-white/40"
         }`}
       >
         {score != null ? score : "–"}
@@ -107,7 +107,7 @@ function BracketMatch({ match, accent, stByGroup, onBet }) {
     <div className="bk-m">
       <div
         onClick={() => isClickable && onBet(match, "stats")}
-        className={`block bk-card rounded-lg overflow-hidden border bg-[#0B1735] transition-colors ${
+        className={`block bk-card rounded-lg overflow-hidden border bg-white/[0.08] backdrop-blur-xl transition-colors ${
           isClickable ? "hover:border-[#7b8fff]/60 cursor-pointer" : ""
         } ${
           accent
@@ -115,11 +115,11 @@ function BracketMatch({ match, accent, stByGroup, onBet }) {
             : "border-white/10"
         }`}
       >
-        <div className="flex items-center justify-between px-2 py-0.5 bg-slate-900/40 border-b border-white/5">
-          <span className="text-[8px] font-bold text-slate-500 tabular-nums">
+        <div className="flex items-center justify-between px-2 py-0.5 bg-white/[0.06] border-b border-white/10">
+          <span className="text-[8px] font-bold text-white/50 tabular-nums">
             {match ? shortDate(match.utcDate) : "—"}
           </span>
-          <span className="text-[8px] font-bold text-slate-500 tabular-nums">
+          <span className="text-[8px] font-bold text-white/50 tabular-nums">
             {match ? vnTime(match.utcDate) : ""}
           </span>
         </div>
@@ -142,12 +142,12 @@ function BracketMatch({ match, accent, stByGroup, onBet }) {
           />
         </div>
         {rs?.isPen && (
-          <div className="text-[8px] font-bold text-[#FFB454] tabular-nums text-center bg-slate-900/30 border-t border-white/5 py-0.5">
+          <div className="text-[8px] font-bold text-[#FFB454] tabular-nums text-center bg-white/[0.04] border-t border-white/10 py-0.5">
             PĐ {rs.pen.home}-{rs.pen.away}
           </div>
         )}
         {rs?.isAet && !rs?.isPen && (
-          <div className="text-[8px] font-bold text-slate-400 tracking-wider text-center bg-slate-900/30 border-t border-white/5 py-0.5">
+          <div className="text-[8px] font-bold text-white/60 tracking-wider text-center bg-white/[0.04] border-t border-white/10 py-0.5">
             HP
           </div>
         )}
@@ -253,7 +253,7 @@ export default function BracketTab({ matches = [], onBet, leagueId = 77, leagueN
     return (
       <div className="text-center py-16">
         <div className="text-4xl mb-3 opacity-30">🗺️</div>
-        <p className="text-xs text-slate-500 font-medium">
+        <p className="text-xs text-white/50 font-medium">
           Chưa có dữ liệu vòng knockout.
         </p>
       </div>
@@ -275,7 +275,7 @@ export default function BracketTab({ matches = [], onBet, leagueId = 77, leagueN
       {/* Toggle: theo BXH hiện tại / chỉ đội đã chắc chắn (chỉ có khi dùng nguồn FotMob) */}
       {fmData && (
         <div className="flex justify-center">
-          <div className="inline-flex gap-1 p-1 rounded-full bg-black/25 border border-white/5">
+          <div className="inline-flex gap-1 p-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
             {[
               { key: "stands", label: "Theo BXH hiện tại" },
               { key: "confirmed", label: "Đã chắc chắn" },
@@ -286,7 +286,7 @@ export default function BracketTab({ matches = [], onBet, leagueId = 77, leagueN
                 className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${
                   view === t.key
                     ? "bg-gradient-to-b from-[#4257ff] to-[#2a3ad9] text-white shadow-lg shadow-[#334BFF]/30"
-                    : "text-slate-400 hover:text-white"
+                    : "text-white/60 hover:text-white"
                 }`}
               >
                 {t.label}
@@ -335,7 +335,7 @@ export default function BracketTab({ matches = [], onBet, leagueId = 77, leagueN
             <div className="bk-col-head text-[#F5C518]">Chung kết</div>
             <div className="bk-final">
               <img
-                src="/wc2026-emblem.png"
+                src="/logo.png"
                 alt="FIFA World Cup 2026"
                 className="bk-emblem"
               />
@@ -383,19 +383,19 @@ export default function BracketTab({ matches = [], onBet, leagueId = 77, leagueN
         </div>
       </div>
 
-      <p className="text-center text-[10px] text-slate-600">
+      <p className="text-center text-[10px] text-white/40">
         {fmData ? (
           view === "confirmed" ? (
             <>
               Chỉ hiện đội{" "}
-              <span className="text-slate-400 font-semibold">đã chắc chắn</span>
+              <span className="text-white/60 font-semibold">đã chắc chắn</span>
               ; ô còn lại là mã suất — di chuột để xem{" "}
               <span className="text-[#7b8fff]">đội có thể gặp</span>
             </>
           ) : (
             <>
               Đội ở các vòng là{" "}
-              <span className="text-slate-400 font-semibold">
+              <span className="text-white/60 font-semibold">
                 tạm tính theo BXH hiện tại
               </span>{" "}
               (FotMob) — chuyển tab{" "}

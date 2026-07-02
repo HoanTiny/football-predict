@@ -159,11 +159,22 @@ export default function HomeTab() {
       .then((results) => {
         if (!alive) return;
         const days = dates
-          .map((d, i) => ({
-            dateKey: dayKey(d),
-            dateLabel: dayLabel(d, todayKey),
-            leagues: (results[i]?.leagues || []).filter((lg) => lg.matches.length > 0),
-          }))
+          .map((d, i) => {
+            const targetKey = dayKey(d);
+            const filteredLeagues = (results[i]?.leagues || [])
+              .map((lg) => {
+                const filteredMatches = (lg.matches || []).filter(
+                  (m) => dayKey(new Date(m.utcTime)) === targetKey
+                );
+                return { ...lg, matches: filteredMatches };
+              })
+              .filter((lg) => lg.matches.length > 0);
+            return {
+              dateKey: targetKey,
+              dateLabel: dayLabel(d, todayKey),
+              leagues: filteredLeagues,
+            };
+          })
           .filter((day) => day.leagues.length > 0);
         setUpcomingDays(days);
       })
@@ -174,7 +185,17 @@ export default function HomeTab() {
     };
   }, [view, todayKey, upcomingDays]);
 
-  const leagues = useMemo(() => data?.leagues || [], [data]);
+  const leagues = useMemo(() => {
+    if (!data?.leagues) return [];
+    return data.leagues
+      .map((lg) => {
+        const filteredMatches = (lg.matches || []).filter(
+          (m) => dayKey(new Date(m.utcTime)) === singleKey
+        );
+        return { ...lg, matches: filteredMatches };
+      })
+      .filter((lg) => lg.matches.length > 0);
+  }, [data, singleKey]);
   const hasAnyMatch = leagues.some((lg) => lg.matches.length > 0);
   const hasAnyUpcoming = (upcomingDays || []).length > 0;
 

@@ -73,7 +73,7 @@ const FormPips = ({ form, align = "start" }) => (
     className={`flex gap-1 ${align === "end" ? "justify-end" : "justify-start"}`}
   >
     {form.length === 0 ? (
-      <span className="text-[10px] text-slate-500">—</span>
+      <span className="text-[10px] text-white/50">—</span>
     ) : (
       form.map((char, idx) => (
         <span
@@ -128,7 +128,7 @@ const renderModalFlag = (teamName) => {
   const imgUrl = flagImgOf(teamName);
   if (imgUrl) {
     return (
-      <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-slate-900/50">
+      <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-white/10">
         <img
           src={imgUrl}
           alt={teamName}
@@ -138,7 +138,7 @@ const renderModalFlag = (teamName) => {
     );
   }
   return (
-    <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-slate-900/50 text-[13px] leading-none">
+    <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-white/10 text-[13px] leading-none">
       {flagOf(teamName)}
     </div>
   );
@@ -148,9 +148,9 @@ function ScoreButton({ value, onChange, label, renderFlag }) {
   const isSelected = value > 0;
   return (
     <div className="flex flex-col items-center gap-3 flex-1">
-      <div className="flex items-center gap-1.5 bg-white/[0.02] border border-white/5 px-2.5 py-1 rounded-full shadow-inner max-w-[140px] justify-center">
+      <div className="flex items-center gap-1.5 bg-white/[0.02] border border-white/10 px-2.5 py-1 rounded-full shadow-inner max-w-[140px] justify-center">
         {renderFlag && renderFlag(label)}
-        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300 truncate">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-white/75 truncate">
           {label}
         </span>
       </div>
@@ -158,7 +158,7 @@ function ScoreButton({ value, onChange, label, renderFlag }) {
         <button
           type="button"
           onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white active:scale-90 border border-white/10 transition-all"
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 text-white/75 hover:bg-white/10 hover:text-white active:scale-90 border border-white/10 transition-all"
         >
           <svg
             className="w-4 h-4"
@@ -178,7 +178,7 @@ function ScoreButton({ value, onChange, label, renderFlag }) {
           className={`w-14 h-16 rounded-2xl flex items-center justify-center text-3xl font-black tabular-nums transition-all duration-200 ${
             isSelected
               ? "bg-gradient-to-b from-[#334BFF]/50 to-[#334BFF]/10 border-[#334BFF] text-white shadow-[0_0_15px_rgba(51,75,255,0.4)]"
-              : "bg-gradient-to-b from-white/[0.06] to-transparent border-white/10 text-slate-400"
+              : "bg-gradient-to-b from-white/[0.06] to-transparent border-white/10 text-white/60"
           } border shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]`}
         >
           {value}
@@ -186,7 +186,7 @@ function ScoreButton({ value, onChange, label, renderFlag }) {
         <button
           type="button"
           onClick={() => onChange(Math.min(20, value + 1))}
-          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white active:scale-90 border border-white/10 transition-all"
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 text-white/75 hover:bg-white/10 hover:text-white active:scale-90 border border-white/10 transition-all"
         >
           <svg
             className="w-4 h-4"
@@ -387,7 +387,7 @@ export default function BetModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient glows */}
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-[#334BFF]/8 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-white/[0.08] rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-[#62F2C0]/8 rounded-full blur-[100px] pointer-events-none" />
 
         {/* Close button */}
@@ -395,7 +395,7 @@ export default function BetModal({
           type="button"
           onClick={onClose}
           aria-label="Đóng"
-          className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white transition-colors"
+          className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white/75 hover:text-white transition-colors"
         >
           <svg
             width="14"
@@ -411,8 +411,8 @@ export default function BetModal({
         </button>
 
         {/* Header */}
-        <div className="text-center mb-4 relative z-10 border-b border-white/5 pb-4">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+        <div className="text-center mb-4 relative z-10 border-b border-white/10 pb-4">
+          <div className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-1">
             {vnDateHeader(match.utcDate)} · {vnTime(match.utcDate)}
           </div>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg font-bold text-white uppercase tracking-wider w-full mt-2">
@@ -431,7 +431,7 @@ export default function BetModal({
                   </span>
                 )}
                 <span
-                  className={`text-[9px] font-bold uppercase tracking-wider mt-1 ${liveNow ? "text-[#ff5a5a]" : "text-slate-500"}`}
+                  className={`text-[9px] font-bold uppercase tracking-wider mt-1 ${liveNow ? "text-[#ff5a5a]" : "text-white/50"}`}
                 >
                   {match.status === "FINISHED"
                     ? "Kết thúc"
@@ -459,8 +459,8 @@ export default function BetModal({
               onClick={() => setModalTab("predict")}
               className={`px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold rounded-full transition-all shrink-0 ${
                 modalTab === "predict"
-                  ? "bg-[#334BFF] text-white"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                  : "text-white/60 hover:text-white hover:bg-white/10"
               }`}
             >
               Dự đoán
@@ -470,8 +470,8 @@ export default function BetModal({
                 onClick={() => setModalTab("friends")}
                 className={`px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold rounded-full transition-all shrink-0 ${
                   modalTab === "friends"
-                    ? "bg-[#334BFF] text-white"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-white/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                    : "text-white/60 hover:text-white hover:bg-white/10"
                 }`}
               >
                 Bạn bè ({roomBets.length})
@@ -481,8 +481,8 @@ export default function BetModal({
               onClick={() => setModalTab("lineup")}
               className={`px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold rounded-full transition-all shrink-0 ${
                 modalTab === "lineup"
-                  ? "bg-[#334BFF] text-white"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                  : "text-white/60 hover:text-white hover:bg-white/10"
               }`}
             >
               Đội hình
@@ -491,8 +491,8 @@ export default function BetModal({
               onClick={() => setModalTab("stats")}
               className={`px-3 sm:px-4 py-1 text-[11px] sm:text-xs font-bold rounded-full transition-all shrink-0 ${
                 modalTab === "stats"
-                  ? "bg-[#334BFF] text-white"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                  : "text-white/60 hover:text-white hover:bg-white/10"
               }`}
             >
               Chi tiết trận đấu
@@ -505,12 +505,12 @@ export default function BetModal({
           <div className="flex flex-col flex-1 min-h-0">
             <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 space-y-3.5 pb-2">
               {!canEdit ? (
-                <div className="bg-[#0B1735]/40 border border-white/5 rounded-xl p-6 text-center space-y-4">
+                <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-xl p-6 text-center space-y-4">
                   <span className="text-3xl block">🔒</span>
                   <div className="text-sm font-bold text-white">
                     Đã Khóa Dự Đoán
                   </div>
-                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                  <p className="text-xs text-white/60 max-w-xs mx-auto leading-relaxed">
                     Trận đấu này đã bắt đầu hoặc kết thúc. Bạn không thể tạo
                     hoặc chỉnh sửa dự đoán nữa.
                   </p>
@@ -528,7 +528,7 @@ export default function BetModal({
                             <span className="text-sm font-black text-white">
                               {betLabel(p)}
                             </span>
-                            <span className="text-[9px] text-slate-400 font-bold">
+                            <span className="text-[9px] text-white/60 font-bold">
                               Đặt cược: 💎{p.wager}
                             </span>
                           </div>
@@ -536,7 +536,7 @@ export default function BetModal({
                       </div>
                     </div>
                   ) : (
-                    <div className="text-xs text-slate-500 italic py-2">
+                    <div className="text-xs text-white/50 italic py-2">
                       Bạn đã không đặt cược cho trận đấu này.
                     </div>
                   )}
@@ -551,7 +551,7 @@ export default function BetModal({
                 <>
                   {/* Chọn loại kèo — segmented control (co theo số loại đang bật) */}
                   <div
-                    className="grid gap-1 p-1 rounded-2xl bg-black/25 border border-white/5"
+                    className="grid gap-1 p-1 rounded-2xl bg-black/25 border border-white/10"
                     style={{
                       gridTemplateColumns: `repeat(${Object.keys(BET_TYPES).length}, minmax(0, 1fr))`,
                     }}
@@ -566,7 +566,7 @@ export default function BetModal({
                         className={`py-2 rounded-xl text-[11px] font-bold transition-all ${
                           betType === key
                             ? "bg-gradient-to-b from-[#4257ff] to-[#2a3ad9] text-white shadow-lg shadow-[#334BFF]/30"
-                            : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+                            : "text-white/60 hover:text-white hover:bg-white/[0.04]"
                         }`}
                       >
                         {cfg.short}
@@ -576,14 +576,14 @@ export default function BetModal({
 
                   {/* Picker theo loại kèo */}
                   {betType === "score" ? (
-                    <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/[0.03] border border-white/5 py-4 px-2">
+                    <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/[0.03] border border-white/10 py-4 px-2">
                       <ScoreButton
                         value={home}
                         onChange={setHome}
                         label={homeName}
                         renderFlag={renderModalFlag}
                       />
-                      <div className="text-2xl font-black text-slate-600 self-center mt-5">
+                      <div className="text-2xl font-black text-white/40 self-center mt-5">
                         :
                       </div>
                       <ScoreButton
@@ -595,7 +595,7 @@ export default function BetModal({
                     </div>
                   ) : (
                     <div className="space-y-2.5">
-                      <div className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <div className="text-center text-[11px] font-bold text-white/60 uppercase tracking-wider">
                         {BET_TYPES[betType].label}
                       </div>
                       <div
@@ -620,7 +620,7 @@ export default function BetModal({
                               className={`relative py-4 px-1 rounded-2xl text-sm font-bold transition-all border-2 truncate ${
                                 active
                                   ? "bg-gradient-to-b from-[#334BFF]/30 to-[#334BFF]/[0.06] border-[#334BFF] text-white shadow-lg shadow-[#334BFF]/20"
-                                  : "bg-white/[0.03] border-white/10 text-slate-300 hover:border-white/25 hover:text-white"
+                                  : "bg-white/[0.03] border-white/10 text-white/75 hover:border-white/25 hover:text-white"
                               }`}
                             >
                               {active && (
@@ -645,7 +645,7 @@ export default function BetModal({
 
                   {/* Existing predictions list */}
                   {prediction && prediction.length > 0 && (
-                    <div className="bg-[#0B1735]/40 border border-white/5 rounded-xl p-3.5 space-y-2">
+                    <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-xl p-3.5 space-y-2">
                       <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wide block">
                         Các cược đã chốt cho trận này ({prediction.length})
                       </span>
@@ -653,10 +653,10 @@ export default function BetModal({
                         {prediction.map((p, pIdx) => (
                           <div
                             key={pIdx}
-                            className="inline-flex items-center gap-2 bg-[#334BFF]/10 border border-[#334BFF]/25 px-3 py-1 rounded-lg text-xs font-semibold text-white shrink-0"
+                            className="inline-flex items-center gap-2 bg-white/10 border border-[#334BFF]/25 px-3 py-1 rounded-lg text-xs font-semibold text-white shrink-0"
                           >
                             <span>{betLabel(p)}</span>
-                            <span className="text-slate-400">·</span>
+                            <span className="text-white/60">·</span>
                             <span className="text-[#62F2C0] font-bold">
                               💎{fmt(p.wager)}
                             </span>
@@ -667,12 +667,12 @@ export default function BetModal({
                   )}
 
                   {/* Khối tiền cược */}
-                  <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-4 space-y-3.5">
+                  <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4 space-y-3.5">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-slate-400 uppercase tracking-wider">
+                      <span className="font-bold text-white/60 uppercase tracking-wider">
                         Tiền cược
                       </span>
-                      <span className="text-slate-400">
+                      <span className="text-white/60">
                         Số dư{" "}
                         <span className="font-bold text-[#62F2C0]">
                           💎 {fmt(chips)}
@@ -732,10 +732,10 @@ export default function BetModal({
                             onClick={() => setWager(Math.min(chips, v))}
                             className={`py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
                               active
-                                ? "bg-[#334BFF]/20 border border-[#334BFF] text-[#7b8fff] shadow-[0_0_10px_rgba(51,75,255,0.25)]"
+                                ? "bg-white/20 border border-[#334BFF] text-[#7b8fff] shadow-[0_0_10px_rgba(51,75,255,0.25)]"
                                 : disabled
-                                  ? "bg-white/[0.01] border border-white/5 text-slate-700 cursor-not-allowed"
-                                  : "bg-white/[0.04] border border-white/5 text-slate-400 hover:text-white hover:bg-white/[0.08]"
+                                  ? "bg-white/[0.01] border border-white/10 text-white/30 cursor-not-allowed"
+                                  : "bg-white/[0.04] border border-white/10 text-white/60 hover:text-white hover:bg-white/[0.08]"
                             }`}
                           >
                             {fmt(v)}
@@ -760,7 +760,7 @@ export default function BetModal({
                         >
                           X{scoreMult} REWARD
                         </div>
-                        <span className="text-slate-300 font-medium text-[11px] flex items-center gap-1.5 flex-wrap">
+                        <span className="text-white/75 font-medium text-[11px] flex items-center gap-1.5 flex-wrap">
                           <span>🎯</span> Đúng chính xác tỉ số
                           {scoreMult > 3 && (
                             <span className="text-[8px] font-black text-[#FFB454] bg-[#FFB454]/15 border border-[#FFB454]/30 px-1.5 py-0.5 rounded uppercase tracking-wide">
@@ -788,7 +788,7 @@ export default function BetModal({
                             <div className="absolute top-1.5 right-2.5 text-[9px] font-black tracking-widest text-[#62F2C0]/20">
                               {oddsLabel} REWARD
                             </div>
-                            <span className="text-slate-300 font-medium text-[11px] flex items-center gap-1">
+                            <span className="text-white/75 font-medium text-[11px] flex items-center gap-1">
                               <span>✅</span> Đoán đúng
                             </span>
                             <span className="text-lg font-black tabular-nums mt-0.5 text-[#62F2C0]">
@@ -801,8 +801,8 @@ export default function BetModal({
                     )}
 
                     {/* Đoán sai */}
-                    <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[11px]">
-                      <span className="text-slate-400 font-medium flex items-center gap-1">
+                    <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/[0.02] border border-white/10 text-[11px]">
+                      <span className="text-white/60 font-medium flex items-center gap-1">
                         <span>❌</span> Đoán sai
                       </span>
                       <span className="font-bold text-[#ff5a5a] tabular-nums">
@@ -815,7 +815,7 @@ export default function BetModal({
             </div>
 
             {canEdit && (
-              <div className="shrink-0 pt-3 mt-2 border-t border-white/5 space-y-2">
+              <div className="shrink-0 pt-3 mt-2 border-t border-white/10 space-y-2">
                 {/* Action Buttons */}
                 <div className="flex gap-2.5">
                   <button
@@ -843,7 +843,7 @@ export default function BetModal({
                     className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2.5 ${
                       valid
                         ? "text-white btn-premium-glow active:scale-[0.98]"
-                        : "bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5"
+                        : "bg-white/[0.06] text-white/40 cursor-not-allowed border border-white/10"
                     }`}
                   >
                     <span className="tracking-wide">Đặt cược</span>
@@ -866,9 +866,9 @@ export default function BetModal({
 
         {/* Tab 2: Friends Bets */}
         {modalTab === "friends" && (
-          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin text-xs text-slate-300">
-            <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-4 space-y-3">
-              <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wide block border-b border-white/5 pb-2 mb-2">
+          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin text-xs text-white/75">
+            <div className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-xl p-4 space-y-3">
+              <span className="text-[10px] font-bold text-[#7b8fff] uppercase tracking-wide block border-b border-white/10 pb-2 mb-2">
                 Danh sách dự đoán trong phòng ({roomBets?.length || 0} người)
               </span>
               {/* Còn đặt cược được → ẩn dự đoán + chip của người khác để tránh đoán theo. */}
@@ -885,7 +885,7 @@ export default function BetModal({
                   {roomBets.map((b, idx) => (
                     <div
                       key={b.playerName}
-                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-slate-400 ${
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-white/60 ${
                         idx > 0 ? "pt-3" : ""
                       }`}
                     >
@@ -912,8 +912,8 @@ export default function BetModal({
                         return (
                           <div className="flex items-center gap-2 pl-3.5 sm:pl-0 self-start sm:self-auto flex-wrap">
                             {/* Score Predict Pill */}
-                            <div className="flex items-center gap-1.5 bg-[#334BFF]/10 border border-[#334BFF]/20 px-2 py-0.5 rounded text-[10px] sm:text-xs">
-                              <span className="text-slate-400 text-[9px] sm:text-[10px]">
+                            <div className="flex items-center gap-1.5 bg-white/10 border border-[#334BFF]/20 px-2 py-0.5 rounded text-[10px] sm:text-xs">
+                              <span className="text-white/60 text-[9px] sm:text-[10px]">
                                 Dự đoán:
                               </span>
                               {reveal ? (
@@ -922,7 +922,7 @@ export default function BetModal({
                                 </strong>
                               ) : (
                                 <strong
-                                  className="text-slate-500 font-extrabold font-mono blur-[3px] select-none"
+                                  className="text-white/50 font-extrabold font-mono blur-[3px] select-none"
                                   aria-label="đã ẩn"
                                 >
                                   ?–?
@@ -932,7 +932,7 @@ export default function BetModal({
 
                             {/* Wager Pill */}
                             <div className="flex items-center gap-1 bg-[#62F2C0]/10 border border-[#62F2C0]/20 px-2 py-0.5 rounded text-[10px] sm:text-xs">
-                              <span className="text-slate-400 text-[9px] sm:text-[10px]">
+                              <span className="text-white/60 text-[9px] sm:text-[10px]">
                                 Cược:
                               </span>
                               <span className="font-bold text-[#62F2C0] tabular-nums font-mono flex items-center gap-0.5">
@@ -941,7 +941,7 @@ export default function BetModal({
                                   fmt(b.wager)
                                 ) : (
                                   <span
-                                    className="text-slate-500 blur-[3px] select-none"
+                                    className="text-white/50 blur-[3px] select-none"
                                     aria-label="đã ẩn"
                                   >
                                     ???
@@ -956,7 +956,7 @@ export default function BetModal({
                   ))}
                 </div>
               ) : (
-                <div className="text-slate-500 italic py-4 text-center">
+                <div className="text-white/50 italic py-4 text-center">
                   Chưa có bạn bè nào trong phòng đặt cược.
                 </div>
               )}
@@ -973,22 +973,22 @@ export default function BetModal({
 
         {/* Tab: Đội hình ra sân (tách riêng) */}
         {modalTab === "lineup" && (
-          <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin text-xs text-slate-300">
+          <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin text-xs text-white/75">
             {stats?.lineups ? (
               <LineupPitch lineups={stats.lineups} />
             ) : statsLoading ? (
-              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-6 text-center text-[11px] text-slate-500">
+              <div className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-xl p-6 text-center text-[11px] text-white/50">
                 Đang tải đội hình…
               </div>
             ) : (
-              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-6 text-center">
+              <div className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-xl p-6 text-center">
                 <div className="text-3xl mb-2 opacity-40">👥</div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <div className="text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1">
                   Đội hình ra sân
                 </div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-[11px] text-white/50">
                   Đội chưa công bố đội hình xuất phát.{" "}
-                  <span className="text-slate-400">
+                  <span className="text-white/60">
                     Thường có ~60 phút trước giờ bóng lăn.
                   </span>
                 </div>
@@ -999,14 +999,14 @@ export default function BetModal({
 
         {/* Tab 3: Stats Details */}
         {modalTab === "stats" && (
-          <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin text-xs text-slate-300">
+          <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin text-xs text-white/75">
             {/* Tỉ số đã gộp vào header modal (xem khối Header) — không lặp lại ở đây.
                 Đội hình ra sân đã tách sang tab "Đội hình" riêng. */}
 
             {/* Diễn biến chính (bàn thắng, thẻ) */}
             {stats?.events?.length > 0 && (
-              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-4 space-y-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              <div className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-xl p-4 space-y-2">
+                <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider block">
                   Diễn biến chính
                 </span>
                 <div className="space-y-1.5">
@@ -1022,14 +1022,14 @@ export default function BetModal({
                           key={i}
                           className={`flex items-center gap-2 text-[11px] ${isHome ? "" : "flex-row-reverse text-right"}`}
                         >
-                          <span className="tabular-nums text-slate-500 w-7 shrink-0">
+                          <span className="tabular-nums text-white/50 w-7 shrink-0">
                             {e.minute != null ? `${e.minute}'` : ""}
                           </span>
                           <span className="shrink-0">{eventIcon(e)}</span>
                           <span className="text-white font-semibold truncate">
                             {e.player}
                             {e.assist && (
-                              <span className="text-slate-500 font-normal">
+                              <span className="text-white/50 font-normal">
                                 {" "}
                                 ({e.assist})
                               </span>
@@ -1044,8 +1044,8 @@ export default function BetModal({
 
             {/* Thống kê trận đấu */}
             {stats?.matchStats && (
-              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-4 space-y-3">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              <div className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-xl p-4 space-y-3">
+                <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider block">
                   Thống kê trận đấu
                 </span>
                 <div className="space-y-2.5">
@@ -1058,12 +1058,12 @@ export default function BetModal({
                       <div key={key} className="space-y-1">
                         <div className="flex justify-between items-center text-[11px] font-bold text-white">
                           <span className="tabular-nums">{h ?? 0}</span>
-                          <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">
+                          <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">
                             {label}
                           </span>
                           <span className="tabular-nums">{a ?? 0}</span>
                         </div>
-                        <div className="w-full h-1.5 rounded-full overflow-hidden flex bg-slate-700/40">
+                        <div className="w-full h-1.5 rounded-full overflow-hidden flex bg-white/[0.08]">
                           <div
                             className="bg-[#334BFF] h-full"
                             style={{ width: `${pct}%` }}
@@ -1078,7 +1078,7 @@ export default function BetModal({
                   })}
                 </div>
                 {liveNow && (
-                  <div className="text-[9px] text-slate-500 text-center">
+                  <div className="text-[9px] text-white/50 text-center">
                     Tự cập nhật mỗi 30s khi trận đang diễn ra
                   </div>
                 )}
@@ -1086,20 +1086,20 @@ export default function BetModal({
             )}
 
             {/* FIFA Rankings & Form (Beautiful Comparison Card) */}
-            <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-4 space-y-3">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            <div className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-xl p-4 space-y-3">
+              <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider block">
                 So sánh phong độ & xếp hạng
               </span>
 
               {/* Team Headers */}
-              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center pb-2 border-b border-white/5">
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center pb-2 border-b border-white/10">
                 <div className="flex items-center gap-1.5 justify-start min-w-0">
                   {renderModalFlag(homeName)}
                   <span className="font-bold text-white truncate text-xs">
                     {homeName}
                   </span>
                 </div>
-                <span className="text-[9px] font-bold text-slate-500 px-2 shrink-0">
+                <span className="text-[9px] font-bold text-white/50 px-2 shrink-0">
                   VS
                 </span>
                 <div className="flex items-center gap-1.5 justify-end min-w-0">
@@ -1118,7 +1118,7 @@ export default function BetModal({
                     {homeFifa != null ? `#${homeFifa}` : "—"}
                   </span>
                   <span
-                    className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]"
+                    className="text-[9px] text-white/60 font-bold uppercase tracking-wider text-center bg-white/10 border border-white/10 px-2 py-0.5 rounded-full min-w-[70px]"
                     title="Xếp hạng FIFA thế giới (6/2026)"
                   >
                     BXH FIFA
@@ -1130,15 +1130,15 @@ export default function BetModal({
 
                 {/* Group standing row (thật — hạng trong bảng World Cup) */}
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                  <span className="font-mono font-semibold text-slate-300 text-left text-[11px]">
+                  <span className="font-mono font-semibold text-white/75 text-left text-[11px]">
                     {homeRankInfo
                       ? `Bảng ${homeRankInfo.group} · #${homeRankInfo.pos}`
                       : "—"}
                   </span>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]">
+                  <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider text-center bg-white/10 border border-white/10 px-2 py-0.5 rounded-full min-w-[70px]">
                     Hạng bảng
                   </span>
-                  <span className="font-mono font-semibold text-slate-300 text-right text-[11px]">
+                  <span className="font-mono font-semibold text-white/75 text-right text-[11px]">
                     {awayRankInfo
                       ? `Bảng ${awayRankInfo.group} · #${awayRankInfo.pos}`
                       : "—"}
@@ -1148,7 +1148,7 @@ export default function BetModal({
                 {/* Form Row (thật — phong độ gần đây) */}
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                   <FormPips form={homeForm} align="start" />
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center bg-slate-800/40 border border-white/5 px-2 py-0.5 rounded-full min-w-[70px]">
+                  <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider text-center bg-white/10 border border-white/10 px-2 py-0.5 rounded-full min-w-[70px]">
                     {statsLoading ? "…" : "Phong độ"}
                   </span>
                   <FormPips form={awayForm} align="end" />
@@ -1157,14 +1157,14 @@ export default function BetModal({
             </div>
 
             {/* Stadium, Referee, Weather (Modern 2x2 Grid with dedicated blocks) */}
-            <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-3.5 space-y-3">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
+            <div className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-xl p-3.5 space-y-3">
+              <span className="text-[10px] font-bold text-white/60 uppercase tracking-wide block">
                 Thông tin sân & điều kiện
               </span>
               <div className="grid grid-cols-2 gap-2.5 text-[11px]">
                 {/* Sân đấu */}
-                <div className="bg-slate-900/40 border border-white/5 rounded-lg p-2.5 flex flex-col gap-1 min-w-0">
-                  <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
+                <div className="bg-white/10 border border-white/10 rounded-lg p-2.5 flex flex-col gap-1 min-w-0">
+                  <span className="text-white/60 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>🏟</span> Sân đấu
                   </span>
                   <span
@@ -1177,8 +1177,8 @@ export default function BetModal({
                   </span>
                 </div>
                 {/* Thời tiết */}
-                <div className="bg-slate-900/40 border border-white/5 rounded-lg p-2.5 flex flex-col gap-1 min-w-0">
-                  <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
+                <div className="bg-white/10 border border-white/10 rounded-lg p-2.5 flex flex-col gap-1 min-w-0">
+                  <span className="text-white/60 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>☀️</span> Thời tiết
                   </span>
                   <span className="font-bold text-white truncate text-xs">
@@ -1190,8 +1190,8 @@ export default function BetModal({
                   </span>
                 </div>
                 {/* Trọng tài */}
-                <div className="bg-slate-900/40 border border-white/5 rounded-lg p-2.5 flex flex-col gap-1 min-w-0">
-                  <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
+                <div className="bg-white/10 border border-white/10 rounded-lg p-2.5 flex flex-col gap-1 min-w-0">
+                  <span className="text-white/60 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>🏁</span> Trọng tài
                   </span>
                   <span
@@ -1202,8 +1202,8 @@ export default function BetModal({
                   </span>
                 </div>
                 {/* Thành phố */}
-                <div className="bg-slate-900/40 border border-white/5 rounded-lg p-2.5 flex flex-col gap-1 min-w-0">
-                  <span className="text-slate-400 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
+                <div className="bg-white/10 border border-white/10 rounded-lg p-2.5 flex flex-col gap-1 min-w-0">
+                  <span className="text-white/60 flex items-center gap-1 font-medium text-[9px] uppercase tracking-wider">
                     <span>📍</span> Thành phố
                   </span>
                   <span
@@ -1219,22 +1219,22 @@ export default function BetModal({
             </div>
 
             {/* Head to Head (H2H) (Visual layout with flags and aligned scores) */}
-            <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-3.5 space-y-3">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
+            <div className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-xl p-3.5 space-y-3">
+              <span className="text-[10px] font-bold text-white/60 uppercase tracking-wide block">
                 Lịch sử đối đầu (H2H)
               </span>
               <div className="space-y-3">
                 {statsLoading && !stats ? (
-                  <div className="text-[10px] text-slate-500 text-center py-2">
+                  <div className="text-[10px] text-white/50 text-center py-2">
                     Đang tải…
                   </div>
                 ) : stats?.h2h?.length ? (
                   stats.h2h.map((g, i) => (
                     <div
                       key={i}
-                      className={`flex flex-col gap-1 ${i < stats.h2h.length - 1 ? "pb-2.5 border-b border-white/5" : ""}`}
+                      className={`flex flex-col gap-1 ${i < stats.h2h.length - 1 ? "pb-2.5 border-b border-white/10" : ""}`}
                     >
-                      <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                      <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">
                         {[
                           g.league,
                           g.date ? new Date(g.date).getFullYear() : null,
@@ -1249,7 +1249,7 @@ export default function BetModal({
                           </span>
                           {renderModalFlag(g.home)}
                         </div>
-                        <span className="px-2.5 py-0.5 rounded-full bg-slate-800 border border-white/5 text-white font-mono font-black text-[11px] shrink-0 min-w-[38px] text-center">
+                        <span className="px-2.5 py-0.5 rounded-full bg-white/12 border border-white/20 text-white font-mono font-black text-[11px] shrink-0 min-w-[38px] text-center">
                           {g.homeGoals ?? "-"} - {g.awayGoals ?? "-"}
                         </span>
                         <div className="flex items-center gap-1.5 justify-start min-w-0">
@@ -1262,7 +1262,7 @@ export default function BetModal({
                     </div>
                   ))
                 ) : (
-                  <div className="text-[10px] text-slate-500 text-center py-2">
+                  <div className="text-[10px] text-white/50 text-center py-2">
                     {stats?.statsAvailable === false
                       ? "Chưa cấu hình nguồn dữ liệu đối đầu."
                       : "Không có dữ liệu đối đầu gần đây."}
@@ -1273,10 +1273,10 @@ export default function BetModal({
 
             {/* Tỉ lệ lựa chọn cộng đồng — tính thật từ kèo trong phòng */}
             {communityDist && (
-              <div className="bg-[#0B1735]/60 border border-white/5 rounded-xl p-3.5 space-y-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
+              <div className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-xl p-3.5 space-y-2">
+                <span className="text-[10px] font-bold text-white/60 uppercase tracking-wide block">
                   Tỉ lệ lựa chọn cộng đồng
-                  <span className="text-slate-500 font-medium ml-1">
+                  <span className="text-white/50 font-medium ml-1">
                     ({communityDist.total} kèo)
                   </span>
                 </span>
@@ -1288,7 +1288,7 @@ export default function BetModal({
                         {homeName} ({communityDist.home}%)
                       </span>
                     </div>
-                    <span className="text-slate-400 text-[10px] shrink-0">
+                    <span className="text-white/60 text-[10px] shrink-0">
                       Hòa ({communityDist.draw}%)
                     </span>
                     <div className="flex items-center gap-1 justify-end min-w-0">
@@ -1298,13 +1298,13 @@ export default function BetModal({
                       {renderModalFlag(awayName)}
                     </div>
                   </div>
-                  <div className="w-full h-2 rounded-full overflow-hidden flex bg-slate-800">
+                  <div className="w-full h-2 rounded-full overflow-hidden flex bg-white/10">
                     <div
                       className="bg-[#334BFF] h-full"
                       style={{ width: `${communityDist.home}%` }}
                     />
                     <div
-                      className="bg-slate-500 h-full"
+                      className="bg-white/40 h-full"
                       style={{ width: `${communityDist.draw}%` }}
                     />
                     <div

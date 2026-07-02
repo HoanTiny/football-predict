@@ -453,7 +453,7 @@ export default function ChatWidget({
                 title={muted ? "Bật âm báo tin nhắn" : "Tắt âm báo tin nhắn"}
                 style={{
                   color: muted ? "rgba(148,163,184,0.6)" : "#62F2C0",
-                  background: "rgba(255,255,255,0.04)",
+                  background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.06)",
                   borderRadius: 8,
                   width: 28,
@@ -472,7 +472,7 @@ export default function ChatWidget({
                 onClick={() => setOpen(false)}
                 style={{
                   color: "rgba(148,163,184,0.6)",
-                  background: "rgba(255,255,255,0.04)",
+                  background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.06)",
                   borderRadius: 8,
                   width: 28,
@@ -720,7 +720,7 @@ export default function ChatWidget({
               gap: 8,
               padding: "10px 10px",
               borderTop: "1px solid rgba(255,255,255,0.06)",
-              background: "rgba(255,255,255,0.015)",
+              background: "rgba(255,255,255,0.04)",
               flexShrink: 0,
             }}
           >
@@ -741,9 +741,11 @@ export default function ChatWidget({
                     marginBottom: 6,
                     padding: 8,
                     borderRadius: 14,
-                    background: "rgba(10,18,45,0.98)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+                    background: "rgba(255,255,255,0.12)",
+                    backdropFilter: "blur(24px)",
+                    WebkitBackdropFilter: "blur(24px)",
+                    border: "1px solid rgba(255,255,255,0.22)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 12px 32px rgba(0,0,0,0.4)",
                     display: "grid",
                     gridTemplateColumns: "repeat(8, 1fr)",
                     gap: 2,
@@ -818,7 +820,7 @@ export default function ChatWidget({
               style={{
                 flex: 1,
                 padding: "9px 14px",
-                background: "rgba(255,255,255,0.04)",
+                background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 12,
                 color: "#e2e8f0",

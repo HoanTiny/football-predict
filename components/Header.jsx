@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { pad } from "@/lib/time";
 import { fmt } from "@/lib/constants";
 import AnimatedNumber from "./AnimatedNumber";
 import Icon from "./Icon";
@@ -9,8 +8,8 @@ import Icon from "./Icon";
 /** Floating Header — Subtle Glassmorphism, Clean Editorial Aesthetics */
 export default function Header({
   player,
-  demoMode,
-  lastUpdated,
+  _demoMode,
+  _lastUpdated,
   tab,
   onTabChange,
   roomCode,
@@ -23,7 +22,7 @@ export default function Header({
   authSession,
   onExit,
   leagueId,
-  leagueName,
+  _leagueName,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const close = () => setMenuOpen(false);
@@ -55,84 +54,77 @@ export default function Header({
         style={{ transform: "translateX(-50%)" }}
       >
         <div
-          className="glass-strong rounded-2xl pl-3 pr-2.5 py-2 flex items-center justify-between gap-3"
-          style={{ minHeight: 52 }}
+          className="rounded-2xl bg-white/10 border border-white/20 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_8px_24px_rgba(0,0,0,0.22)] px-3 py-2 flex items-center justify-between gap-3 h-14"
         >
-          {/* Về trang chủ bóng đá (Hôm nay/Giải đấu) — chỉ hiện khi mở từ AppShell mới */}
-          {onExit && (
-            <button
-              onClick={onExit}
-              title="Về trang chủ bóng đá"
-              className="hidden sm:flex w-9 h-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06] text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
-            >
-              <Icon name="home" className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Logo */}
-          <button
-            onClick={() => onTabChange("schedule")}
-            className="flex items-center gap-2.5 shrink-0 group"
-          >
-            <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-white/10 to-white/[0.02] border border-white/10 overflow-hidden select-none">
-              <img
-                src="/wc2026-emblem.png"
-                alt="Tiny Football"
-                className="h-8 w-auto object-contain drop-shadow-[0_2px_6px_rgba(245,197,24,0.35)]"
-              />
-            </div>
-            <div className="hidden lg:block text-left">
-              <div className="text-[13px] font-extrabold tracking-[0.18em] leading-tight uppercase bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent whitespace-nowrap">
-                {leagueName || "Tiny Football"}
+          {/* Left: Mobile Navigation Pill / Desktop Logo & Name */}
+          <div className="flex items-center w-[50px] sm:w-[110px] md:w-[50px] lg:w-[180px] shrink-0">
+            {/* Desktop Brand Identity: Logo + Name */}
+            <div className="hidden md:flex items-center gap-2 select-none">
+              <div className="w-8.5 h-8.5 flex items-center justify-center rounded-xl bg-white/10 border border-white/15 backdrop-blur-xl overflow-hidden shadow-sm">
+                <img
+                  src="/logo.png"
+                  alt="Tiny Sports"
+                  className="h-6.5 w-auto object-contain"
+                />
               </div>
-              <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 whitespace-nowrap">
-                {demoMode ? (
-                  <>🎮 Chế độ chơi thử</>
-                ) : lastUpdated ? (
-                  <>
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#62F2C0] opacity-60" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#62F2C0]" />
-                    </span>
-                    Cập nhật {pad(lastUpdated.getHours())}:
-                    {pad(lastUpdated.getMinutes())}
-                  </>
-                ) : (
-                  "Đang tải…"
-                )}
-              </div>
+              <span className="hidden lg:inline text-[12px] font-black tracking-[0.15em] leading-tight uppercase text-white whitespace-nowrap">
+                Tiny Sports
+              </span>
             </div>
-          </button>
 
-          {/* Desktop nav tabs — segmented pill (no scroll: labels collapse to icons below xl) */}
-          <nav className="hidden md:flex items-center gap-0.5 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-            {navTabs.map((t) => {
-              const active = tab === t.key;
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => onTabChange(t.key)}
-                  title={t.label}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
-                    active
-                      ? "bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white shadow-[0_2px_12px_rgba(51,75,255,0.45)]"
-                      : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
-                  }`}
-                >
-                  <Icon name={t.icon} className="w-4 h-4 shrink-0" />
-                  <span className={active ? "inline" : "hidden xl:inline"}>
-                    {t.label}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
+            {/* Mobile: Home */}
+            {onExit && (
+              <button
+                onClick={onExit}
+                title="Về trang chủ bóng đá"
+                className="md:hidden flex w-10 h-10 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-white/70 hover:text-white hover:bg-white/[0.18] transition-all duration-200 active:scale-95 z-10"
+              >
+                <Icon name="home" className="w-4.5 h-4.5" />
+              </button>
+            )}
+          </div>
 
-          {/* Right: room code + player profile (Stream moved into the dropdown) */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Middle: Desktop Navigation Pill */}
+          <div className="hidden md:flex flex-1 justify-center min-w-0">
+            <nav className="flex items-center gap-1.5 p-1 rounded-xl bg-white/10 border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] h-10">
+              {onExit && (
+                <>
+                  <button
+                    onClick={onExit}
+                    title="Về trang chủ bóng đá"
+                    className="flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200 active:scale-95"
+                  >
+                    <Icon name="home" className="w-4 h-4" />
+                  </button>
+                  <div className="w-[1px] h-4 bg-white/15 shrink-0" />
+                </>
+              )}
+
+              {navTabs.map((t) => {
+                const active = tab === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => onTabChange(t.key)}
+                    title={t.label}
+                    className={`flex items-center justify-center px-2.5 lg:px-4 rounded-lg text-[10px] lg:text-[11px] font-extrabold uppercase tracking-wider whitespace-nowrap transition-all duration-200 h-8 ${
+                      active
+                        ? "bg-white/20 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] scale-[1.02]"
+                        : "text-white/60 hover:text-white hover:bg-white/5 hover:scale-[1.02]"
+                    } active:scale-95`}
+                  >
+                    <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Right: Room code + Player profile */}
+          <div className="flex items-center justify-end gap-2 w-[50px] sm:w-[110px] md:w-[50px] lg:w-[180px] shrink-0">
             {roomCode && (
               <span
-                className="hidden sm:flex h-9 items-center gap-1.5 px-3 rounded-xl text-[11px] font-bold tracking-[0.1em] text-[#F5C518] bg-[#F5C518]/[0.07] border border-[#F5C518]/25 whitespace-nowrap max-w-[220px]"
+                className="hidden sm:flex md:hidden lg:flex h-10 items-center gap-1.5 px-3.5 rounded-xl text-[11px] font-bold tracking-[0.1em] text-[#F5D67A] bg-[#F5C518]/[0.12] border border-[#F5C518]/35 backdrop-blur-xl whitespace-nowrap max-w-[120px]"
                 title={activeRoomName ? `${activeRoomName} · ${roomCode}` : "Mã phòng"}
               >
                 <Icon name="users" className="w-3.5 h-3.5 shrink-0" />
@@ -150,30 +142,21 @@ export default function Header({
                 onClick={() => setMenuOpen((o) => !o)}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
-                className={`flex h-9 items-center gap-2.5 pl-2.5 pr-2 rounded-xl bg-gradient-to-r from-[#334BFF]/15 to-[#62F2C0]/10 border transition-all duration-200 ${
+                className={`flex h-10 items-center gap-2 pl-2 pr-2 rounded-xl bg-white/10 border backdrop-blur-xl transition-all duration-300 active:scale-95 ${
                   menuOpen || settingsActive || statsActive
-                    ? "border-[#62F2C0]/50 shadow-[0_0_14px_rgba(98,242,192,0.18)]"
-                    : "border-white/10 hover:border-white/25"
+                    ? "border-[#62F2C0]/50 bg-white/15 shadow-[0_0_16px_rgba(98,242,192,0.25)]"
+                    : "border-white/15 hover:border-white/30 hover:bg-white/[0.16] hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)]"
                 }`}
               >
-                <div className="flex w-6 h-6 rounded-full bg-[#334BFF]/40 border border-white/15 items-center justify-center text-[10px] font-bold text-white uppercase select-none">
+                <div className="flex w-7 h-7 rounded-lg bg-gradient-to-tr from-[#334bff] to-[#62F2C0] border border-white/30 items-center justify-center text-[11px] font-black text-white uppercase select-none shadow-[0_2px_8px_rgba(98,242,192,0.3)]">
                   {initial}
                 </div>
-                <div className="hidden sm:block text-left leading-tight">
-                  <div className="text-[10px] text-slate-400 font-medium max-w-[90px] truncate">
-                    {player.playerName}
-                  </div>
-                  <div className="text-xs font-bold text-[#62F2C0] tabular-nums flex items-center gap-1">
-                    <Icon name="gem" className="w-3.5 h-3.5 shrink-0" />
-                    <AnimatedNumber value={player.chips} />
-                  </div>
-                </div>
-                <div className="sm:hidden text-xs font-bold text-[#62F2C0] tabular-nums flex items-center gap-1">
-                  <Icon name="gem" className="w-3.5 h-3.5 shrink-0" />
+                <div className="hidden sm:flex md:hidden lg:flex items-center gap-1.5 bg-white/5 border border-white/10 px-2 py-1 rounded-lg text-xs font-bold text-[#62F2C0] tabular-nums">
+                  <Icon name="gem" className="w-3.5 h-3.5 shrink-0 text-[#62F2C0] drop-shadow-[0_0_4px_rgba(98,242,192,0.5)]" />
                   <AnimatedNumber value={player.chips} />
                 </div>
                 <svg
-                  className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`}
+                  className={`w-3.5 h-3.5 text-white/60 transition-transform duration-300 ${menuOpen ? "rotate-180" : ""}`}
                   viewBox="0 0 12 12"
                   fill="none"
                 >
@@ -197,33 +180,36 @@ export default function Header({
                   {/* Dropdown menu */}
                   <div
                     role="menu"
-                    className="absolute right-0 mt-2 w-60 z-50 rounded-xl glass-strong border border-white/10 shadow-2xl p-1.5 origin-top-right"
+                    className="absolute right-0 mt-2.5 w-64 z-50 rounded-2xl bg-[#0b1735]/95 border border-white/20 backdrop-blur-3xl shadow-[0_12px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] p-2 origin-top-right animate-slide-up"
                   >
                     {/* Profile summary */}
-                    <div className="px-3 py-2.5 border-b border-white/5 mb-1">
-                      <div className="text-xs font-bold text-white truncate">
-                        {player.playerName}
+                    <div className="px-3 py-3 border-b border-white/10 mb-1.5 bg-white/5 rounded-xl">
+                      <div className="text-xs font-bold text-white flex items-center gap-2">
+                        <div className="w-5 h-5 rounded bg-gradient-to-tr from-[#334bff] to-[#62F2C0] flex items-center justify-center text-[10px] font-black text-white">
+                          {initial}
+                        </div>
+                        <span className="truncate">{player.playerName}</span>
                       </div>
-                      <div className="text-[11px] text-[#62F2C0] font-bold tabular-nums mt-0.5 flex items-center gap-1.5">
-                        <Icon name="gem" className="w-3.5 h-3.5 shrink-0" />
+                      <div className="text-[11px] text-[#62F2C0] font-bold tabular-nums mt-2 flex items-center gap-1.5">
+                        <Icon name="gem" className="w-3.5 h-3.5 shrink-0 text-[#62F2C0]" />
                         {fmt(player.chips)} chips
                       </div>
                       {authSession?.user?.email && (
                         <div
-                          className="text-[10px] text-slate-400 truncate mt-1.5 flex items-center gap-1.5"
+                          className="text-[10px] text-white/50 truncate mt-2 flex items-center gap-1.5"
                           title={authSession.user.email}
                         >
-                          <Icon name="mail" className="w-3 h-3 shrink-0" />
+                          <Icon name="mail" className="w-3 h-3 shrink-0 text-white/40" />
                           <span className="truncate">{authSession.user.email}</span>
                         </div>
                       )}
                       {roomCode && (
-                        <div className="text-[10px] text-[#F5C518] mt-1.5 flex items-center gap-1.5">
-                          <Icon name="users" className="w-3 h-3 shrink-0" />
+                        <div className="text-[10px] text-[#F5D67A] mt-2 flex items-center gap-1.5">
+                          <Icon name="users" className="w-3 h-3 shrink-0 text-[#F5D67A]/60" />
                           {activeRoomName ? (
                             <span className="truncate">
                               {activeRoomName}{" "}
-                              <span className="font-mono text-slate-500">· {roomCode}</span>
+                              <span className="font-mono text-white/40">· {roomCode}</span>
                             </span>
                           ) : (
                             <span className="font-mono tracking-wider">Phòng {roomCode}</span>
@@ -233,7 +219,7 @@ export default function Header({
                     </div>
 
                     {/* Room switcher */}
-                    <div className="px-2 pt-1 pb-0.5 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                    <div className="px-2.5 pt-2 pb-1 text-[9px] font-extrabold text-white/40 uppercase tracking-widest">
                       Phòng chơi
                     </div>
                     <button
@@ -242,13 +228,13 @@ export default function Header({
                         onGoSolo && onGoSolo();
                         close();
                       }}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
                         isSolo
-                          ? "bg-[#334BFF]/20 text-white"
-                          : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                          ? "bg-white/10 text-white shadow-sm"
+                          : "text-white/70 hover:text-white hover:bg-white/5"
                       }`}
                     >
-                      <Icon name="user" className="w-4 h-4 shrink-0" />
+                      <Icon name="user" className="w-4 h-4 shrink-0 text-white/60" />
                       Chơi một mình
                       {isSolo && (
                         <Icon name="check" className="ml-auto w-3.5 h-3.5 text-[#62F2C0]" />
@@ -264,17 +250,17 @@ export default function Header({
                             onSwitchRoom && onSwitchRoom(s.code);
                             close();
                           }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
                             active
-                              ? "bg-[#334BFF]/20 text-white"
-                              : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                              ? "bg-white/10 text-white shadow-sm"
+                              : "text-white/70 hover:text-white hover:bg-white/5"
                           }`}
                         >
-                          <Icon name="users" className="w-4 h-4 shrink-0" />
+                          <Icon name="users" className="w-4 h-4 shrink-0 text-white/60" />
                           {s.roomName ? (
                             <span className="flex flex-col items-start min-w-0">
                               <span className="truncate max-w-[150px]">{s.roomName}</span>
-                              <span className="font-mono tracking-wider text-[10px] text-slate-500">
+                              <span className="font-mono tracking-wider text-[10px] text-white/40">
                                 {s.code}
                               </span>
                             </span>
@@ -293,13 +279,13 @@ export default function Header({
                         onOpenRoomPicker && onOpenRoomPicker();
                         close();
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#62F2C0] hover:bg-white/[0.06] transition-colors"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#62F2C0] hover:bg-[#62F2C0]/10 transition-all duration-200 cursor-pointer"
                     >
-                      <Icon name="plus" className="w-4 h-4 shrink-0" />
+                      <Icon name="plus" className="w-4 h-4 shrink-0 text-[#62F2C0]" />
                       Tạo / vào phòng khác
                     </button>
 
-                    <div className="my-1 border-t border-white/5" />
+                    <div className="my-1.5 border-t border-white/10" />
 
                     {/* Stream / OBS */}
                     <a
@@ -307,9 +293,9 @@ export default function Header({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#62F2C0] hover:bg-white/[0.06] transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#62F2C0] hover:bg-[#62F2C0]/10 transition-all duration-200"
                     >
-                      <Icon name="tv" className="w-4 h-4 shrink-0" />
+                      <Icon name="tv" className="w-4 h-4 shrink-0 text-[#62F2C0]" />
                       Stream / OBS
                     </a>
 
@@ -320,13 +306,13 @@ export default function Header({
                         onTabChange("statistics");
                         setMenuOpen(false);
                       }}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
                         statsActive
-                          ? "bg-[#334BFF]/20 text-white"
-                          : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                          ? "bg-white/10 text-white shadow-sm"
+                          : "text-white/70 hover:text-white hover:bg-white/5"
                       }`}
                     >
-                      <Icon name="activity" className="w-4 h-4 shrink-0" />
+                      <Icon name="activity" className="w-4 h-4 shrink-0 text-white/60" />
                       Thống kê của tôi
                     </button>
 
@@ -337,18 +323,18 @@ export default function Header({
                         onTabChange("settings");
                         setMenuOpen(false);
                       }}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
                         settingsActive
-                          ? "bg-[#334BFF]/20 text-white"
-                          : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                          ? "bg-white/10 text-white shadow-sm"
+                          : "text-white/70 hover:text-white hover:bg-white/5"
                       }`}
                     >
-                      <Icon name="settings" className="w-4 h-4 shrink-0" />
+                      <Icon name="settings" className="w-4 h-4 shrink-0 text-white/60" />
                       Cài đặt & tài khoản
                     </button>
                     {authSession && (
                       <>
-                        <div className="my-1 border-t border-white/5" />
+                        <div className="my-1.5 border-t border-white/10" />
                         <button
                           role="menuitem"
                           onClick={async () => {
@@ -356,7 +342,7 @@ export default function Header({
                             await supabase.auth.signOut();
                             close();
                           }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-950/20 hover:text-red-300 transition-colors cursor-pointer"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#ff8a8a] hover:bg-[#ff5a5a]/15 hover:text-white transition-all duration-200 cursor-pointer"
                         >
                           <Icon name="logout" className="w-4 h-4 shrink-0" />
                           Đăng xuất tài khoản

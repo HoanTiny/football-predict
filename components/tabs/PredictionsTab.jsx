@@ -8,7 +8,7 @@ const renderTeamFlag = (teamName) => {
   const imgUrl = flagImgOf(teamName);
   if (imgUrl) {
     return (
-      <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-slate-900/50">
+      <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-white/10">
         <img
           src={imgUrl}
           alt={teamName}
@@ -21,9 +21,9 @@ const renderTeamFlag = (teamName) => {
 };
 
 const STATUS_CONFIG = {
-  pending:     { bg: "bg-[#0B1735]/40 border-white/5",        label: "⏳ Chờ kết quả",  labelClass: "bg-[#334BFF]/12 text-[#7b8fff]" },
+  pending:     { bg: "bg-white/[0.06] border-white/12",       label: "⏳ Chờ kết quả",  labelClass: "bg-white/15 text-white/85" },
   won_exact:   { bg: "bg-[#62F2C0]/5 border-[#62F2C0]/20",    label: "🎯 Đúng tỉ số",   labelClass: "bg-[#62F2C0]/15 text-[#62F2C0]" },
-  won_outcome: { bg: "bg-[#334BFF]/5 border-[#334BFF]/20",    label: "✅ Đúng kết quả", labelClass: "bg-[#334BFF]/15 text-[#7b8fff]" },
+  won_outcome: { bg: "bg-[#7b8fff]/10 border-[#7b8fff]/25",   label: "✅ Đúng kết quả", labelClass: "bg-[#7b8fff]/20 text-[#a5b5ff]" },
   lost:        { bg: "bg-[#E40000]/5 border-[#E40000]/15",    label: "❌ Sai",          labelClass: "bg-[#E40000]/15 text-[#ff4d4d]" },
 };
 
@@ -41,7 +41,7 @@ function RoomPredictions({ betsByMatch, matchById }) {
     return (
       <div className="text-center py-16">
         <div className="text-5xl mb-4 opacity-30">🏟</div>
-        <p className="text-xs text-slate-500 font-semibold">
+        <p className="text-xs text-white/50 font-semibold">
           Phòng chưa có dự đoán nào.
         </p>
       </div>
@@ -57,14 +57,14 @@ function RoomPredictions({ betsByMatch, matchById }) {
         const matchOpen =
           !match || match.status === "SCHEDULED" || match.status === "TIMED";
         return (
-          <div key={matchId} className="rounded-xl border border-white/5 bg-[#0B1735]/40 overflow-hidden">
+          <div key={matchId} className="rounded-2xl border border-white/15 bg-white/[0.08] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] overflow-hidden">
             {/* Match header */}
-            <div className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-white/[0.03] border-b border-white/5">
+            <div className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-white/[0.06] border-b border-white/10">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xs text-white">{home}</span>
                 {renderTeamFlag(home)}
               </div>
-              <span className="text-[10px] text-slate-500 font-semibold px-1">
+              <span className="text-[10px] text-white/50 font-semibold px-1">
                 {match ? `${vnDateHeader(match.utcDate)} · ${vnTime(match.utcDate)}` : "vs"}
               </span>
               <div className="flex items-center gap-2">
@@ -89,7 +89,7 @@ function RoomPredictions({ betsByMatch, matchById }) {
                 return (
                   <div
                     key={b.id || `${b.playerName}_${i}`}
-                    className={`flex flex-col gap-1.5 px-4 py-2.5 text-xs ${b.isMe ? "bg-[#334BFF]/[0.07]" : ""}`}
+                    className={`flex flex-col gap-1.5 px-4 py-2.5 text-xs ${b.isMe ? "bg-white/[0.09]" : ""}`}
                   >
                     {/* Line 1 — player name (full, wraps instead of truncating) + status */}
                     <div className="flex items-start gap-2">
@@ -109,14 +109,14 @@ function RoomPredictions({ betsByMatch, matchById }) {
                           {betLabel(b)}
                         </span>
                       ) : (
-                        <span className="score-capsule px-2 py-0.5 text-[11px] font-bold bg-white/5 border border-white/10 text-slate-500 shrink-0 blur-[3px] select-none" aria-label="đã ẩn">
+                        <span className="score-capsule px-2 py-0.5 text-[11px] font-bold bg-white/5 border border-white/10 text-white/50 shrink-0 blur-[3px] select-none" aria-label="đã ẩn">
                           ? – ?
                         </span>
                       )}
                       {reveal ? (
-                        <span className="text-slate-400 font-medium tabular-nums shrink-0">💎{fmt(b.wager)}</span>
+                        <span className="text-white/60 font-medium tabular-nums shrink-0">💎{fmt(b.wager)}</span>
                       ) : (
-                        <span className="text-slate-500 font-medium shrink-0">💎<span className="blur-[3px] select-none" aria-label="đã ẩn">???</span></span>
+                        <span className="text-white/50 font-medium shrink-0">💎<span className="blur-[3px] select-none" aria-label="đã ẩn">???</span></span>
                       )}
                       {b.status !== "pending" && b.payout !== 0 && (
                         <span className={`font-bold tabular-nums shrink-0 ${b.payout > 0 ? "text-[#62F2C0]" : "text-[#ff5a5a]"}`}>
@@ -124,7 +124,7 @@ function RoomPredictions({ betsByMatch, matchById }) {
                         </span>
                       )}
                       {b.placedAt && (
-                        <span className="ml-auto text-slate-500 font-medium tabular-nums shrink-0" title="Thời gian đặt cược">
+                        <span className="ml-auto text-white/50 font-medium tabular-nums shrink-0" title="Thời gian đặt cược">
                           🕐 {vnShortDateTime(b.placedAt)}
                         </span>
                       )}
@@ -149,7 +149,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
   const wins = settled.filter(p => p.status !== "lost").length;
 
   const viewToggle = inRoom && (
-    <div className="flex items-center gap-0.5 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+    <div className="flex items-center gap-0.5 p-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
       {[
         { key: "mine", label: "🎯 Của tôi" },
         { key: "room", label: "🏟 Cả phòng" },
@@ -157,10 +157,10 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
         <button
           key={v.key}
           onClick={() => setView(v.key)}
-          className={`px-3 py-1.5 rounded-md text-[11px] font-bold whitespace-nowrap transition-all duration-200 ${
+          className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all duration-200 ${
             view === v.key
-              ? "bg-gradient-to-b from-[#4159FF] to-[#2E44E8] text-white shadow-[0_2px_12px_rgba(51,75,255,0.45)]"
-              : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
+              ? "bg-white/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+              : "text-white/60 hover:text-white hover:bg-white/10"
           }`}
         >
           {v.label}
@@ -177,7 +177,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
             <div className="text-[10px] font-bold tracking-[0.2em] text-[#334BFF] uppercase">
               DỰ ĐOÁN CẢ PHÒNG
             </div>
-            <div className="text-[11px] text-slate-500 font-semibold mt-0.5">
+            <div className="text-[11px] text-white/50 font-semibold mt-0.5">
               Minh bạch — ai cược gì, lúc nào
             </div>
           </div>
@@ -194,7 +194,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
         {inRoom && <div className="flex justify-end pb-2">{viewToggle}</div>}
         <div className="text-center py-16">
           <div className="text-5xl mb-4 opacity-30">🎯</div>
-          <p className="text-xs text-slate-500 font-semibold mb-4">
+          <p className="text-xs text-white/50 font-semibold mb-4">
             Bạn chưa có dự đoán nào.
           </p>
           <button
@@ -216,7 +216,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
           <div className="text-[10px] font-bold tracking-[0.2em] text-[#334BFF] uppercase">
             DỰ ĐOÁN CỦA TÔI
           </div>
-          <div className="text-[11px] text-slate-500 font-semibold mt-0.5">
+          <div className="text-[11px] text-white/50 font-semibold mt-0.5">
             {player.predictions.length} dự đoán
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
                   {sc.label}
                 </span>
                 <div className="flex items-center gap-1.5 font-bold text-xs shrink-0">
-                  <span className="text-slate-300 font-semibold tabular-nums">💎{fmt(p.wager)}</span>
+                  <span className="text-white/75 font-semibold tabular-nums">💎{fmt(p.wager)}</span>
                   {p.status !== "pending" && p.payout !== 0 && (
                     <span className={`tabular-nums ${isWin ? "text-[#62F2C0]" : "text-[#ff5a5a]"}`}>
                       ({isWin ? "+" : ""}{fmt(p.payout)})
@@ -287,7 +287,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
               </div>
 
               {/* Meta row — date / placed time / actual score */}
-              <div className="flex justify-center items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 font-medium flex-wrap">
+              <div className="flex justify-center items-center gap-x-2 gap-y-0.5 text-[10px] text-white/50 font-medium flex-wrap">
                 <span>{m ? `${vnDateHeader(m.utcDate)} · ${vnTime(m.utcDate)}` : "—"}</span>
                 {p.placedAt && (
                   <>
