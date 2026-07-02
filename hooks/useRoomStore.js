@@ -12,7 +12,7 @@ import {
 
 const mapPrediction = (row) => ({
   id: row.id,
-  matchId: Number(row.match_id),
+  matchId: String(row.match_id),
   betType: row.bet_type || "score",
   selection: row.selection || null,
   homeGoals: row.home_goals,
@@ -157,9 +157,10 @@ export function useRoomStore(session, matches, pushToast) {
   const betsByMatch = useMemo(() => {
     const m = new Map();
     predictions.forEach((r) => {
-      const list = m.get(Number(r.match_id)) || [];
+      const matchIdStr = String(r.match_id);
+      const list = m.get(matchIdStr) || [];
       list.push({ ...mapPrediction(r), playerName: nameById.get(r.player_id) || "?", isMe: r.player_id === playerId });
-      m.set(Number(r.match_id), list);
+      m.set(matchIdStr, list);
     });
     return m;
   }, [predictions, nameById, playerId]);

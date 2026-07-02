@@ -2,10 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { teamLogo } from "@/lib/leagues";
+import { flagImgOf } from "@/lib/constants";
 
 const TeamLogo = ({ id, name }) => {
   const [err, setErr] = useState(false);
   const url = teamLogo(id);
+  const fallbackUrl = !url || err ? flagImgOf(name) : null;
+
+  if (fallbackUrl) {
+    return (
+      <img
+        src={fallbackUrl}
+        alt={name}
+        className="w-6 h-6 object-cover rounded-full shrink-0 border border-white/10"
+      />
+    );
+  }
+
   if (!url || err) {
     return (
       <div className="w-6 h-6 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-[9px] font-bold text-slate-400 shrink-0">
@@ -116,6 +129,7 @@ function TopStatsTable({ rows, statLabel, loading, empty }) {
         {rows.slice(0, 20).map((p, idx) => {
           const rank = idx + 1;
           const logoUrl = p.teamId ? teamLogo(p.teamId) : null;
+          const finalLogo = logoUrl || flagImgOf(p.teamName);
           return (
             <li key={p.id || rank} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.02] transition-colors">
               <span
@@ -140,8 +154,8 @@ function TopStatsTable({ rows, statLabel, loading, empty }) {
               <div className="min-w-0 flex-1">
                 <div className="text-[12px] font-bold text-white truncate">{p.name}</div>
                 <div className="flex items-center gap-1.5 text-[10px] text-white/60 truncate">
-                  {logoUrl && (
-                    <img src={logoUrl} alt={p.teamName} className="w-3.5 h-3.5 object-contain" />
+                  {finalLogo && (
+                    <img src={finalLogo} alt={p.teamName} className="w-3.5 h-3.5 object-contain" />
                   )}
                   <span className="truncate">{p.teamName}</span>
                 </div>

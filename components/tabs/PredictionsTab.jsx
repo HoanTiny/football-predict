@@ -32,7 +32,7 @@ function RoomPredictions({ betsByMatch, matchById }) {
   const matchGroups = [...betsByMatch.entries()]
     .map(([matchId, bets]) => ({
       matchId,
-      match: matchById.get(matchId),
+      match: matchById.get(String(matchId)),
       bets: [...bets].sort((a, b) => new Date(a.placedAt) - new Date(b.placedAt)),
     }))
     .sort((a, b) => new Date(b.match?.utcDate || 0) - new Date(a.match?.utcDate || 0));
@@ -235,7 +235,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
 
       <div className="space-y-2.5">
         {[...player.predictions].reverse().map((p, idx) => {
-          const m = matchById.get(p.matchId);
+          const m = matchById.get(String(p.matchId));
           const home = m?.homeTeam?.name || "?";
           const away = m?.awayTeam?.name || "?";
           const sc = STATUS_CONFIG[p.status] || STATUS_CONFIG.pending;

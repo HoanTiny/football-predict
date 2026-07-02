@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { teamLogo } from "@/lib/leagues";
 import { vnShortDateTime } from "@/lib/time";
+import { flagImgOf } from "@/lib/constants";
 import LineupPitch from "../LineupPitch";
 
 // Thống kê hiển thị (theo thứ tự) → nhãn tiếng Việt. Key khớp shape FotMob (lib/fotmob.js).
@@ -55,6 +56,18 @@ const Badge = ({ id, name, size = "lg" }) => {
   const [err, setErr] = useState(false);
   const url = teamLogo(id);
   const cls = size === "sm" ? "w-6 h-6" : "w-9 h-9";
+  const fallbackUrl = !url || err ? flagImgOf(name) : null;
+
+  if (fallbackUrl) {
+    return (
+      <img
+        src={fallbackUrl}
+        alt={name}
+        className={`${cls} object-cover rounded-full shrink-0 border border-white/10`}
+      />
+    );
+  }
+
   if (!url || err) {
     return (
       <div className={`${cls} rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-[10px] font-bold text-slate-400 shrink-0`}>

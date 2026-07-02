@@ -3,10 +3,23 @@
 import { useState } from "react";
 import { teamLogo } from "@/lib/leagues";
 import { vnTime } from "@/lib/time";
+import { flagImgOf } from "@/lib/constants";
 
 export const TeamLogo = ({ id, name }) => {
   const [err, setErr] = useState(false);
   const url = teamLogo(id);
+  const fallbackUrl = !url || err ? flagImgOf(name) : null;
+
+  if (fallbackUrl) {
+    return (
+      <img
+        src={fallbackUrl}
+        alt={name}
+        className="w-7 h-7 object-cover rounded-full shrink-0 border border-white/10"
+      />
+    );
+  }
+
   if (!url || err) {
     return (
       <div className="w-7 h-7 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-[9px] font-bold text-white/60 shrink-0">

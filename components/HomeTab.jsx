@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { leagueLogo, teamLogo } from "@/lib/leagues";
+import { flagImgOf } from "@/lib/constants";
 import MatchRow from "./leagues/MatchRow";
 import MatchDetailSheet from "./leagues/MatchDetailSheet";
 
@@ -41,6 +42,18 @@ const LeagueLogoImg = ({ id, name }) => {
 const TeamCrest = ({ id, name, size = "w-14 h-14" }) => {
   const [err, setErr] = useState(false);
   const url = teamLogo(id);
+  const fallbackUrl = !url || err ? flagImgOf(name) : null;
+
+  if (fallbackUrl) {
+    return (
+      <img
+        src={fallbackUrl}
+        alt={name}
+        className={`${size} object-cover rounded-full shrink-0 border border-white/25`}
+      />
+    );
+  }
+
   if (!url || err) {
     return (
       <div className={`${size} rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm font-bold text-white shrink-0`}>
