@@ -4,22 +4,25 @@ import { useState } from "react";
 import Icon from "./Icon";
 
 /** Premium bottom navigation — mobile only with collapsible menu */
-export default function BottomNav({ tab, onTabChange }) {
+export default function BottomNav({ tab, onTabChange, leagueId }) {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Bảng đấu/Sơ đồ/Vô địch chỉ hỗ trợ đúng format World Cup 2026 — ẩn với giải khác.
+  const isWorldCup = leagueId === 77;
 
   // Top 4 main tabs visible directly in the navigation bar
   const mainTabs = [
     { key: "schedule",    label: "Lịch",    icon: "calendar" },
-    { key: "groups",      label: "Bảng",    icon: "table" },
+    ...(isWorldCup ? [{ key: "groups", label: "Bảng", icon: "table" }] : []),
     { key: "predictions", label: "Dự đoán", icon: "history" },
     { key: "leaderboard", label: "BXH",     icon: "chart" },
   ];
 
   // Hidden tabs collapsed into the "More" overlay menu
   const moreTabs = [
-    { key: "bracket",     label: "Sơ đồ",   icon: "bracket" },
+    ...(isWorldCup ? [{ key: "bracket", label: "Sơ đồ", icon: "bracket" }] : []),
     { key: "statistics",  label: "Thống kê", icon: "activity" },
-    { key: "champion",    label: "Vô địch", icon: "trophy" },
+    ...(isWorldCup ? [{ key: "champion", label: "Vô địch", icon: "trophy" }] : []),
     { key: "settings",    label: "Cài đặt", icon: "settings" },
   ];
 

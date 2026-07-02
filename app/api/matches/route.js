@@ -1,56 +1,21 @@
-// Nguồn danh sách trận. Ưu tiên API-Football (live tốt: HT/phút/cập nhật ~15s)
-// khi có RAPIDAPI_KEY; nếu không có key hoặc lỗi thì fallback football-data.org.
-import { wcSourceReady, fetchWorldCupMatches } from "@/lib/wcMatches";
+// Nguồn danh sách trận cho phần Dự đoán — FotMob theo leagueId (không cần API key), CÙNG
+// nguồn với phần duyệt trận. Thay cho football-data.org/API-Football cũ (hay lỗi 403/hết quota,
+// chỉ hỗ trợ World Cup) để mỗi phòng chơi có thể chọn giải đấu bất kỳ (lib/leagues.js).
+import { fetchLeagueMatchesForPredict } from "@/lib/predictMatches";
 import { enrichLiveScores } from "@/lib/liveEnrich";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request) {
-  // 1) Ưu tiên API-Football
-  if (wcSourceReady()) {
-    try {
-      const matches = await fetchWorldCupMatches();
-      if (matches && matches.length) {
-        await enrichLiveScores(matches);
-        return Response.json({ matches, source: "api-football" });
-      }
-    } catch {
-      // rơi xuống fallback football-data
-    }
-  }
-
-  // 2) Fallback: football-data.org (token từ client header hoặc env)
-  const token =
-    request.headers.get("x-auth-token") || process.env.FOOTBALL_DATA_TOKEN;
-
-  if (!token) {
-    return Response.json({ error: "Missing API token" }, { status: 401 });
-  }
+  const leagueId = Number(new URL(request.url).searchParams.get("leagueId")) || 77;
 
   try {
-    const res = await fetch(
-      "https://api.football-data.org/v4/competitions/WC/matches",
-      {
-        headers: { "X-Auth-Token": token },
-        cache: "no-store",
-      }
-    );
-
-    if (!res.ok) {
-      return Response.json(
-        { error: `football-data.org trả về HTTP ${res.status}` },
-        { status: res.status }
-      );
-    }
-
-    const body = await res.json();
-    if (body && Array.isArray(body.matches)) {
-      await enrichLiveScores(body.matches);
-    }
-    return Response.json(body);
-  } catch {
+    const matches = await fetchLeagueMatchesForPredict(leagueId);
+    if (matches.length) await enrichLiveScores(matches);
+    return Response.json({ matches, source: "fotmob" });
+  } catch (e) {
     return Response.json(
-      { error: "Không kết nối được football-data.org" },
+      { error: e.message || "Không tải được lịch trận" },
       { status: 502 }
     );
   }

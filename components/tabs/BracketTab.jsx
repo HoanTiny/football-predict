@@ -169,15 +169,21 @@ function RoundColumn({ matches, mods, label, stByGroup, onBet }) {
   );
 }
 
-/** TAB — Sơ đồ — bracket knockout 2 nhánh đối xứng */
-export default function BracketTab({ matches, onBet }) {
+/**
+ * TAB — Sơ đồ — bracket knockout 2 nhánh đối xứng.
+ * Mặc định World Cup; truyền leagueId/leagueName để dùng cho giải cúp khác (UCL, UEL…).
+ * `matches` (feed football-data) chỉ có ý nghĩa với WC — giải khác truyền [] vẫn chạy
+ * (mất phần fallback + tooltip "đội có thể gặp" + PĐ enrich, nhánh FotMob vẫn đầy đủ).
+ */
+export default function BracketTab({ matches = [], onBet, leagueId = 77, leagueName = "FIFA World Cup 2026" }) {
   // Ưu tiên sơ đồ FotMob (2 biến thể: theo BXH / đã chắc chắn); fallback football-data.
   const fallback = useMemo(() => organizeBracket(matches), [matches]);
   const [fmData, setFmData] = useState(null); // { asItStands, confirmed }
   const [view, setView] = useState("stands"); // "stands" | "confirmed"
   useEffect(() => {
     let active = true;
-    fetch("/api/bracket")
+    setFmData(null); // đổi giải → xoá bracket cũ trong lúc tải
+    fetch(`/api/bracket?id=${leagueId}`)
       .then((r) => r.json())
       .then((d) => {
         if (active && d?.hasData) setFmData(d);
@@ -186,7 +192,7 @@ export default function BracketTab({ matches, onBet }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [leagueId]);
 
   // BXH 12 bảng (kết quả thật) → liệt kê đội có thể vào mỗi suất chưa chắc chắn.
   const stByGroup = useMemo(() => {
@@ -259,7 +265,7 @@ export default function BracketTab({ matches, onBet }) {
       {/* Section title */}
       <div className="text-center">
         <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-[#334BFF] mb-1">
-          FIFA WORLD CUP 2026
+          {leagueName}
         </div>
         <h2 className="text-2xl font-bold text-[#F5C518] uppercase tracking-wider">
           SƠ ĐỒ KNOCKOUT

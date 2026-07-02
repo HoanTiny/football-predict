@@ -21,6 +21,9 @@ export default function Header({
   onGoSolo,
   onOpenRoomPicker,
   authSession,
+  onExit,
+  leagueId,
+  leagueName,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const close = () => setMenuOpen(false);
@@ -28,13 +31,16 @@ export default function Header({
   // Tên phòng đang mở (nếu đã đặt) để hiển thị thay cho mã khô khan.
   const activeRoomName = sessions.find((s) => s.code === activeCode)?.roomName || null;
 
+  // Bảng đấu/Sơ đồ/Vô địch hiện chỉ hỗ trợ đúng format World Cup 2026 (12 bảng, 48 đội,
+  // vòng loại trực tiếp cố định) — ẩn với các giải khác để tránh hiện dữ liệu sai.
+  const isWorldCup = leagueId === 77;
   const navTabs = [
     { key: "schedule", label: "Lịch đấu", icon: "calendar" },
-    { key: "groups", label: "Bảng đấu", icon: "table" },
-    { key: "bracket", label: "Sơ đồ", icon: "bracket" },
+    ...(isWorldCup ? [{ key: "groups", label: "Bảng đấu", icon: "table" }] : []),
+    ...(isWorldCup ? [{ key: "bracket", label: "Sơ đồ", icon: "bracket" }] : []),
     { key: "predictions", label: "Lịch sử", icon: "history" },
     { key: "leaderboard", label: "BXH", icon: "chart" },
-    { key: "champion", label: "Vô địch", icon: "trophy" },
+    ...(isWorldCup ? [{ key: "champion", label: "Vô địch", icon: "trophy" }] : []),
   ];
 
   const initial = (player.playerName || "?").charAt(0).toUpperCase();
@@ -52,6 +58,17 @@ export default function Header({
           className="glass-strong rounded-2xl pl-3 pr-2.5 py-2 flex items-center justify-between gap-3"
           style={{ minHeight: 52 }}
         >
+          {/* Về trang chủ bóng đá (Hôm nay/Giải đấu) — chỉ hiện khi mở từ AppShell mới */}
+          {onExit && (
+            <button
+              onClick={onExit}
+              title="Về trang chủ bóng đá"
+              className="hidden sm:flex w-9 h-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06] text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+            >
+              <Icon name="home" className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Logo */}
           <button
             onClick={() => onTabChange("schedule")}
@@ -66,7 +83,7 @@ export default function Header({
             </div>
             <div className="hidden lg:block text-left">
               <div className="text-[13px] font-extrabold tracking-[0.18em] leading-tight uppercase bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent whitespace-nowrap">
-                Tiny Football
+                {leagueName || "Tiny Football"}
               </div>
               <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 whitespace-nowrap">
                 {demoMode ? (

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 /** FIFA 2026 × Glass Config Screen — API token setup */
-export default function ConfigScreen({ onSave, onDemo }) {
+export default function ConfigScreen({ onSave, onDemo, onExit }) {
   const [token, setToken] = useState("");
 
   return (
@@ -11,6 +11,14 @@ export default function ConfigScreen({ onSave, onDemo }) {
       className="min-h-[100dvh] flex items-center justify-center p-4 relative overflow-hidden"
       style={{ background: "linear-gradient(180deg, #06101e 0%, #08142d 100%)" }}
     >
+      {onExit && (
+        <button
+          onClick={onExit}
+          className="fixed top-4 left-4 z-20 flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+        >
+          ← Trang chủ bóng đá
+        </button>
+      )}
       {/* Blobs */}
       <div aria-hidden style={{
         position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",

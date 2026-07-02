@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { fetchWorldCupMatches } from "@/lib/wcMatches";
+import { fetchLeagueMatchesForPredict } from "@/lib/predictMatches";
 import { normalizeTeamName } from "@/lib/standings";
 import { evaluateBet } from "@/lib/settlement";
 
@@ -16,24 +16,17 @@ const KNOCKOUT_STAGES = new Set([
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Lấy trận từ ĐÚNG nguồn mà client dùng (api-football nếu có key, fallback football-data)
-// để khớp match_id đã lưu trong kèo.
-async function getMatches(request) {
-  try {
-    const m = await fetchWorldCupMatches();
-    if (m && m.length) return m;
-  } catch {
-    /* fallback */
-  }
-  const token =
-    request.headers.get("x-auth-token") || process.env.FOOTBALL_DATA_TOKEN;
-  if (!token) return [];
-  const res = await fetch(
-    "https://api.football-data.org/v4/competitions/WC/matches",
-    { headers: { "X-Auth-Token": token }, cache: "no-store" }
+// Mỗi phòng có thể là 1 giải đấu khác nhau (rooms.league_id) — lấy trận của TỪNG giải đang có
+// phòng, gộp lại. match_id là id gốc FotMob (không phụ thuộc giải) nên gộp trực tiếp an toàn.
+async function getMatches() {
+  const { data: rooms } = await supabaseAdmin.from("rooms").select("league_id");
+  const leagueIds = [...new Set((rooms || []).map((r) => r.league_id || 77))];
+  if (!leagueIds.length) leagueIds.push(77);
+
+  const lists = await Promise.all(
+    leagueIds.map((id) => fetchLeagueMatchesForPredict(id).catch(() => []))
   );
-  if (!res.ok) return [];
-  return (await res.json()).matches || [];
+  return lists.flat();
 }
 
 export async function GET(request) {
@@ -48,7 +41,7 @@ export async function GET(request) {
     return Response.json({ error: "Thiếu SUPABASE_SERVICE_ROLE_KEY" }, { status: 503 });
   }
 
-  const matches = await getMatches(request);
+  const matches = await getMatches();
   const finished = new Map(
     matches
       .filter((m) => m.status === "FINISHED" && m.score?.fullTime?.home != null)

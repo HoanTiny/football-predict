@@ -75,9 +75,22 @@ const AWAY_COLOR = {
 /** Avatar: ảnh cầu thủ (FotMob) nếu có, tự fallback về chữ viết tắt khi ảnh lỗi/thiếu. */
 function PlayerAvatar({ photo, name, color, size }) {
   const [errored, setErrored] = useState(false);
+  const isHex = typeof color === "string" && color.startsWith("#");
+  
+  const bgStyle = isHex 
+    ? { 
+        backgroundColor: color,
+        border: "2px solid rgba(255, 255, 255, 0.95)",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)"
+      }
+    : {};
+
   return (
     <div
-      className={`${size} rounded-full bg-gradient-to-br ${color.from} ${color.to} border-2 border-white/95 text-white font-extrabold text-[13px] md:text-[14px] lg:text-[15px] tracking-wider uppercase flex items-center justify-center shadow-lg ${color.shadow} overflow-hidden`}
+      className={`${size} rounded-full text-white font-extrabold text-[13px] md:text-[14px] lg:text-[15px] tracking-wider uppercase flex items-center justify-center overflow-hidden ${
+        isHex ? "shadow-lg" : `bg-gradient-to-br ${color.from} ${color.to} border-2 border-white/95 ${color.shadow} shadow-lg`
+      }`}
+      style={bgStyle}
     >
       {photo && !errored ? (
         <img
@@ -168,15 +181,28 @@ function PlayerDot({ p, color, onSelect }) {
   );
 }
 
-function TeamTab({ team, active, onClick }) {
+function TeamTab({ team, active, color, onClick }) {
   const flag = flagImgOf(team?.team);
+  const isHex = typeof color === "string" && color.startsWith("#");
+  
+  const activeStyle = active && isHex
+    ? {
+        backgroundColor: "rgba(255, 255, 255, 0.12)",
+        borderColor: color,
+        boxShadow: `0 0 10px ${color}33`,
+      }
+    : {};
+
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all duration-200 shrink-0 min-w-0 select-none ${
+      style={activeStyle}
+      className={`flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all duration-200 shrink-0 min-w-0 select-none border ${
         active
-          ? "bg-white/12 border border-white/20 text-white shadow-lg backdrop-blur-md scale-[1.02]"
-          : "bg-white/4 border border-white/5 text-slate-400 hover:bg-white/7 hover:text-white"
+          ? isHex 
+            ? "text-white scale-[1.02]" 
+            : "bg-white/12 border-white/20 text-white shadow-lg backdrop-blur-md scale-[1.02]"
+          : "bg-white/4 border-white/5 text-slate-400 hover:bg-white/7 hover:text-white"
       }`}
     >
       {flag && (
@@ -428,24 +454,49 @@ function PlayerStatsCard({ entry, onClose }) {
   );
 }
 
-export default function LineupPitch({ lineups }) {
+export default function LineupPitch({ lineups, homeColor, awayColor }) {
   const [side, setSide] = useState("home");
   const [selected, setSelected] = useState(null);
   if (!lineups || !lineups.home || !lineups.away) return null;
+
+  const alphaColor = (color, alpha = 0.15) => {
+    if (!color || typeof color !== "string") return `rgba(255, 255, 255, ${alpha})`;
+    let cleanHex = color.replace("#", "");
+    if (cleanHex.length === 3) {
+      cleanHex = cleanHex.split("").map((c) => c + c).join("");
+    }
+    if (cleanHex.length === 6) {
+      const r = parseInt(cleanHex.substring(0, 2), 16);
+      const g = parseInt(cleanHex.substring(2, 4), 16);
+      const b = parseInt(cleanHex.substring(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    return color;
+  };
+
+  const pitchHome = homeColor || "#3b82f6";
+  const pitchAway = awayColor || "#ef4444";
+
+  const containerStyle = {
+    background: `
+      radial-gradient(circle at 15% 15%, ${alphaColor(pitchHome, 0.16)} 0%, transparent 60%),
+      radial-gradient(circle at 85% 15%, ${alphaColor(pitchAway, 0.16)} 0%, transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.01) 0%, rgba(255, 255, 255, 0.02) 100%),
+      #081229
+    `
+  };
 
   const predicted = lineups.predicted;
   const pickPlayer = (p) =>
     setSelected({
       player: p,
       team: lineups[side]?.team,
-      color: side === "home" ? HOME_COLOR : AWAY_COLOR,
+      color: side === "home" ? (homeColor || HOME_COLOR) : (awayColor || AWAY_COLOR),
     });
 
   return (
     <div
-      style={{
-        background: "radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.28) 0%, transparent 60%), radial-gradient(circle at 85% 15%, rgba(239, 68, 68, 0.28) 0%, transparent 60%), linear-gradient(180deg, #0d132b 0%, #050710 100%)",
-      }}
+      style={containerStyle}
       className="w-full rounded-2xl p-4 md:p-5 border border-white/10 shadow-2xl relative space-y-4"
     >
       {/* Header labels */}
@@ -468,11 +519,13 @@ export default function LineupPitch({ lineups }) {
         <TeamTab
           team={lineups.home}
           active={side === "home"}
+          color={homeColor}
           onClick={() => setSide("home")}
         />
         <TeamTab
           team={lineups.away}
           active={side === "away"}
+          color={awayColor}
           onClick={() => setSide("away")}
         />
       </div>
@@ -480,9 +533,9 @@ export default function LineupPitch({ lineups }) {
       {/* Sân bóng — 1 sân duy nhất, căn giữa, giới hạn chiều rộng trên PC */}
       <div className="mx-auto w-full max-w-[460px] lg:max-w-[620px]">
         {side === "home" ? (
-          <SingleTeamPitch team={lineups.home} color={HOME_COLOR} isHome={true} onSelect={pickPlayer} />
+          <SingleTeamPitch team={lineups.home} color={homeColor || HOME_COLOR} isHome={true} onSelect={pickPlayer} />
         ) : (
-          <SingleTeamPitch team={lineups.away} color={AWAY_COLOR} isHome={false} onSelect={pickPlayer} />
+          <SingleTeamPitch team={lineups.away} color={awayColor || AWAY_COLOR} isHome={false} onSelect={pickPlayer} />
         )}
       </div>
 

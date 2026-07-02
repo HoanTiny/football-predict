@@ -4,17 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import { buildDemoMatches } from "@/lib/demoData";
 
 /**
- * Tải danh sách trận đấu (qua proxy /api/matches) và poll mỗi 60 giây.
- * Chạy được khi: có token cá nhân (apiToken) HOẶC server đã cấu hình token
- * (hasServerToken) — khi đó client không cần dán token, route dùng env server.
+ * Tải danh sách trận đấu của 1 giải (qua proxy /api/matches?leagueId=, nguồn FotMob — không
+ * cần API key) và poll mỗi 60 giây.
  */
-export function useMatches(apiToken, demoMode, hasServerToken = false) {
+export function useMatches(leagueId, demoMode) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const enabled = demoMode || !!apiToken || hasServerToken;
+  const enabled = demoMode || !!leagueId;
 
   const fetchMatches = useCallback(
     async (silent = false) => {
@@ -25,15 +24,13 @@ export function useMatches(apiToken, demoMode, hasServerToken = false) {
         setError(null);
         return;
       }
-      if (!apiToken && !hasServerToken) return;
+      if (!leagueId) return;
       if (!silent) {
         setLoading(true);
         setError(null);
       }
       try {
-        // Chỉ gửi token cá nhân nếu có; nếu không, route dùng FOOTBALL_DATA_TOKEN server.
-        const headers = apiToken ? { "X-Auth-Token": apiToken } : undefined;
-        const res = await fetch("/api/matches", { headers });
+        const res = await fetch(`/api/matches?leagueId=${leagueId}`);
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || `HTTP ${res.status}`);
@@ -48,7 +45,7 @@ export function useMatches(apiToken, demoMode, hasServerToken = false) {
         setLoading(false);
       }
     },
-    [apiToken, demoMode, hasServerToken]
+    [leagueId, demoMode]
   );
 
   useEffect(() => {

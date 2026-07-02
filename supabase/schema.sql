@@ -7,11 +7,16 @@
 create table if not exists rooms (
   code text primary key,
   name text,
+  league_id integer not null default 77,
   created_at timestamptz not null default now()
 );
 
 -- Migration: thêm tên phòng (hiển thị để dễ nhận biết) nếu DB đã tồn tại
 alter table rooms add column if not exists name text;
+
+-- Migration: mỗi phòng gắn với 1 giải đấu (FotMob leagueId, xem lib/leagues.js).
+-- Mặc định 77 = World Cup 2026 để phòng cũ (tạo trước khi có tính năng đa giải) không vỡ.
+alter table rooms add column if not exists league_id integer not null default 77;
 
 -- Người chơi trong phòng (kèm cược vô địch theo vòng)
 create table if not exists players (

@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase, supabaseReady } from "@/lib/supabase";
 import { createRoom, joinRoom } from "@/lib/roomApi";
+import { LEAGUES } from "@/lib/leagues";
 
 /** FIFA 2026 × Premium Room Screen with Supabase Auth integration */
 export default function RoomScreen({
   initialCode,
   onJoined,
   onSolo,
-  onViewer,
+  onExit,
   onCancel,
   session,
   pushToast,
@@ -27,6 +28,7 @@ export default function RoomScreen({
   });
   const [code, setCode] = useState(initialCode || "");
   const [roomName, setRoomName] = useState("");
+  const [leagueId, setLeagueId] = useState(77); // mặc định World Cup 2026
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -179,7 +181,7 @@ export default function RoomScreen({
     setError(null);
     try {
       let roomCode = code.trim().toUpperCase();
-      if (view === "create") roomCode = await createRoom(roomName);
+      if (view === "create") roomCode = await createRoom(roomName, leagueId);
       const me = await joinRoom(roomCode, name.trim(), session?.user?.id);
 
       // Lưu tên cuối cùng vào localStorage thiết bị
@@ -218,6 +220,15 @@ export default function RoomScreen({
         <div className="w-[500px] h-[500px] bg-gradient-to-b from-[#334BFF]/20 to-transparent rounded-full blur-[120px] absolute -top-[250px] left-1/2 -translate-x-1/2" />
         <div className="w-[400px] h-[400px] bg-gradient-to-t from-[#62F2C0]/10 to-transparent rounded-full blur-[100px] absolute -bottom-[200px] left-1/2 -translate-x-1/2" />
       </div>
+
+      {onExit && view === "menu" && (
+        <button
+          onClick={onExit}
+          className="fixed top-4 left-4 z-20 flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+        >
+          ← Trang chủ bóng đá
+        </button>
+      )}
 
       <div className="relative z-10 w-full max-w-md backdrop-blur-xl bg-[#091124]/80 border border-white/[0.08] rounded-2xl p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden">
         {/* Top reflective glow */}
@@ -332,25 +343,6 @@ export default function RoomScreen({
                   </div>
                 </div>
                 <span className="text-slate-400 group-hover:translate-x-1 transition-transform duration-200 text-sm font-bold">
-                  →
-                </span>
-              </div>
-            </button>
-
-            <button
-              onClick={onViewer}
-              className="w-full text-left p-4 rounded-xl bg-transparent border border-white/5 hover:bg-white/[0.03] hover:border-amber-500/20 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>📅</span> Xem lịch &amp; kết quả
-                  </div>
-                  <div className="text-[10px] text-slate-500 font-medium mt-0.5">
-                    Theo dõi lịch thi đấu và cập nhật kết quả thủ công
-                  </div>
-                </div>
-                <span className="text-amber-400/60 group-hover:translate-x-1 transition-transform duration-200 text-sm font-bold">
                   →
                 </span>
               </div>
@@ -541,13 +533,31 @@ export default function RoomScreen({
               />
             )}
             {view === "create" && (
-              <input
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                maxLength={40}
-                placeholder="Tên phòng (VD: Phòng công ty) — tuỳ chọn"
-                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-center font-semibold text-xs placeholder-slate-600 focus:outline-none focus:border-[#334BFF] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#334BFF] transition-all duration-200"
-              />
+              <>
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider pl-1">
+                    Giải đấu cho phòng này
+                  </label>
+                  <select
+                    value={leagueId}
+                    onChange={(e) => setLeagueId(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-[#334BFF] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#334BFF] transition-all duration-200 cursor-pointer"
+                  >
+                    {LEAGUES.map((l) => (
+                      <option key={l.id} value={l.id} className="bg-[#08142D]">
+                        {l.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <input
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                  maxLength={40}
+                  placeholder="Tên phòng (VD: Phòng công ty) — tuỳ chọn"
+                  className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-center font-semibold text-xs placeholder-slate-600 focus:outline-none focus:border-[#334BFF] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#334BFF] transition-all duration-200"
+                />
+              </>
             )}
             <input
               value={name}

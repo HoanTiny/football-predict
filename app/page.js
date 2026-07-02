@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 
 // App đọc localStorage ngay khi khởi tạo state → chỉ render phía client
-const WC2026App = dynamic(() => import("@/components/WC2026App"), {
+const AppShell = dynamic(() => import("@/components/AppShell"), {
   ssr: false,
   loading: () => (
     <div
@@ -28,5 +28,5 @@ const WC2026App = dynamic(() => import("@/components/WC2026App"), {
 });
 
 export default function Page() {
-  return <WC2026App />;
+  return <AppShell />;
 }

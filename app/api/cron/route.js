@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { pushReady, sendToAll, sendToUserIds } from "@/lib/push";
 import { evaluateBet } from "@/lib/settlement";
 import { betLabel } from "@/lib/constants";
+import { fetchLeagueMatchesForPredict } from "@/lib/predictMatches";
 
 // Chạy trên Node runtime (web-push cần crypto của Node).
 export const runtime = "nodejs";
@@ -48,24 +49,19 @@ export async function GET(request) {
     return Response.json({ error: "Push/Supabase chưa cấu hình" }, { status: 503 });
   }
 
-  const token = process.env.FOOTBALL_DATA_TOKEN;
-  if (!token) {
-    return Response.json({ error: "Thiếu FOOTBALL_DATA_TOKEN" }, { status: 503 });
-  }
-
-  // 1) Lấy toàn bộ trận
+  // 1) Lấy toàn bộ trận của MỌI giải đang có phòng (rooms.league_id) — mỗi phòng có thể là
+  // 1 giải khác nhau, match_id là id gốc FotMob nên gộp trực tiếp an toàn.
   let matches = [];
   try {
-    const res = await fetch(
-      "https://api.football-data.org/v4/competitions/WC/matches",
-      { headers: { "X-Auth-Token": token }, cache: "no-store" }
+    const { data: rooms } = await supabaseAdmin.from("rooms").select("league_id");
+    const leagueIds = [...new Set((rooms || []).map((r) => r.league_id || 77))];
+    if (!leagueIds.length) leagueIds.push(77);
+    const lists = await Promise.all(
+      leagueIds.map((id) => fetchLeagueMatchesForPredict(id).catch(() => []))
     );
-    if (!res.ok) {
-      return Response.json({ error: `football-data HTTP ${res.status}` }, { status: 502 });
-    }
-    matches = (await res.json()).matches || [];
+    matches = lists.flat();
   } catch {
-    return Response.json({ error: "Không gọi được football-data" }, { status: 502 });
+    return Response.json({ error: "Không tải được lịch trận" }, { status: 502 });
   }
 
   // 2) Tải state cũ

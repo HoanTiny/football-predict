@@ -26,29 +26,28 @@ const TeamLogo = ({ id, name }) => {
 function StandingsTable({ rows }) {
   return (
     <div className="overflow-x-auto scrollbar-thin">
-      <table className="w-full text-xs text-left text-slate-300 min-w-[520px] border-collapse">
-        <thead className="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-white/5 bg-slate-900/25">
+      <table className="w-full text-xs text-left text-white/85 min-w-[520px] border-collapse">
+        <thead className="text-[10px] font-bold text-white/50 uppercase tracking-wider border-b border-white/10">
           <tr>
             <th className="py-2.5 px-3 text-center w-10">#</th>
             <th className="py-2.5 px-2 text-left">Đội</th>
             <th className="py-2.5 px-1 text-center w-9" title="Số trận">Tr</th>
-            <th className="py-2.5 px-1 text-center w-8 text-[#62F2C0]" title="Thắng">T</th>
-            <th className="py-2.5 px-1 text-center w-8 text-[#FFA07A]" title="Hòa">H</th>
-            <th className="py-2.5 px-1 text-center w-8 text-[#ff5a5a]" title="Thua">B</th>
+            <th className="py-2.5 px-1 text-center w-8 text-[#8fffc9]" title="Thắng">T</th>
+            <th className="py-2.5 px-1 text-center w-8 text-[#ffcba0]" title="Hòa">H</th>
+            <th className="py-2.5 px-1 text-center w-8 text-[#ff9a9a]" title="Thua">B</th>
             <th className="py-2.5 px-2 text-center w-12" title="Hiệu số">HS</th>
             <th className="py-2.5 px-2 text-center w-12 text-white font-extrabold" title="Điểm">Đ</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/5">
+        <tbody className="divide-y divide-white/10">
           {rows.map((t) => (
-            <tr key={t.teamId ?? t.rank} className="standings-row h-11">
-              <td className="py-2 px-3 text-center font-bold text-slate-400">
+            <tr key={t.teamId ?? t.rank} className="h-11 hover:bg-white/[0.04] transition-colors">
+              <td className="py-2 px-3 text-center font-bold text-white/60">
                 <span className="inline-flex items-center gap-1.5 justify-center">
                   {t.qualColor && (
-                    <span
-                      className="w-1 h-4 rounded-full shrink-0"
-                      style={{ background: t.qualColor }}
-                    />
+                    <svg viewBox="0 0 10 10" className="w-2 h-2 shrink-0" style={{ fill: t.qualColor }}>
+                      <polygon points="0,0 10,5 0,10" />
+                    </svg>
                   )}
                   {t.rank}
                 </span>
@@ -62,13 +61,13 @@ function StandingsTable({ rows }) {
                   )}
                 </div>
               </td>
-              <td className="py-2 px-1 text-center text-slate-400 tabular-nums">{t.played}</td>
-              <td className="py-2 px-1 text-center text-slate-300 tabular-nums">{t.wins}</td>
-              <td className="py-2 px-1 text-center text-slate-300 tabular-nums">{t.draws}</td>
-              <td className="py-2 px-1 text-center text-slate-300 tabular-nums">{t.losses}</td>
+              <td className="py-2 px-1 text-center text-white/60 tabular-nums">{t.played}</td>
+              <td className="py-2 px-1 text-center text-white/75 tabular-nums">{t.wins}</td>
+              <td className="py-2 px-1 text-center text-white/75 tabular-nums">{t.draws}</td>
+              <td className="py-2 px-1 text-center text-white/75 tabular-nums">{t.losses}</td>
               <td
                 className={`py-2 px-2 text-center font-bold tabular-nums ${
-                  t.gd > 0 ? "text-[#62F2C0]" : t.gd < 0 ? "text-[#ff5a5a]" : "text-slate-400"
+                  t.gd > 0 ? "text-[#8fffc9]" : t.gd < 0 ? "text-[#ff9a9a]" : "text-white/60"
                 }`}
               >
                 {t.gd > 0 ? `+${t.gd}` : t.gd}
@@ -110,7 +109,7 @@ export default function LeagueTable({ league }) {
     return (
       <div className="space-y-2">
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="h-11 rounded-lg bg-slate-800/30 animate-pulse" />
+          <div key={i} className="h-11 rounded-2xl bg-white/5 border border-white/10 animate-pulse" />
         ))}
       </div>
     );
@@ -120,7 +119,7 @@ export default function LeagueTable({ league }) {
     return (
       <div className="text-center py-16">
         <div className="text-4xl mb-3 opacity-30">📋</div>
-        <p className="text-xs text-slate-500 font-medium">
+        <p className="text-xs text-white/50 font-medium">
           Chưa có bảng xếp hạng cho giải này.
         </p>
       </div>
@@ -132,20 +131,17 @@ export default function LeagueTable({ league }) {
       {data.groups.map((g, i) => (
         <div
           key={i}
-          className="bg-[#0B1735] border border-white/5 rounded-xl overflow-hidden shadow-xl"
+          className="rounded-[24px] bg-white/[0.07] border border-white/15 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_8px_28px_rgba(0,0,0,0.2)] overflow-hidden"
         >
-          <div className="px-4 py-3 border-b border-white/5 bg-slate-900/10">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <span>{g.name || data.leagueName || league.name}</span>
-              {g.name && (
-                <span className="text-[#334BFF] font-black">{g.name}</span>
-              )}
+          <div className="px-4 py-3 text-center">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+              {g.name || data.leagueName || league.name}
             </h4>
           </div>
           <StandingsTable rows={g.rows} />
         </div>
       ))}
-      <p className="text-[10px] text-slate-600 text-center font-medium">
+      <p className="text-[10px] text-white/40 text-center font-medium">
         Nguồn dữ liệu: FotMob
       </p>
     </div>
