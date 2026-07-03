@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { pushReady, sendToAll, sendToUserIds } from "@/lib/push";
+import { sendToAll, sendToUserIds } from "@/lib/push";
+import { sendFcmDataToUserIds } from "@/lib/pushFcm";
 import { evaluateBet } from "@/lib/settlement";
 import { betLabel } from "@/lib/constants";
 import { fetchLeagueMatchesForPredict } from "@/lib/predictMatches";
@@ -45,8 +46,10 @@ export async function GET(request) {
     }
   }
 
-  if (!pushReady()) {
-    return Response.json({ error: "Push/Supabase chưa cấu hình" }, { status: 503 });
+  // Chỉ chặn nếu thiếu Supabase (cần cho mọi bước dưới). Thiếu riêng Web Push hay riêng FCM
+  // không chặn toàn bộ — sendToUserIds/sendFcmDataToUserIds tự no-op nếu kênh đó chưa sẵn sàng.
+  if (!supabaseAdmin) {
+    return Response.json({ error: "Supabase chưa cấu hình" }, { status: 503 });
   }
 
   // 1) Lấy toàn bộ trận của MỌI giải đang có phòng (rooms.league_id) — mỗi phòng có thể là
@@ -77,6 +80,7 @@ export async function GET(request) {
   const kickoffMatches = []; // cần nhắc giờ → bettors
   const goalMatches = []; // có bàn thắng → broadcast
   const finishedMatches = []; // vừa kết thúc → bettors (kết quả kèo)
+  const liveMatches = []; // đang đá → tick live-update (mọi lần chạy, không chỉ khi có bàn)
   const upserts = [];
 
   for (const m of matches) {
@@ -111,6 +115,11 @@ export async function GET(request) {
       goalMatches.push(m);
     }
 
+    // --- Đang đá: tick live-update (cho app native — kiểu iOS Live Activity) ---
+    if (isLive(m.status) && home != null && away != null) {
+      liveMatches.push(m);
+    }
+
     // --- Kết thúc trận (CHUYỂN từ trạng thái khác sang FINISHED) ---
     // Yêu cầu đã từng thấy trận này ở trạng thái chưa kết thúc (p tồn tại & != FINISHED)
     // để lần chạy đầu không gửi lại kết quả cho mọi trận cũ.
@@ -136,9 +145,9 @@ export async function GET(request) {
     });
   }
 
-  // 3) Map bettors cho các trận cần nhắm người (kickoff + finished)
+  // 3) Map bettors cho các trận cần nhắm người (kickoff + finished + đang đá)
   const targetedIds = [
-    ...new Set([...kickoffMatches, ...finishedMatches].map((m) => m.id)),
+    ...new Set([...kickoffMatches, ...finishedMatches, ...liveMatches].map((m) => m.id)),
   ];
   const bettors = await bettorsByMatch(targetedIds);
 
@@ -173,6 +182,32 @@ export async function GET(request) {
     );
   }
 
+  // Live-update (kiểu iOS Live Activity) → tick mỗi lần cron chạy cho người có kèo pending ở
+  // trận đang đá, KHÔNG chỉ khi có bàn thắng. Data-only (không alert) — native Android tự vẽ
+  // notification ProgressStyle. Phút thi đấu ước lượng theo thời gian trôi qua từ giờ bóng lăn
+  // (đơn giản, không cần gọi thêm API — đủ dùng cho hiệu ứng "đang chạy").
+  for (const m of liveMatches) {
+    const list = bettors.get(m.id) || [];
+    if (!list.length) continue;
+    const h = m.score?.fullTime?.home ?? 0;
+    const a = m.score?.fullTime?.away ?? 0;
+    const elapsedMin = Math.max(0, Math.floor((now - new Date(m.utcDate).getTime()) / 60000));
+    const minute = Math.min(90, elapsedMin);
+    const userIds = [...new Set(list.map((b) => b.userId))];
+    tasks.push(
+      sendFcmDataToUserIds(userIds, {
+        liveMatch: "1",
+        matchId: String(m.id),
+        home: m.homeTeam?.name || "?",
+        away: m.awayTeam?.name || "?",
+        homeScore: String(h),
+        awayScore: String(a),
+        minute: String(minute),
+        status: "LIVE",
+      })
+    );
+  }
+
   // Kết thúc → từng người cược biết thắng/thua kèo
   for (const m of finishedMatches) {
     const list = bettors.get(m.id) || [];
@@ -180,6 +215,20 @@ export async function GET(request) {
     const h = m.score?.fullTime?.home ?? 0;
     const a = m.score?.fullTime?.away ?? 0;
     const label = `${m.homeTeam?.name} ${h}-${a} ${m.awayTeam?.name}`;
+    const finishedUserIds = [...new Set(list.map((b) => b.userId))];
+    // Tick live-update LẦN CUỐI với status FINISHED → native tự đóng notification đang chạy.
+    tasks.push(
+      sendFcmDataToUserIds(finishedUserIds, {
+        liveMatch: "1",
+        matchId: String(m.id),
+        home: m.homeTeam?.name || "?",
+        away: m.awayTeam?.name || "?",
+        homeScore: String(h),
+        awayScore: String(a),
+        minute: "90",
+        status: "FINISHED",
+      })
+    );
     for (const b of list) {
       const { status, profitMult } = evaluateBet(b, h, a, { homeTeam: m.homeTeam?.name, awayTeam: m.awayTeam?.name });
       let body;
@@ -213,5 +262,6 @@ export async function GET(request) {
     kickoff: kickoffMatches.length,
     goals: goalMatches.length,
     finished: finishedMatches.length,
+    live: liveMatches.length,
   });
 }

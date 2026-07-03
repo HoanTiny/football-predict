@@ -40,6 +40,21 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Live-update tỉ số (kiểu iOS Live Activity): thay service FCM mặc định của
+             @capacitor/push-notifications bằng bản mở rộng của mình (kế thừa, không mất
+             hành vi gốc) — bắt thêm data message "liveMatch" để tự vẽ notification native,
+             hoạt động cả khi app đã đóng hẳn. -->
+        <service
+            android:name="com.capacitorjs.plugins.pushnotifications.MessagingService"
+            tools:node="remove" />
+        <service
+            android:name=".LiveMatchMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 
     <!-- Permissions -->
