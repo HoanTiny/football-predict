@@ -41,13 +41,38 @@ const LeagueLogoImg = ({ id, name, className = "w-5 h-5" }) => {
   );
 };
 
-/** Nền "liquid glass" indigo cho toàn khu vực xem bóng đá (khác theme navy của game Dự đoán). */
-function LiquidGlassBg() {
+const hexToRgb = (hex) => {
+  let h = (hex || "").replace("#", "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const n = parseInt(h, 16);
+  return isNaN(n) ? { r: 91, g: 107, b: 255 } : { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+};
+// Pha 2 màu hex theo trọng số w (0-1, w=1 -> hoàn toàn màu a).
+const mixHex = (a, b, w) => {
+  const ca = hexToRgb(a), cb = hexToRgb(b);
+  const r = Math.round(ca.r * w + cb.r * (1 - w));
+  const g = Math.round(ca.g * w + cb.g * (1 - w));
+  const bl = Math.round(ca.b * w + cb.b * (1 - w));
+  return `rgb(${r}, ${g}, ${bl})`;
+};
+const rgba = (hex, a) => {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+};
+
+/**
+ * Nền "liquid glass" cho khu vực xem bóng đá — mỗi giải pha thêm màu thương hiệu riêng
+ * (`accent` trong lib/leagues.js) vào dải gradient + quả cầu glow đầu tiên, để mỗi giải có
+ * sắc thái riêng nhưng vẫn cùng "họ" liquid-glass (không đổi hẳn tông, tránh chói/lệch giao diện).
+ */
+function LiquidGlassBg({ accent }) {
+  const topStop = accent ? mixHex(accent, "#4a51b8", 0.55) : "#4a51b8";
+  const blob1 = accent ? rgba(accent, 0.4) : "rgba(116, 132, 255, 0.35)";
   return (
-    <div aria-hidden className="fixed inset-0 -z-10 overflow-hidden" style={{ background: "linear-gradient(165deg, #363b9e 0%, #262a7c 45%, #14163f 100%)" }}>
-      <div className="absolute -top-32 -left-24 w-[480px] h-[480px] rounded-full bg-[#5b6bff]/35 blur-[110px]" />
-      <div className="absolute -top-16 right-[-120px] w-[420px] h-[420px] rounded-full bg-[#4fd6ff]/20 blur-[100px]" />
-      <div className="absolute bottom-[-160px] left-1/3 w-[520px] h-[520px] rounded-full bg-[#7b3fff]/20 blur-[130px]" />
+    <div aria-hidden className="fixed inset-0 -z-10 overflow-hidden" style={{ background: `linear-gradient(165deg, ${topStop} 0%, #383e9c 45%, #23265c 100%)` }}>
+      <div className="absolute -top-32 -left-24 w-[480px] h-[480px] rounded-full blur-[110px]" style={{ background: blob1 }} />
+      <div className="absolute -top-16 right-[-120px] w-[420px] h-[420px] rounded-full bg-[#6fe0ff]/20 blur-[100px]" />
+      <div className="absolute bottom-[-160px] left-1/3 w-[520px] h-[520px] rounded-full bg-[#9a63ff]/20 blur-[130px]" />
     </div>
   );
 }
@@ -76,7 +101,7 @@ export default function AppShell() {
 
   return (
     <div className="min-h-[100dvh] pb-10">
-      <LiquidGlassBg />
+      <LiquidGlassBg accent={league?.accent} />
 
       <header className="sticky top-0 z-40 border-b border-white/10 backdrop-blur-2xl bg-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-4 h-16 flex items-center justify-between gap-3">
@@ -228,7 +253,7 @@ export default function AppShell() {
       {/* Overlay SƠ ĐỒ knockout — full màn hình, kiểu Apple Sports (ảnh bracket) */}
       {bracketOpen && league?.bracket && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <LiquidGlassBg />
+          <LiquidGlassBg accent={league?.accent} />
           <div className="sticky top-0 z-10 flex items-center justify-between px-4 h-16 border-b border-white/10 backdrop-blur-2xl bg-white/[0.04]">
             <button
               onClick={() => setBracketOpen(false)}
