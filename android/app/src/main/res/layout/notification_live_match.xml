@@ -78,6 +78,8 @@
         android:layout_marginTop="4dp"
         android:gravity="center"
         android:textSize="11sp"
+        android:maxLines="1"
+        android:ellipsize="end"
         android:textColor="?android:attr/textColorSecondary" />
 
     <ProgressBar

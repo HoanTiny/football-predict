@@ -5,6 +5,7 @@ import { evaluateBet } from "@/lib/settlement";
 import { betLabel } from "@/lib/constants";
 import { fetchLeagueMatchesForPredict } from "@/lib/predictMatches";
 import { teamLogo } from "@/lib/leagues";
+import { fotmobMatchDetailById } from "@/lib/fotmob";
 
 // Chạy trên Node runtime (web-push cần crypto của Node).
 export const runtime = "nodejs";
@@ -185,15 +186,32 @@ export async function GET(request) {
 
   // Live-update (kiểu iOS Live Activity) → tick mỗi lần cron chạy cho người có kèo pending ở
   // trận đang đá, KHÔNG chỉ khi có bàn thắng. Data-only (không alert) — native Android tự vẽ
-  // notification ProgressStyle. Phút thi đấu ước lượng theo thời gian trôi qua từ giờ bóng lăn
-  // (đơn giản, không cần gọi thêm API — đủ dùng cho hiệu ứng "đang chạy").
+  // notification ProgressStyle. Phút thi đấu: ưu tiên phút thật từ FotMob (matchDetails),
+  // ước lượng theo thời gian trôi qua từ giờ bóng lăn nếu gọi FotMob lỗi.
   for (const m of liveMatches) {
     const list = bettors.get(m.id) || [];
     if (!list.length) continue;
     const h = m.score?.fullTime?.home ?? 0;
     const a = m.score?.fullTime?.away ?? 0;
     const elapsedMin = Math.max(0, Math.floor((now - new Date(m.utcDate).getTime()) / 60000));
-    const minute = Math.min(90, elapsedMin);
+    let minute = Math.min(90, elapsedMin);
+    let scorerFields = {};
+    try {
+      const detail = await fotmobMatchDetailById(m.id);
+      const parsedMinute = parseInt(String(detail?.liveMinute || "").replace(/\D/g, ""), 10);
+      if (!isNaN(parsedMinute)) minute = Math.min(90, parsedMinute);
+      const goals = (detail?.events || []).filter((e) => e.type === "Goal");
+      if (goals.length) {
+        // events đã sắp theo thứ tự diễn ra → phần tử cuối là bàn MỚI NHẤT.
+        const latest = goals[goals.length - 1];
+        scorerFields = {
+          scorer: latest.player || "",
+          scorerMinute: latest.minute != null ? String(latest.minute) : "",
+        };
+      }
+    } catch {
+      // Không chặn luồng chính — thiếu scorer/phút thật thì dùng phút ước lượng, không có scorer.
+    }
     const userIds = [...new Set(list.map((b) => b.userId))];
     tasks.push(
       sendFcmDataToUserIds(userIds, {
@@ -207,6 +225,7 @@ export async function GET(request) {
         status: "LIVE",
         ...(teamLogo(m.homeTeam?.id) ? { homeLogo: teamLogo(m.homeTeam.id) } : {}),
         ...(teamLogo(m.awayTeam?.id) ? { awayLogo: teamLogo(m.awayTeam.id) } : {}),
+        ...scorerFields,
       })
     );
   }

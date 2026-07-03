@@ -71,7 +71,8 @@ object LiveMatchNotifier {
 
     /**
      * data (từ FCM, mọi field là String): matchId, home, away, homeScore, awayScore,
-     * minute ("0".."90"), status ("LIVE" | "FINISHED"), homeLogo?, awayLogo? (URL).
+     * minute ("0".."90"), status ("LIVE" | "FINISHED"), homeLogo?, awayLogo? (URL),
+     * scorer? (tên người ghi bàn gần nhất), scorerMinute? (phút ghi bàn đó).
      */
     fun showOrUpdate(context: Context, data: Map<String, String>) {
         val matchId = data["matchId"] ?: return
@@ -81,6 +82,8 @@ object LiveMatchNotifier {
         val awayScore = data["awayScore"] ?: "0"
         val minute = (data["minute"] ?: "0").toIntOrNull()?.coerceIn(0, 90) ?: 0
         val finished = data["status"] == "FINISHED"
+        val scorer = data["scorer"]?.takeIf { it.isNotBlank() }
+        val scorerMinute = data["scorerMinute"]?.takeIf { it.isNotBlank() }
 
         ensureChannel(context)
 
@@ -99,7 +102,15 @@ object LiveMatchNotifier {
             setTextViewText(R.id.home_name, home)
             setTextViewText(R.id.away_name, away)
             setTextViewText(R.id.score_text, "$homeScore - $awayScore")
-            setTextViewText(R.id.status_text, if (finished) "Kết thúc" else "Phút $minute'")
+            val statusLine = when {
+                finished -> "Kết thúc"
+                scorer != null -> {
+                    val minuteSuffix = if (scorerMinute != null) " $scorerMinute'" else ""
+                    "⚽ $scorer$minuteSuffix · Phút $minute'"
+                }
+                else -> "Phút $minute'"
+            }
+            setTextViewText(R.id.status_text, statusLine)
 
             loadBitmap(data["homeLogo"])?.let { setImageViewBitmap(R.id.home_crest, it) }
             loadBitmap(data["awayLogo"])?.let { setImageViewBitmap(R.id.away_crest, it) }

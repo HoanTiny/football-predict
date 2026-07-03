@@ -12,9 +12,10 @@ const DEMO_AWAY_ID = 5788; // Thái Lan
 // để test LiveMatchMessagingService mà không cần đợi trận thật. Chỉ dùng lúc dev/test.
 //
 // Cách gọi (dán thẳng vào trình duyệt):
-//   /api/push/test-live?secret=<CRON_SECRET>                     → tick "đang đá" phút 23
-//   /api/push/test-live?secret=<CRON_SECRET>&minute=88            → tuỳ chỉnh phút
-//   /api/push/test-live?secret=<CRON_SECRET>&status=FINISHED      → test tự đóng khi kết thúc
+//   /api/push/test-live?secret=<CRON_SECRET>                            → tick "đang đá" phút 23
+//   /api/push/test-live?secret=<CRON_SECRET>&minute=88                   → tuỳ chỉnh phút
+//   /api/push/test-live?secret=<CRON_SECRET>&status=FINISHED             → test tự đóng khi kết thúc
+//   /api/push/test-live?secret=<CRON_SECRET>&scorer=Công+Phượng&scorerMinute=45 → test có người ghi bàn
 //
 // Chấp nhận secret qua query param (không chỉ header Bearer) để test thẳng bằng URL trên
 // trình duyệt cho tiện — đây là route test, rủi ro thấp (chỉ bắn thông báo tỉ số giả).
@@ -43,6 +44,10 @@ export async function GET(request) {
     status,
     homeLogo: searchParams.get("homeLogo") || teamLogo(homeId),
     awayLogo: searchParams.get("awayLogo") || teamLogo(awayId),
+    // Mặc định có sẵn 1 bàn thắng giả để test hiển thị người ghi bàn ngay — truyền
+    // &scorer= rỗng nếu muốn test trường hợp KHÔNG có ai ghi bàn.
+    scorer: searchParams.has("scorer") ? searchParams.get("scorer") : "Nguyễn Văn Toàn",
+    scorerMinute: searchParams.get("scorerMinute") || "12",
   };
 
   await sendFcmDataToAll(data);
