@@ -16,14 +16,15 @@ import BracketTab from "./tabs/BracketTab";
 import WC2026App from "./WC2026App";
 import SearchLeagues from "./SearchLeagues";
 import MyTeamsView from "./MyTeamsView";
+import NewsView from "./NewsView";
 
 const LS_TOP_TAB = "wc2026_top_tab";
 
-// selection: "home" | "predict" | "search" | "myteams" | "league:<id>"
+// selection: "home" | "predict" | "search" | "myteams" | "news" | "league:<id>"
 function initialSelection() {
   if (typeof window === "undefined") return "home";
   const saved = localStorage.getItem(LS_TOP_TAB);
-  if (saved === "home" || saved === "predict" || saved === "search" || saved === "myteams") return saved;
+  if (saved === "home" || saved === "predict" || saved === "search" || saved === "myteams" || saved === "news") return saved;
   if (saved?.startsWith("league:") && leagueById(saved.slice(7))) return saved;
   return "home";
 }
@@ -191,6 +192,18 @@ export default function AppShell() {
                     )}
                   </button>
 
+                  <button
+                    role="menuitem"
+                    onClick={() => setSelection("news")}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition-colors cursor-pointer ${
+                      selection === "news"
+                        ? "bg-white/20 text-white"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <span className="w-6 text-center">📰</span> Tin tức
+                  </button>
+
                   <div className="my-1.5 border-t border-white/10" />
                   <div className="px-3 pt-1 pb-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
                     Giải đấu
@@ -245,6 +258,8 @@ export default function AppShell() {
           />
         ) : selection === "myteams" ? (
           <MyTeamsView onClose={() => setSelection("home")} />
+        ) : selection === "news" ? (
+          <NewsView onClose={() => setSelection("home")} />
         ) : (
           <HomeTab />
         )}
