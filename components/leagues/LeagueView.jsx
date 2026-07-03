@@ -61,7 +61,7 @@ export default function LeagueView({ league }) {
       )}
 
       {/* Modal chi tiết trận */}
-      {selected && <MatchDetailSheet match={selected} onClose={() => setSelected(null)} />}
+      {selected && <MatchDetailSheet match={selected} leagueId={league.id} onClose={() => setSelected(null)} />}
     </div>
   );
 }

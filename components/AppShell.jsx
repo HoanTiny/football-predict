@@ -9,18 +9,21 @@
 
 import { useState } from "react";
 import { LEAGUES, leagueById, leagueLogo } from "@/lib/leagues";
+import { useFavTeams } from "@/hooks/useFavTeams";
 import HomeTab from "./HomeTab";
 import LeagueView from "./leagues/LeagueView";
 import BracketTab from "./tabs/BracketTab";
 import WC2026App from "./WC2026App";
+import SearchLeagues from "./SearchLeagues";
+import MyTeamsView from "./MyTeamsView";
 
 const LS_TOP_TAB = "wc2026_top_tab";
 
-// selection: "home" | "predict" | "league:<id>"
+// selection: "home" | "predict" | "search" | "myteams" | "league:<id>"
 function initialSelection() {
   if (typeof window === "undefined") return "home";
   const saved = localStorage.getItem(LS_TOP_TAB);
-  if (saved === "home" || saved === "predict") return saved;
+  if (saved === "home" || saved === "predict" || saved === "search" || saved === "myteams") return saved;
   if (saved?.startsWith("league:") && leagueById(saved.slice(7))) return saved;
   return "home";
 }
@@ -60,6 +63,8 @@ export default function AppShell() {
     setPickerOpen(false);
     setBracketOpen(false);
   };
+
+  const { teams: favTeams } = useFavTeams();
 
   // Giải đang xem (null nếu đang ở Trang chủ)
   const league = selection.startsWith("league:") ? leagueById(selection.slice(7)) : null;
@@ -124,6 +129,18 @@ export default function AppShell() {
                 >
                   <button
                     role="menuitem"
+                    onClick={() => setSelection("search")}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition-colors cursor-pointer ${
+                      selection === "search"
+                        ? "bg-white/20 text-white"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <span className="w-6 text-center">🔍</span> Tìm kiếm
+                  </button>
+
+                  <button
+                    role="menuitem"
                     onClick={() => setSelection("home")}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition-colors cursor-pointer ${
                       selection === "home"
@@ -132,6 +149,21 @@ export default function AppShell() {
                     }`}
                   >
                     <span className="w-6 text-center">🏠</span> Trang chủ
+                  </button>
+
+                  <button
+                    role="menuitem"
+                    onClick={() => setSelection("myteams")}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition-colors cursor-pointer ${
+                      selection === "myteams"
+                        ? "bg-white/20 text-white"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <span className="w-6 text-center">⭐</span> Đội của tôi
+                    {favTeams.length > 0 && (
+                      <span className="ml-auto text-[9px] text-slate-400 font-bold">{favTeams.length}</span>
+                    )}
                   </button>
 
                   <div className="my-1.5 border-t border-white/10" />
@@ -179,7 +211,18 @@ export default function AppShell() {
       </header>
 
       <main className="max-w-[1280px] mx-auto px-4 py-5">
-        {league ? <LeagueView key={league.id} league={league} /> : <HomeTab />}
+        {league ? (
+          <LeagueView key={league.id} league={league} />
+        ) : selection === "search" ? (
+          <SearchLeagues
+            onSelectLeague={(l) => setSelection(`league:${l.id}`)}
+            onClose={() => setSelection("home")}
+          />
+        ) : selection === "myteams" ? (
+          <MyTeamsView onClose={() => setSelection("home")} />
+        ) : (
+          <HomeTab />
+        )}
       </main>
 
       {/* Overlay SƠ ĐỒ knockout — full màn hình, kiểu Apple Sports (ảnh bracket) */}

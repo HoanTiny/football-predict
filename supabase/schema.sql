@@ -18,6 +18,23 @@ alter table rooms add column if not exists name text;
 -- Mặc định 77 = World Cup 2026 để phòng cũ (tạo trước khi có tính năng đa giải) không vỡ.
 alter table rooms add column if not exists league_id integer not null default 77;
 
+-- Đội bóng yêu thích ("Đội của tôi") — đồng bộ theo TÀI KHOẢN (chung với đăng nhập game Dự
+-- đoán), không phải theo máy, để xem được trên nhiều thiết bị.
+create table if not exists favorite_teams (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  team_id text not null,
+  team_name text not null,
+  league_id integer not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, team_id)
+);
+create index if not exists idx_favorite_teams_user on favorite_teams (user_id);
+alter table favorite_teams enable row level security;
+drop policy if exists "own favorite teams" on favorite_teams;
+create policy "own favorite teams" on favorite_teams for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
 -- Người chơi trong phòng (kèm cược vô địch theo vòng)
 create table if not exists players (
   id uuid primary key default gen_random_uuid(),

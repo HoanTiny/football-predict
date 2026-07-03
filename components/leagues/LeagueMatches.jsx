@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { vnDateKey, vnDateHeader } from "@/lib/time";
+import { vnDateKey, vnDateHeader, vnShortDateTime } from "@/lib/time";
+import { teamLogo } from "@/lib/leagues";
+import { flagImgOf } from "@/lib/constants";
 import MatchRow from "./MatchRow";
 
 const VIEW_TABS = [
@@ -9,6 +11,85 @@ const VIEW_TABS = [
   { key: "today", label: "Hôm nay" },
   { key: "upcoming", label: "Sắp tới" },
 ];
+
+const pad2 = (n) => String(n).padStart(2, "0");
+
+// Crest to, kiểu thẻ "trận nổi bật" của HomeTab — dùng riêng ở đây vì cần cỡ lớn hơn TeamLogo.
+const BigCrest = ({ id, name }) => {
+  const [err, setErr] = useState(false);
+  const url = teamLogo(id);
+  const fallbackUrl = !url || err ? flagImgOf(name) : null;
+  if (fallbackUrl) {
+    return <img src={fallbackUrl} alt={name} className="w-14 h-14 object-cover rounded-full shrink-0 border border-white/25" />;
+  }
+  if (!url || err) {
+    return (
+      <div className="w-14 h-14 rounded-full bg-white/10 border border-white/25 flex items-center justify-center text-xs font-bold text-white/70 shrink-0">
+        {(name || "?").slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
+  return <img src={url} alt={name} onError={() => setErr(true)} className="w-14 h-14 object-contain shrink-0" />;
+};
+
+/** Đếm ngược tới trận SẮP TỚI GẦN NHẤT của giải (không phụ thuộc tab đang chọn). */
+function NextMatchCountdown({ match, league, onSelect }) {
+  const [left, setLeft] = useState(null);
+
+  useEffect(() => {
+    const target = new Date(match.utcTime).getTime();
+    const tick = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        setLeft({ h: 0, m: 0, s: 0 });
+        return;
+      }
+      setLeft({
+        h: Math.floor(diff / 3600000),
+        m: Math.floor((diff % 3600000) / 60000),
+        s: Math.floor((diff % 60000) / 1000),
+      });
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, [match.utcTime]);
+
+  if (!left) return null;
+
+  return (
+    <button
+      onClick={() => onSelect(match)}
+      className="w-full text-left rounded-[28px] p-6 bg-white/10 border border-white/20 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_32px_rgba(0,0,0,0.25)] hover:bg-white/[0.14] transition-colors cursor-pointer"
+    >
+      <div className="flex items-center justify-between text-xs font-bold text-white/70 mb-4">
+        <span className="truncate">{match.home.name}</span>
+        <span className="truncate text-right">{match.away.name}</span>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+          <BigCrest id={match.home.id} name={match.home.name} />
+        </div>
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{league.name}</span>
+          <div className="flex items-center gap-1 font-mono tabular-nums">
+            <span className="text-2xl font-black text-white">{pad2(left.h)}</span>
+            <span className="text-lg font-black text-white/40">:</span>
+            <span className="text-2xl font-black text-white">{pad2(left.m)}</span>
+            <span className="text-lg font-black text-white/40">:</span>
+            <span className="text-2xl font-black text-white">{pad2(left.s)}</span>
+          </div>
+          <span className="text-[10px] font-extrabold text-[#a5b4ff] uppercase tracking-widest">
+            {vnShortDateTime(match.utcTime)}
+          </span>
+        </div>
+        <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+          <BigCrest id={match.away.id} name={match.away.name} />
+        </div>
+      </div>
+    </button>
+  );
+}
 
 /** Lịch + kết quả một giải. Mặc định 3 tab nhanh Hôm qua/Hôm nay/Sắp tới; có nút mở cả mùa. */
 export default function LeagueMatches({ league, onSelect }) {
@@ -79,6 +160,15 @@ export default function LeagueMatches({ league, onSelect }) {
 
   const ordered = showAll ? fullSeasonOrdered : quickFiltered;
 
+  // Trận sắp tới GẦN NHẤT của giải (bất kể đang chọn tab nào) — hiện đếm ngược phía trên danh sách.
+  const nextMatch = useMemo(() => {
+    if (!data) return null;
+    const upcoming = data.matches
+      .filter((m) => new Date(m.utcTime).getTime() > Date.now())
+      .sort((a, b) => new Date(a.utcTime) - new Date(b.utcTime));
+    return upcoming[0] || null;
+  }, [data]);
+
   const byDate = useMemo(() => {
     const groups = [];
     let lastKey = null;
@@ -120,6 +210,7 @@ export default function LeagueMatches({ league, onSelect }) {
 
   return (
     <div className="space-y-5">
+      {nextMatch && <NextMatchCountdown match={nextMatch} league={league} onSelect={onSelect} />}
       {!showAll && (
         <div className="flex items-center justify-center">
           <div className="flex items-center gap-1 p-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">

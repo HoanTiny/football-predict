@@ -236,7 +236,7 @@ export default function HomeTab() {
     if (view === "upcoming") return null;
     for (const lg of leagues) {
       const m = lg.matches.find((x) => x.started && !x.finished && !x.cancelled);
-      if (m) return { match: m, leagueName: lg.name };
+      if (m) return { match: m, leagueName: lg.name, leagueId: lg.id };
     }
     return null;
   }, [leagues, view]);
@@ -313,7 +313,7 @@ export default function HomeTab() {
                     </div>
                     <div className="space-y-2">
                       {lg.matches.map((m) => (
-                        <MatchRow key={m.id} m={m} onSelect={setSelected} />
+                        <MatchRow key={m.id} m={m} onSelect={() => setSelected({ match: m, leagueId: lg.id })} />
                       ))}
                     </div>
                   </div>
@@ -344,7 +344,11 @@ export default function HomeTab() {
       ) : (
         <div className="max-w-2xl mx-auto space-y-5">
           {featured && (
-            <FeaturedMatch m={featured.match} leagueName={featured.leagueName} onSelect={setSelected} />
+            <FeaturedMatch
+              m={featured.match}
+              leagueName={featured.leagueName}
+              onSelect={() => setSelected({ match: featured.match, leagueId: featured.leagueId })}
+            />
           )}
           {leagues
             .filter((lg) => lg.matches.length > 0)
@@ -356,7 +360,7 @@ export default function HomeTab() {
                 </div>
                 <div className="space-y-2">
                   {lg.matches.map((m) => (
-                    <MatchRow key={m.id} m={m} onSelect={setSelected} />
+                    <MatchRow key={m.id} m={m} onSelect={() => setSelected({ match: m, leagueId: lg.id })} />
                   ))}
                 </div>
               </div>
@@ -365,7 +369,9 @@ export default function HomeTab() {
         </div>
       )}
 
-      {selected && <MatchDetailSheet match={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <MatchDetailSheet match={selected.match} leagueId={selected.leagueId} onClose={() => setSelected(null)} />
+      )}
     </div>
   );
 }
