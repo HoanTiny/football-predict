@@ -10,6 +10,7 @@ const VIEW_TABS = [
   { key: "yesterday", label: "Hôm qua" },
   { key: "today", label: "Hôm nay" },
   { key: "upcoming", label: "Sắp tới" },
+  { key: "all", label: "Tất cả" },
 ];
 
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -32,12 +33,13 @@ const BigCrest = ({ id, name }) => {
   return <img src={url} alt={name} onError={() => setErr(true)} className="w-14 h-14 object-contain shrink-0" />;
 };
 
-/** Trận ĐANG DIỄN RA — ưu tiên hiện thay cho đếm ngược khi giải có trận live. */
+/** Trận ĐANG DIỄN RA — ưu tiên hiện thay cho đếm ngược khi giải có trận live. Cùng kiểu
+ * "spotlight" gọn nhẹ với FeaturedMatch của HomeTab (kính mờ trắng, không viền đỏ nổi bật). */
 function LiveMatchFeatured({ match, league, onSelect }) {
   return (
     <button
       onClick={() => onSelect(match)}
-      className="w-full text-left rounded-[28px] p-6 bg-[#ff5a5a]/10 border border-[#ff5a5a]/30 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_32px_rgba(0,0,0,0.25)] hover:bg-[#ff5a5a]/15 transition-colors cursor-pointer"
+      className="w-full text-left rounded-[28px] p-6 bg-white/10 border border-white/20 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_32px_rgba(0,0,0,0.25)] hover:bg-white/[0.14] transition-colors cursor-pointer"
     >
       <div className="flex items-center justify-between text-xs font-bold text-white/70 mb-4">
         <span className="truncate">{match.home.name}</span>
@@ -48,16 +50,15 @@ function LiveMatchFeatured({ match, league, onSelect }) {
           <BigCrest id={match.home.id} name={match.home.name} />
         </div>
         <div className="flex flex-col items-center gap-1 shrink-0">
-          <span className="flex items-center gap-1 text-[10px] font-extrabold text-[#ff8a8a] uppercase tracking-widest">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a5a] animate-pulse" />
-            {match.liveTime || match.statusShort || "LIVE"}
-          </span>
-          <div className="flex items-center gap-2 font-mono tabular-nums">
-            <span className="text-3xl font-black text-white">{match.home.score}</span>
-            <span className="text-lg font-black text-white/40">-</span>
-            <span className="text-3xl font-black text-white">{match.away.score}</span>
-          </div>
           <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{league.name}</span>
+          <div className="flex items-center gap-2 text-4xl font-black text-white tabular-nums">
+            <span>{match.home.score ?? 0}</span>
+            <span className="w-2 h-2 rounded-full bg-[#ff5a5a] animate-pulse" />
+            <span>{match.away.score ?? 0}</span>
+          </div>
+          <span className="text-[10px] font-extrabold text-[#ff8a8a] uppercase tracking-widest">
+            {match.liveTime || match.statusShort || "Đang đá"}
+          </span>
         </div>
         <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
           <BigCrest id={match.away.id} name={match.away.name} />
@@ -131,26 +132,46 @@ export default function LeagueMatches({ league, onSelect }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [showAll, setShowAll] = useState(false);
   const [view, setView] = useState("today");
 
   useEffect(() => {
     let alive = true;
+    setData(null);
     setLoading(true);
     setError(false);
-    setShowAll(false);
     setView("today");
-    fetch(`/api/leagues/fixtures?id=${league.id}`)
-      .then((r) => r.json())
-      .then((j) => {
-        if (!alive) return;
-        if (!j.matches || j.matches.length === 0) setError(true);
-        else setData(j);
-      })
-      .catch(() => alive && setError(true))
-      .finally(() => alive && setLoading(false));
+
+    const load = (silent) => {
+      if (!silent) setLoading(true);
+      fetch(`/api/leagues/fixtures?id=${league.id}`)
+        .then((r) => r.json())
+        .then((j) => {
+          if (!alive) return;
+          if (!j.matches || j.matches.length === 0) {
+            if (!silent) setError(true);
+          } else {
+            setData(j);
+            setError(false);
+          }
+        })
+        .catch(() => alive && !silent && setError(true))
+        .finally(() => alive && setLoading(false));
+    };
+
+    load(false);
+    // Tự làm mới định kỳ để tỉ số/phút trận đang live không bị đứng yên trên màn hình (giống
+    // HomeTab) — trước đây trang giải chỉ tải 1 lần lúc mount, phải F5 mới thấy cập nhật.
+    const iv = setInterval(() => load(true), 20000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
     return () => {
       alive = false;
+      clearInterval(iv);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
   }, [league.id]);
 
@@ -162,7 +183,7 @@ export default function LeagueMatches({ league, onSelect }) {
   }, []);
 
   // Tab nhanh: lọc trực tiếp trên danh sách cả mùa đã tải (không gọi API thêm).
-  const quickFiltered = useMemo(() => {
+  const ordered = useMemo(() => {
     if (!data) return [];
     if (view === "yesterday") {
       return data.matches
@@ -174,26 +195,22 @@ export default function LeagueMatches({ league, onSelect }) {
         .filter((m) => vnDateKey(m.utcTime) === todayKeyStr)
         .sort((a, b) => new Date(a.utcTime) - new Date(b.utcTime));
     }
+    if (view === "all") {
+      // "Tất cả": kết quả MỚI NHẤT lên đầu; trận CHƯA đá xếp gần nhất trước, nối phía dưới —
+      // tránh trận rất xa tương lai (vd chung kết, đội còn TBD) nhảy lên đầu danh sách.
+      const now = Date.now();
+      const past = data.matches
+        .filter((m) => new Date(m.utcTime).getTime() <= now)
+        .sort((a, b) => new Date(b.utcTime) - new Date(a.utcTime));
+      const future = data.matches
+        .filter((m) => new Date(m.utcTime).getTime() > now)
+        .sort((a, b) => new Date(a.utcTime) - new Date(b.utcTime));
+      return [...past, ...future];
+    }
     return data.matches
       .filter((m) => new Date(m.utcTime).getTime() > Date.now())
       .sort((a, b) => new Date(a.utcTime) - new Date(b.utcTime));
   }, [data, view, todayKeyStr, yesterdayKeyStr]);
-
-  // "Xem toàn bộ mùa giải": kết quả MỚI NHẤT lên đầu; trận CHƯA đá xếp gần nhất trước, nối phía
-  // dưới — tránh trận rất xa tương lai (vd chung kết, đội còn TBD) nhảy lên đầu danh sách.
-  const fullSeasonOrdered = useMemo(() => {
-    if (!data) return [];
-    const now = Date.now();
-    const past = data.matches
-      .filter((m) => new Date(m.utcTime).getTime() <= now)
-      .sort((a, b) => new Date(b.utcTime) - new Date(a.utcTime));
-    const future = data.matches
-      .filter((m) => new Date(m.utcTime).getTime() > now)
-      .sort((a, b) => new Date(a.utcTime) - new Date(b.utcTime));
-    return [...past, ...future];
-  }, [data]);
-
-  const ordered = showAll ? fullSeasonOrdered : quickFiltered;
 
   // Trận ĐANG ĐÁ của giải (nếu có) — ưu tiên hiện thay cho đếm ngược trận sắp tới.
   const liveMatch = useMemo(() => {
@@ -229,6 +246,7 @@ export default function LeagueMatches({ league, onSelect }) {
     yesterday: "Không có trận nào của giải hôm qua.",
     today: "Không có trận nào của giải hôm nay.",
     upcoming: "Chưa có lịch sắp tới được công bố.",
+    all: "Chưa có lịch thi đấu cho giải này.",
   }[view];
 
   if (loading) {
@@ -252,42 +270,37 @@ export default function LeagueMatches({ league, onSelect }) {
 
   return (
     <div className="space-y-5">
+      <div className="flex items-center justify-center">
+        <div className="flex items-center gap-1 p-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+          {VIEW_TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setView(t.key)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+                view === t.key ? "bg-white/25 text-white" : "text-white/60 hover:text-white/80"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
       {liveMatch ? (
         <LiveMatchFeatured match={liveMatch} league={league} onSelect={onSelect} />
       ) : (
         nextMatch && <NextMatchCountdown match={nextMatch} league={league} onSelect={onSelect} />
       )}
-      {!showAll && (
-        <div className="flex items-center justify-center">
-          <div className="flex items-center gap-1 p-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-            {VIEW_TABS.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setView(t.key)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-                  view === t.key ? "bg-white/25 text-white" : "text-white/60 hover:text-white/80"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      <button
-        onClick={() => setShowAll((v) => !v)}
-        className="w-full py-2 rounded-full text-[11px] font-bold text-white/60 bg-white/10 border border-white/15 backdrop-blur-xl hover:text-white hover:bg-white/15 transition-all"
-      >
-        {showAll ? "↓ Thu gọn (Hôm qua / Hôm nay / Sắp tới)" : `↑ Xem toàn bộ lịch mùa giải (${data.matches.length} trận)`}
-      </button>
       {byDate.length === 0 && (
         <div className="text-center py-16">
           <div className="text-4xl mb-3 opacity-30">📅</div>
           <p className="text-xs text-white/50 font-medium">{emptyQuickMsg}</p>
         </div>
       )}
-      {byDate.map((g) => (
-        <div key={g.key} className="space-y-2.5">
+      {byDate.map((g, i) => (
+        // "Tất cả": cùng 1 ngày có thể xuất hiện ở 2 đoạn KHÔNG liền nhau (trận đã đá hôm nay
+        // nằm trong đoạn "past", trận hôm nay chưa đá nằm trong đoạn "future") → 2 group riêng
+        // biệt trùng g.key, phải ghép thêm index để key React không bị đụng nhau.
+        <div key={`${g.key}-${i}`} className="space-y-2.5">
           <div className="flex items-center gap-2.5 pt-1">
             <h3 className="text-[10px] font-bold text-white/50 uppercase tracking-widest shrink-0">
               {g.header}

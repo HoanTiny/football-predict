@@ -104,7 +104,7 @@ object LiveMatchNotifier {
 
     /**
      * data (từ FCM, mọi field là String): matchId, home, away, homeScore, awayScore,
-     * minute ("0".."90"), status ("LIVE" | "FINISHED"), homeLogo?, awayLogo? (URL),
+     * minute ("0".."90"), status ("LIVE" | "HALFTIME" | "FINISHED"), homeLogo?, awayLogo? (URL),
      * scorer? (tên người ghi bàn gần nhất), scorerMinute? (phút ghi bàn đó).
      */
     fun showOrUpdate(context: Context, data: Map<String, String>) {
@@ -115,6 +115,7 @@ object LiveMatchNotifier {
         val awayScore = data["awayScore"] ?: "0"
         val minute = (data["minute"] ?: "0").toIntOrNull()?.coerceIn(0, 90) ?: 0
         val finished = data["status"] == "FINISHED"
+        val halftime = data["status"] == "HALFTIME"
         val scorer = data["scorer"]?.takeIf { it.isNotBlank() }
         val scorerMinute = data["scorerMinute"]?.takeIf { it.isNotBlank() }
 
@@ -156,6 +157,11 @@ object LiveMatchNotifier {
             setTextViewText(R.id.score_text, "$homeScore - $awayScore")
             val statusLine = when {
                 finished -> "Kết thúc"
+                halftime && scorer != null -> {
+                    val minuteSuffix = if (scorerMinute != null) " $scorerMinute'" else ""
+                    "⚽ $scorer$minuteSuffix · Nghỉ giữa hiệp"
+                }
+                halftime -> "Nghỉ giữa hiệp"
                 scorer != null -> {
                     val minuteSuffix = if (scorerMinute != null) " $scorerMinute'" else ""
                     "⚽ $scorer$minuteSuffix · Phút $minute'"

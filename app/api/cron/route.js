@@ -227,11 +227,22 @@ export async function GET(request) {
     const a = m.score?.fullTime?.away ?? 0;
     const elapsedMin = Math.max(0, Math.floor((now - new Date(m.utcDate).getTime()) / 60000));
     let minute = Math.min(90, elapsedMin);
+    let halftime = false;
     let scorerFields = {};
     try {
       const detail = await fotmobMatchDetailById(m.id);
-      const parsedMinute = parseInt(String(detail?.liveMinute || "").replace(/\D/g, ""), 10);
-      if (!isNaN(parsedMinute)) minute = Math.min(90, parsedMinute);
+      const liveMinuteRaw = detail?.liveMinute;
+      if (liveMinuteRaw === "HT") {
+        // Nghỉ giữa hiệp: đồng hồ trận đấu ĐỨNG YÊN ở 45, không dùng elapsedMin (thời gian
+        // thực trôi qua) vì nó vẫn tăng suốt giờ nghỉ → hiện phút sai (vd "63'" khi đang nghỉ).
+        halftime = true;
+        minute = 45;
+      } else {
+        // Chỉ lấy phần SỐ Ở ĐẦU chuỗi (vd "45+2" -> 45) — trước đây strip hết ký tự không phải
+        // số làm dính liền số bù giờ ("45+2" -> "452"), ra phút sai lệch hẳn.
+        const parsedMinute = parseInt(String(liveMinuteRaw || "").match(/^\d+/)?.[0] || "", 10);
+        if (!isNaN(parsedMinute)) minute = Math.min(90, parsedMinute);
+      }
       const goals = (detail?.events || []).filter((e) => e.type === "Goal");
       if (goals.length) {
         // events đã sắp theo thứ tự diễn ra → phần tử cuối là bàn MỚI NHẤT.
@@ -253,7 +264,7 @@ export async function GET(request) {
         homeScore: String(h),
         awayScore: String(a),
         minute: String(minute),
-        status: "LIVE",
+        status: halftime ? "HALFTIME" : "LIVE",
         ...(m.homeTeam?.id ? { homeId: String(m.homeTeam.id) } : {}),
         ...(m.awayTeam?.id ? { awayId: String(m.awayTeam.id) } : {}),
         ...(teamLogo(m.homeTeam?.id) ? { homeLogo: teamLogo(m.homeTeam.id) } : {}),

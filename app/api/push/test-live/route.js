@@ -15,6 +15,7 @@ const DEMO_AWAY_ID = 5788; // Thái Lan
 //   /api/push/test-live?secret=<CRON_SECRET>                            → tick "đang đá" phút 23
 //   /api/push/test-live?secret=<CRON_SECRET>&minute=88                   → tuỳ chỉnh phút
 //   /api/push/test-live?secret=<CRON_SECRET>&status=FINISHED             → test tự đóng khi kết thúc
+//   /api/push/test-live?secret=<CRON_SECRET>&status=HALFTIME             → test hiện "Nghỉ giữa hiệp"
 //   /api/push/test-live?secret=<CRON_SECRET>&scorer=Công+Phượng&scorerMinute=45 → test có người ghi bàn
 //
 // Chấp nhận secret qua query param (không chỉ header Bearer) để test thẳng bằng URL trên
@@ -30,7 +31,8 @@ export async function GET(request) {
     }
   }
 
-  const status = searchParams.get("status") === "FINISHED" ? "FINISHED" : "LIVE";
+  const statusParam = searchParams.get("status");
+  const status = statusParam === "FINISHED" || statusParam === "HALFTIME" ? statusParam : "LIVE";
   const homeId = searchParams.get("homeId") || String(DEMO_HOME_ID);
   const awayId = searchParams.get("awayId") || String(DEMO_AWAY_ID);
   const data = {
@@ -40,7 +42,7 @@ export async function GET(request) {
     away: searchParams.get("away") || "Thái Lan",
     homeScore: searchParams.get("homeScore") || "1",
     awayScore: searchParams.get("awayScore") || "0",
-    minute: searchParams.get("minute") || (status === "FINISHED" ? "90" : "23"),
+    minute: searchParams.get("minute") || (status === "FINISHED" ? "90" : status === "HALFTIME" ? "45" : "23"),
     status,
     homeId,
     awayId,
