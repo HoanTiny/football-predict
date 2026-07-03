@@ -4,6 +4,7 @@ import { sendFcmDataToUserIds } from "@/lib/pushFcm";
 import { evaluateBet } from "@/lib/settlement";
 import { betLabel } from "@/lib/constants";
 import { fetchLeagueMatchesForPredict } from "@/lib/predictMatches";
+import { teamLogo } from "@/lib/leagues";
 
 // Chạy trên Node runtime (web-push cần crypto của Node).
 export const runtime = "nodejs";
@@ -204,6 +205,8 @@ export async function GET(request) {
         awayScore: String(a),
         minute: String(minute),
         status: "LIVE",
+        ...(teamLogo(m.homeTeam?.id) ? { homeLogo: teamLogo(m.homeTeam.id) } : {}),
+        ...(teamLogo(m.awayTeam?.id) ? { awayLogo: teamLogo(m.awayTeam.id) } : {}),
       })
     );
   }
@@ -227,6 +230,8 @@ export async function GET(request) {
         awayScore: String(a),
         minute: "90",
         status: "FINISHED",
+        ...(teamLogo(m.homeTeam?.id) ? { homeLogo: teamLogo(m.homeTeam.id) } : {}),
+        ...(teamLogo(m.awayTeam?.id) ? { awayLogo: teamLogo(m.awayTeam.id) } : {}),
       })
     );
     for (const b of list) {

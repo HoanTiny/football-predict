@@ -104,7 +104,10 @@ export default function AppShell() {
     <div className="min-h-[100dvh] pb-10">
       <LiquidGlassBg accent={league?.accent} />
 
-      <header className="sticky top-0 z-40 border-b border-white/10 backdrop-blur-2xl bg-white/[0.04]">
+      <header
+        className="sticky top-0 z-40 border-b border-white/10 backdrop-blur-2xl bg-white/[0.04]"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
         <div className="max-w-[1280px] mx-auto px-4 h-16 flex items-center justify-between gap-3">
           {/* Trái: nút sơ đồ knockout (chỉ giải cúp) + logo app */}
           <div className="flex items-center gap-2.5 shrink-0">
@@ -269,7 +272,10 @@ export default function AppShell() {
       {bracketOpen && league?.bracket && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <LiquidGlassBg accent={league?.accent} />
-          <div className="sticky top-0 z-10 flex items-center justify-between px-4 h-16 border-b border-white/10 backdrop-blur-2xl bg-white/[0.04]">
+          <div
+            className="sticky top-0 z-10 flex items-center justify-between px-4 h-16 border-b border-white/10 backdrop-blur-2xl bg-white/[0.04]"
+            style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+          >
             <button
               onClick={() => setBracketOpen(false)}
               aria-label="Đóng sơ đồ"

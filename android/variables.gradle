@@ -13,4 +13,9 @@ ext {
     androidxJunitVersion = '1.2.1'
     androidxEspressoCoreVersion = '3.6.1'
     cordovaAndroidVersion = '10.1.1'
+    // Khớp version @capacitor/push-notifications đang dùng (xem
+    // node_modules/@capacitor/push-notifications/android/build.gradle) — cần khai TRỰC TIẾP
+    // ở app module vì plugin khai "implementation" (không transitive), nên
+    // LiveMatchMessagingService.kt (app module) không tự thấy RemoteMessage/FirebaseMessagingService.
+    firebaseMessagingVersion = '24.1.0'
 }

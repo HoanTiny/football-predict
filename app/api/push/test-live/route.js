@@ -1,7 +1,12 @@
 import { sendFcmDataToAll } from "@/lib/pushFcm";
+import { teamLogo } from "@/lib/leagues";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// FotMob team id thật (đã xác minh logo trả 200) — dùng làm mặc định cho payload test.
+const DEMO_HOME_ID = 5894; // Việt Nam
+const DEMO_AWAY_ID = 5788; // Thái Lan
 
 // Gửi 1 live-update GIẢ (kiểu iOS Live Activity) tới TẤT CẢ app native đã đăng ký FCM —
 // để test LiveMatchMessagingService mà không cần đợi trận thật. Chỉ dùng lúc dev/test.
@@ -25,6 +30,8 @@ export async function GET(request) {
   }
 
   const status = searchParams.get("status") === "FINISHED" ? "FINISHED" : "LIVE";
+  const homeId = searchParams.get("homeId") || String(DEMO_HOME_ID);
+  const awayId = searchParams.get("awayId") || String(DEMO_AWAY_ID);
   const data = {
     liveMatch: "1",
     matchId: searchParams.get("matchId") || "999999",
@@ -34,6 +41,8 @@ export async function GET(request) {
     awayScore: searchParams.get("awayScore") || "0",
     minute: searchParams.get("minute") || (status === "FINISHED" ? "90" : "23"),
     status,
+    homeLogo: searchParams.get("homeLogo") || teamLogo(homeId),
+    awayLogo: searchParams.get("awayLogo") || teamLogo(awayId),
   };
 
   await sendFcmDataToAll(data);
