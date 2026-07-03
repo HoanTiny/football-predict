@@ -50,8 +50,13 @@ export default function Header({
     <>
       {/* Floating glass navbar */}
       <header
-        className="fixed top-2 left-1/2 z-50 w-full max-w-7xl px-3"
-        style={{ transform: "translateX(-50%)" }}
+        className="fixed left-1/2 z-50 w-full max-w-7xl px-3"
+        style={{
+          // Cách top an toàn: 8px + phần status bar hệ thống che (Android/iOS). Trên web
+          // (không có safe-area) env() trả 0px nên vẫn giữ đúng top-2 cũ.
+          top: "calc(env(safe-area-inset-top, 0px) + 8px)",
+          transform: "translateX(-50%)",
+        }}
       >
         <div
           className="rounded-2xl bg-white/10 border border-white/20 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_8px_24px_rgba(0,0,0,0.22)] px-3 py-2 flex items-center justify-between gap-3 h-14"

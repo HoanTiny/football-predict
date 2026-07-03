@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!--
+  Fallback tối thiểu cho app Capacitor (server mode) — chỉ hiển thị nếu thiết bị KHÔNG có
+  mạng lúc khởi động (Capacitor tải thẳng server.url trong capacitor.config.json ở điều
+  kiện bình thường, không dùng file này). Không phải trang chạy thật của app.
+-->
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tiny Football</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #262a7c;
+        color: #fff;
+        font-family: -apple-system, system-ui, sans-serif;
+        text-align: center;
+      }
+      p { opacity: 0.7; font-size: 14px; padding: 0 24px; }
+    </style>
+  </head>
+  <body>
+    <p>Đang kết nối… vui lòng kiểm tra mạng và mở lại ứng dụng.</p>
+  </body>
+</html>

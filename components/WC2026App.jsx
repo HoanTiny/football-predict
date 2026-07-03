@@ -17,6 +17,8 @@ import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMatches } from "@/hooks/useMatches";
 import { createRoom, joinRoom } from "@/lib/roomApi";
 import { supabaseReady, supabase } from "@/lib/supabase";
+import { registerNativePush, reassociateNativePushUser } from "@/lib/pushNative";
+import { isNativeApp } from "@/lib/platform";
 
 /** Các tab hợp lệ — dùng để sync tab hiện tại với URL hash (#predictions, #leaderboard…). */
 const VALID_TABS = ["schedule", "groups", "bracket", "predictions", "leaderboard", "statistics", "champion", "settings"];
@@ -111,10 +113,16 @@ export default function WC2026App({ onExit } = {}) {
       if (s?.user?.id) {
         syncRooms(s.user.id);
       }
+      // Đăng ký push native (Capacitor/FCM) 1 lần lúc mở app; không ảnh hưởng web.
+      registerNativePush(s?.access_token);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       setAuthSession(s);
+      // Gắn lại token FCM đã có với user vừa đổi (không đăng ký lại từ đầu).
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        reassociateNativePushUser(s?.access_token);
+      }
       if (event === "SIGNED_OUT") {
         // Clear all room-related localStorage items and state to avoid hanging on RLS blocks
         localStorage.removeItem(LS_ROOM_SESSIONS);
@@ -172,10 +180,30 @@ export default function WC2026App({ onExit } = {}) {
   // Buộc hiện màn chọn/tạo phòng (khi đang ở phòng mà muốn vào/tạo phòng khác)
   const [forceRoomPicker, setForceRoomPicker] = useState(false);
 
-  // Link mời ?room=CODE → vào thẳng form nhập tên
-  const inviteCode = useMemo(() => {
+  // Link mời ?room=CODE (web) → vào thẳng form nhập tên. Trên app native còn nhận qua
+  // deep link custom scheme vn.tinyfootball.app://room?code=CODE (xem effect bên dưới),
+  // nên inviteCode phải là state (không chỉ đọc 1 lần lúc mount).
+  const [inviteCode, setInviteCode] = useState(() => {
     const c = new URLSearchParams(window.location.search).get("room");
     return c ? c.toUpperCase() : null;
+  });
+
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    let listenerHandle;
+    (async () => {
+      const { App } = await import("@capacitor/app");
+      listenerHandle = await App.addListener("appUrlOpen", ({ url }) => {
+        try {
+          const parsed = new URL(url);
+          const code = parsed.searchParams.get("code") || parsed.searchParams.get("room");
+          if (code) setInviteCode(code.toUpperCase());
+        } catch {
+          /* URL không hợp lệ — bỏ qua */
+        }
+      });
+    })();
+    return () => listenerHandle?.remove();
   }, []);
 
   // Tab hiện tại sync với URL hash → F5 giữ nguyên tab, back/forward hoạt động
@@ -347,16 +375,25 @@ export default function WC2026App({ onExit } = {}) {
   const [creatingRoom, setCreatingRoom] = useState(false);
 
   // Ưu tiên khay chia sẻ gốc của thiết bị (Messenger/Zalo…), fallback sao chép link.
-  // Trả về: "shared" | "copied" | "cancelled" | "failed".
+  // App đóng gói (Capacitor) dùng @capacitor/share — ổn định hơn navigator.share trên
+  // WebView Android cũ. Trả về: "shared" | "copied" | "cancelled" | "failed".
   const shareRoom = async (code) => {
     const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
-    if (typeof navigator !== "undefined" && navigator.share) {
+    const title = "Tiny Football";
+    const text = `Vào phòng ${code} dự đoán ${league.name} cùng mình nhé! 🏆`;
+
+    if (isNativeApp()) {
       try {
-        await navigator.share({
-          title: "Tiny Football",
-          text: `Vào phòng ${code} dự đoán ${league.name} cùng mình nhé! 🏆`,
-          url,
-        });
+        const { Share } = await import("@capacitor/share");
+        await Share.share({ title, text, url, dialogTitle: "Mời bạn bè" });
+        return "shared";
+      } catch (e) {
+        if (e?.message?.includes("cancel")) return "cancelled";
+        /* thiết bị từ chối/lỗi → thử clipboard */
+      }
+    } else if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
         return "shared";
       } catch (e) {
         if (e?.name === "AbortError") return "cancelled";

@@ -244,6 +244,20 @@ create table if not exists push_subscriptions (
 );
 create index if not exists idx_push_user on push_subscriptions (user_id);
 
+-- Push cho app Android/iOS đóng gói bằng Capacitor (FCM token — khác định dạng Web Push
+-- subscription object nên tách bảng riêng). Token có thể đổi (app reinstall, clear data)
+-- nên upsert theo token, không theo user.
+create table if not exists fcm_tokens (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  token text not null unique,
+  platform text not null default 'android',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_fcm_user on fcm_tokens (user_id);
+alter table fcm_tokens enable row level security;
+
 create table if not exists match_state (
   match_id bigint primary key,
   status text,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isNativeApp } from "@/lib/platform";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
@@ -22,6 +23,7 @@ export default function PushToggle({ authSession }) {
 
   useEffect(() => {
     if (
+      isNativeApp() ||
       typeof navigator === "undefined" ||
       !("serviceWorker" in navigator) ||
       !("PushManager" in window) ||
@@ -88,6 +90,15 @@ export default function PushToggle({ authSession }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (isNativeApp()) {
+    // App Android/iOS đóng gói: push đăng ký tự động (FCM) lúc mở app — không cần bật/tắt tay.
+    return (
+      <p className="text-[11px] text-white/50 leading-relaxed">
+        🔔 Thông báo đã được bật tự động cho ứng dụng.
+      </p>
+    );
   }
 
   if (!supported) {

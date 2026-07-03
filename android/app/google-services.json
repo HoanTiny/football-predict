@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "729210649976",
+    "project_id": "tiny-sports",
+    "storage_bucket": "tiny-sports.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:729210649976:android:ea3b834a35a2ecc7d6dc8d",
+        "android_client_info": {
+          "package_name": "vn.tinyfootball.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDcArcvms0TadxJi_JbbZhjMy81Qmq3loM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
