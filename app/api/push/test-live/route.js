@@ -42,6 +42,8 @@ export async function GET(request) {
     awayScore: searchParams.get("awayScore") || "0",
     minute: searchParams.get("minute") || (status === "FINISHED" ? "90" : "23"),
     status,
+    homeId,
+    awayId,
     homeLogo: searchParams.get("homeLogo") || teamLogo(homeId),
     awayLogo: searchParams.get("awayLogo") || teamLogo(awayId),
     // Mặc định có sẵn 1 bàn thắng giả để test hiển thị người ghi bàn ngay — truyền

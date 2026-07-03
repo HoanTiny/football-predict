@@ -254,6 +254,8 @@ export async function GET(request) {
         awayScore: String(a),
         minute: String(minute),
         status: "LIVE",
+        ...(m.homeTeam?.id ? { homeId: String(m.homeTeam.id) } : {}),
+        ...(m.awayTeam?.id ? { awayId: String(m.awayTeam.id) } : {}),
         ...(teamLogo(m.homeTeam?.id) ? { homeLogo: teamLogo(m.homeTeam.id) } : {}),
         ...(teamLogo(m.awayTeam?.id) ? { awayLogo: teamLogo(m.awayTeam.id) } : {}),
         ...scorerFields,
@@ -285,6 +287,8 @@ export async function GET(request) {
         awayScore: String(a),
         minute: "90",
         status: "FINISHED",
+        ...(m.homeTeam?.id ? { homeId: String(m.homeTeam.id) } : {}),
+        ...(m.awayTeam?.id ? { awayId: String(m.awayTeam.id) } : {}),
         ...(teamLogo(m.homeTeam?.id) ? { homeLogo: teamLogo(m.homeTeam.id) } : {}),
         ...(teamLogo(m.awayTeam?.id) ? { awayLogo: teamLogo(m.awayTeam.id) } : {}),
       })

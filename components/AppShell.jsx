@@ -7,9 +7,10 @@
    Không cổng chặn: ai vào cũng xem được lịch/kết quả ngay.
    ============================================================ */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LEAGUES, leagueById, leagueLogo } from "@/lib/leagues";
 import { useFavTeams } from "@/hooks/useFavTeams";
+import { isNativeApp } from "@/lib/platform";
 import HomeTab from "./HomeTab";
 import LeagueView from "./leagues/LeagueView";
 import BracketTab from "./tabs/BracketTab";
@@ -17,6 +18,7 @@ import WC2026App from "./WC2026App";
 import SearchLeagues from "./SearchLeagues";
 import MyTeamsView from "./MyTeamsView";
 import NewsView from "./NewsView";
+import MatchDetailSheet from "./leagues/MatchDetailSheet";
 
 const LS_TOP_TAB = "wc2026_top_tab";
 
@@ -95,9 +97,64 @@ export default function AppShell() {
   // Giải đang xem (null nếu đang ở Trang chủ)
   const league = selection.startsWith("league:") ? leagueById(selection.slice(7)) : null;
 
+  // Mở thẳng modal chi tiết 1 trận (ở tab bất kỳ, mặc định "Diễn biến") khi bấm vào notification
+  // live-update — data đủ dùng lấy thẳng từ payload FCM, không cần biết trận thuộc giải nào.
+  const [deepLinkMatch, setDeepLinkMatch] = useState(null);
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    let listenerHandle;
+    (async () => {
+      const { App } = await import("@capacitor/app");
+      listenerHandle = await App.addListener("appUrlOpen", ({ url }) => {
+        try {
+          const parsed = new URL(url);
+          if (parsed.hostname !== "match") return;
+          const id = parsed.searchParams.get("id");
+          if (!id) return;
+          setDeepLinkMatch({
+            stub: {
+              id,
+              home: {
+                id: parsed.searchParams.get("homeId") || null,
+                name: parsed.searchParams.get("home") || "?",
+                score: Number(parsed.searchParams.get("homeScore") || 0),
+              },
+              away: {
+                id: parsed.searchParams.get("awayId") || null,
+                name: parsed.searchParams.get("away") || "?",
+                score: Number(parsed.searchParams.get("awayScore") || 0),
+              },
+              utcTime: new Date().toISOString(),
+              started: true,
+              finished: false,
+              cancelled: false,
+            },
+            tab: parsed.searchParams.get("tab") || "lineup",
+          });
+        } catch {
+          /* URL không hợp lệ — bỏ qua */
+        }
+      });
+    })();
+    return () => listenerHandle?.remove();
+  }, []);
+
+  const deepLinkOverlay = deepLinkMatch && (
+    <MatchDetailSheet
+      match={deepLinkMatch.stub}
+      initialTab={deepLinkMatch.tab}
+      onClose={() => setDeepLinkMatch(null)}
+    />
+  );
+
   // Tab Dự đoán = game cũ đầy đủ (đăng nhập/phòng/kèo) — có nút thoát về đây.
   if (selection === "predict") {
-    return <WC2026App onExit={() => setSelection("home")} />;
+    return (
+      <>
+        <WC2026App onExit={() => setSelection("home")} />
+        {deepLinkOverlay}
+      </>
+    );
   }
 
   return (
@@ -294,6 +351,8 @@ export default function AppShell() {
           </div>
         </div>
       )}
+
+      {deepLinkOverlay}
     </div>
   );
 }

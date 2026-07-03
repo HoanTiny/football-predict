@@ -8,6 +8,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
@@ -26,24 +27,56 @@ import java.net.URL
 object LiveMatchNotifier {
     private const val CHANNEL_ID = "live_matches"
     private const val CHANNEL_NAME = "Trận đang diễn ra"
+    // Kênh riêng CÓ âm thanh — chỉ dùng đúng lần tick phát hiện bàn thắng MỚI, các tick
+    // tick thường (chỉ đổi phút) vẫn im lặng qua CHANNEL_ID ở trên.
+    private const val CHANNEL_ID_GOAL = "live_matches_goal"
+    private const val CHANNEL_NAME_GOAL = "Có bàn thắng"
+    private const val PREFS_NAME = "live_match_state"
     private const val BRAND_COLOR = "#262a7c"
     private const val LOGO_TIMEOUT_MS = 3000
 
     private fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            CHANNEL_NAME,
-            // LOW: không âm thanh/không heads-up mỗi lần tick (cron gửi mỗi phút) — chỉ cập
-            // nhật im lặng, đúng cảm giác "live activity" thay vì spam thông báo.
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = "Tỉ số & phút thi đấu cập nhật trực tiếp cho trận bạn đã cược"
-            setShowBadge(false)
+        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                // LOW: không âm thanh/không heads-up mỗi lần tick (cron gửi mỗi phút) — chỉ cập
+                // nhật im lặng, đúng cảm giác "live activity" thay vì spam thông báo.
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Tỉ số & phút thi đấu cập nhật trực tiếp cho trận bạn đã cược"
+                setShowBadge(false)
+            }
+            manager.createNotificationChannel(channel)
         }
-        manager.createNotificationChannel(channel)
+        if (manager.getNotificationChannel(CHANNEL_ID_GOAL) == null) {
+            val goalChannel = NotificationChannel(
+                CHANNEL_ID_GOAL,
+                CHANNEL_NAME_GOAL,
+                NotificationManager.IMPORTANCE_HIGH // có âm thanh + hiện nổi (heads-up)
+            ).apply {
+                description = "Báo âm thanh khi có bàn thắng ở trận bạn theo dõi"
+                setShowBadge(false)
+            }
+            manager.createNotificationChannel(goalChannel)
+        }
+    }
+
+    /**
+     * So với bàn thắng gần nhất đã báo cho trận này (lưu trên máy) để chỉ phát âm thanh ĐÚNG 1
+     * lần khi có bàn MỚI — tick tiếp theo cùng bàn đó (scorer/scorerMinute không đổi) vẫn im lặng.
+     */
+    private fun isNewGoal(context: Context, matchId: String, scorer: String?, scorerMinute: String?): Boolean {
+        if (scorer == null) return false
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val key = "goal_$matchId"
+        val goalSignature = "$scorer|${scorerMinute ?: ""}"
+        val last = prefs.getString(key, null)
+        if (last == goalSignature) return false
+        prefs.edit().putString(key, goalSignature).apply()
+        return true
     }
 
     /** ID ổn định theo matchId — cùng 1 trận luôn UPDATE, không tạo notification mới mỗi lần. */
@@ -87,7 +120,26 @@ object LiveMatchNotifier {
 
         ensureChannel(context)
 
-        val openIntent = Intent(context, MainActivity::class.java).apply {
+        // Deep link vào thẳng modal chi tiết trận (tab "Diễn biến") thay vì chỉ mở app ở màn
+        // hình mặc định — dùng ĐÚNG custom scheme đã khai báo trong AndroidManifest (intent-filter
+        // ACTION_VIEW) để Capacitor App plugin bắn sự kiện appUrlOpen mà web (AppShell.jsx) đang
+        // lắng nghe sẵn. Kèm theo dữ liệu trận (tên/tỉ số/id đội) vì app chưa chắc biết trận này
+        // thuộc giải nào để tự tra cứu.
+        val deepLinkUri = Uri.Builder()
+            .scheme("vn.tinyfootball.app")
+            .authority("match")
+            .appendQueryParameter("id", matchId)
+            .appendQueryParameter("tab", "events")
+            .appendQueryParameter("home", home)
+            .appendQueryParameter("away", away)
+            .appendQueryParameter("homeScore", homeScore)
+            .appendQueryParameter("awayScore", awayScore)
+            .apply {
+                data["homeId"]?.takeIf { it.isNotBlank() }?.let { appendQueryParameter("homeId", it) }
+                data["awayId"]?.takeIf { it.isNotBlank() }?.let { appendQueryParameter("awayId", it) }
+            }
+            .build()
+        val openIntent = Intent(Intent.ACTION_VIEW, deepLinkUri, context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
@@ -123,18 +175,21 @@ object LiveMatchNotifier {
             }
         }
 
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+        val newGoal = isNewGoal(context, matchId, scorer, scorerMinute)
+        val channelId = if (newGoal) CHANNEL_ID_GOAL else CHANNEL_ID
+
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_stat_live)
             .setColor(Color.parseColor(BRAND_COLOR))
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setCustomContentView(views)
             .setCustomBigContentView(views)
-            .setOnlyAlertOnce(true) // im lặng ở các lần update sau — chỉ báo (nếu có) lần đầu
+            .setOnlyAlertOnce(!newGoal) // có bàn mới thì cho phát âm thanh, còn lại im lặng
             .setOngoing(!finished) // ongoing = không vuốt tắt được trong lúc trận đang đá
             .setAutoCancel(finished)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(if (newGoal) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_LOW)
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(notificationId(matchId), builder.build())

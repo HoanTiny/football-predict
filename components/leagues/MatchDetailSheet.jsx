@@ -131,10 +131,10 @@ const TABS = [
   { key: "stats", label: "Thống kê" },
 ];
 
-export default function MatchDetailSheet({ match, leagueId, onClose }) {
+export default function MatchDetailSheet({ match, leagueId, onClose, initialTab = "lineup" }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("lineup");
+  const [tab, setTab] = useState(initialTab);
   const isLive = match.started && !match.finished && !match.cancelled;
 
   // Bottom-sheet kiểu Apple Sports trên mobile: mở ra ở dạng "peek" (thẻ lửng, thấy nền phía
@@ -158,8 +158,9 @@ export default function MatchDetailSheet({ match, leagueId, onClose }) {
   };
 
   useEffect(() => {
-    setTab("lineup");
+    setTab(initialTab);
     setExpanded(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match.id]);
 
   useEffect(() => {
