@@ -38,6 +38,21 @@ async function bettorsByMatch(matchIds) {
   return map;
 }
 
+/** Lấy user_id đang theo dõi (follow) một số đội — bảng favorite_teams (hooks/useFavTeams). */
+async function followersByTeam(teamIds) {
+  const map = new Map(); // teamId (string) -> Set(userId)
+  if (!teamIds.length) return map;
+  const { data } = await supabaseAdmin
+    .from("favorite_teams")
+    .select("team_id, user_id")
+    .in("team_id", teamIds);
+  (data || []).forEach((r) => {
+    if (!map.has(r.team_id)) map.set(r.team_id, new Set());
+    map.get(r.team_id).add(r.user_id);
+  });
+  return map;
+}
+
 export async function GET(request) {
   // Xác thực: Vercel Cron tự gửi "Authorization: Bearer <CRON_SECRET>".
   const secret = process.env.CRON_SECRET;
@@ -153,6 +168,18 @@ export async function GET(request) {
   ];
   const bettors = await bettorsByMatch(targetedIds);
 
+  // Người theo dõi (follow) 1 trong 2 đội của các trận đang đá/vừa kết thúc — nhận live-update
+  // dù không cược (kể cả tick FINISHED để đóng notification đang chạy trên máy họ).
+  const liveTeamIds = [
+    ...new Set(
+      [...liveMatches, ...finishedMatches]
+        .flatMap((m) => [m.homeTeam?.id, m.awayTeam?.id])
+        .filter(Boolean)
+        .map(String)
+    ),
+  ];
+  const followers = await followersByTeam(liveTeamIds);
+
   const tasks = [];
 
   // Nhắc giờ → người đã cược trận đó
@@ -190,7 +217,12 @@ export async function GET(request) {
   // ước lượng theo thời gian trôi qua từ giờ bóng lăn nếu gọi FotMob lỗi.
   for (const m of liveMatches) {
     const list = bettors.get(m.id) || [];
-    if (!list.length) continue;
+    const followerIds = [
+      ...(followers.get(String(m.homeTeam?.id)) || []),
+      ...(followers.get(String(m.awayTeam?.id)) || []),
+    ];
+    const userIds = [...new Set([...list.map((b) => b.userId), ...followerIds])];
+    if (!userIds.length) continue;
     const h = m.score?.fullTime?.home ?? 0;
     const a = m.score?.fullTime?.away ?? 0;
     const elapsedMin = Math.max(0, Math.floor((now - new Date(m.utcDate).getTime()) / 60000));
@@ -212,7 +244,6 @@ export async function GET(request) {
     } catch {
       // Không chặn luồng chính — thiếu scorer/phút thật thì dùng phút ước lượng, không có scorer.
     }
-    const userIds = [...new Set(list.map((b) => b.userId))];
     tasks.push(
       sendFcmDataToUserIds(userIds, {
         liveMatch: "1",
@@ -238,9 +269,14 @@ export async function GET(request) {
     const a = m.score?.fullTime?.away ?? 0;
     const label = `${m.homeTeam?.name} ${h}-${a} ${m.awayTeam?.name}`;
     const finishedUserIds = [...new Set(list.map((b) => b.userId))];
-    // Tick live-update LẦN CUỐI với status FINISHED → native tự đóng notification đang chạy.
+    const finishedFollowerIds = [
+      ...(followers.get(String(m.homeTeam?.id)) || []),
+      ...(followers.get(String(m.awayTeam?.id)) || []),
+    ];
+    // Tick live-update LẦN CUỐI với status FINISHED → native tự đóng notification đang chạy
+    // (gồm cả người chỉ follow đội, không cược, để họ không bị kẹt notification "đang đá" mãi).
     tasks.push(
-      sendFcmDataToUserIds(finishedUserIds, {
+      sendFcmDataToUserIds([...new Set([...finishedUserIds, ...finishedFollowerIds])], {
         liveMatch: "1",
         matchId: String(m.id),
         home: m.homeTeam?.name || "?",

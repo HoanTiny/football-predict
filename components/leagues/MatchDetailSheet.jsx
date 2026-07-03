@@ -235,7 +235,12 @@ export default function MatchDetailSheet({ match, leagueId, onClose }) {
         className={`relative w-full sm:max-w-lg sm:h-auto sm:max-h-[92dvh] flex flex-col border border-white/10 sm:rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${
           expanded ? "h-[100dvh] rounded-none" : "h-[66vh] rounded-t-3xl"
         }`}
-        style={containerStyle}
+        style={{
+          ...containerStyle,
+          // Full màn hình (rounded-none) đụng thẳng status bar — chỉ cần bù safe-area lúc đó,
+          // dạng peek đã cách top một khoảng nên không cần.
+          paddingTop: expanded ? "env(safe-area-inset-top, 0px)" : undefined,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header/tab bar KHÔNG có nền riêng — dùng chung gradient của containerStyle (trải suốt
