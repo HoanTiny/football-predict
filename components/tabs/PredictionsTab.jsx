@@ -20,23 +20,55 @@ const renderTeamFlag = (teamName) => {
   return <span className="text-xl shrink-0">{flagOf(teamName)}</span>;
 };
 
+// Tỉ số dùng quyết toán của 1 trận, ĐÚNG công thức lib/settlement.js (knockout dùng 90',
+// vòng bảng dùng fullTime) — để so khớp ngược với p.finalScore đã lưu lúc quyết toán.
+const KNOCKOUT_STAGES = new Set(["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "THIRD_PLACE", "FINAL"]);
+function settledScoreKey(m) {
+  const rt = m.score?.regularTime;
+  const ft = m.score?.fullTime;
+  if (!ft || ft.home == null) return null;
+  const useRT = KNOCKOUT_STAGES.has(m.stage) && rt && rt.home != null;
+  const h = useRT ? rt.home : ft.home;
+  const a = useRT ? rt.away : ft.away;
+  return `${h}-${a}`;
+}
+
 /**
  * Tra trận cho 1 dự đoán: ưu tiên khớp thẳng match_id; nếu không có (vd dự đoán đặt TRƯỚC khi
- * đổi nguồn lịch trận, xem lib/predictMatches.js) thì tìm trận có giờ bóng lăn gần nhất với
- * `kickoff` đã lưu lúc đặt cược (trong khoảng 3 phút) — vẫn ra đúng tên đội dù đổi hệ id.
+ * đổi nguồn lịch trận, xem lib/predictMatches.js) thì thử 2 lớp dự phòng:
+ *  1. Giờ bóng lăn đã lưu lúc đặt cược (`kickoff`) — chính xác, dùng khi có.
+ *  2. Với dự đoán CŨ HƠN NỮA (đặt trước khi hệ thống lưu `kickoff`): khớp theo tỉ số quyết
+ *     toán (`finalScore`) + gần thời điểm đặt cược — chỉ nhận khi DUY NHẤT 1 trận khớp trong
+ *     cửa sổ ±48h để tránh đoán nhầm giữa các trận cùng tỉ số.
  */
 function resolveMatch(matchById, matches, p) {
   const direct = matchById.get(String(p.matchId));
   if (direct) return direct;
-  if (!p.kickoff || !matches?.length) return null;
-  const target = new Date(p.kickoff).getTime();
-  if (isNaN(target)) return null;
-  let best = null, bestDiff = Infinity;
-  for (const m of matches) {
-    const diff = Math.abs(new Date(m.utcDate).getTime() - target);
-    if (diff < bestDiff) { bestDiff = diff; best = m; }
+  if (!matches?.length) return null;
+
+  if (p.kickoff) {
+    const target = new Date(p.kickoff).getTime();
+    if (!isNaN(target)) {
+      let best = null, bestDiff = Infinity;
+      for (const m of matches) {
+        const diff = Math.abs(new Date(m.utcDate).getTime() - target);
+        if (diff < bestDiff) { bestDiff = diff; best = m; }
+      }
+      if (bestDiff <= 3 * 60000) return best;
+    }
   }
-  return bestDiff <= 3 * 60000 ? best : null;
+
+  if (p.finalScore && p.placedAt) {
+    const scoreKey = String(p.finalScore).split(" (")[0];
+    const placed = new Date(p.placedAt).getTime();
+    const candidates = matches.filter((m) => {
+      if (m.status !== "FINISHED" || settledScoreKey(m) !== scoreKey) return false;
+      return Math.abs(new Date(m.utcDate).getTime() - placed) <= 48 * 3600000;
+    });
+    if (candidates.length === 1) return candidates[0];
+  }
+
+  return null;
 }
 
 const STATUS_CONFIG = {
