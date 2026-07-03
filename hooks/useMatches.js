@@ -9,6 +9,7 @@ import { buildDemoMatches } from "@/lib/demoData";
  */
 export function useMatches(leagueId, demoMode) {
   const [matches, setMatches] = useState([]);
+  const [legacyMatches, setLegacyMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -37,6 +38,7 @@ export function useMatches(leagueId, demoMode) {
         }
         const data = await res.json();
         setMatches(data.matches || []);
+        setLegacyMatches(data.legacyMatches || []);
         setLastUpdated(new Date());
         setError(null);
       } catch (e) {
@@ -74,5 +76,5 @@ export function useMatches(leagueId, demoMode) {
     };
   }, [fetchMatches, enabled]);
 
-  return { matches, loading, error, lastUpdated, fetchMatches };
+  return { matches, legacyMatches, loading, error, lastUpdated, fetchMatches };
 }

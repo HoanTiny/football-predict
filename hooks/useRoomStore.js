@@ -22,6 +22,9 @@ const mapPrediction = (row) => ({
   payout: row.payout,
   finalScore: row.final_score,
   placedAt: row.created_at,
+  // Giờ bóng lăn đã lưu lúc đặt cược — dùng để tra lại tên đội khi match_id không còn khớp
+  // (vd sau khi đổi nguồn lịch trận, xem lib/predictMatches.js).
+  kickoff: row.lock_at,
 });
 
 /**

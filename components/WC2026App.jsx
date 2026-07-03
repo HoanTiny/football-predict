@@ -203,7 +203,7 @@ export default function WC2026App({ onExit } = {}) {
   // Mỗi phòng gắn với 1 giải đấu riêng (chọn lúc tạo phòng); chơi solo mặc định World Cup 2026.
   const leagueId = inRoom ? session.leagueId || 77 : 77;
   const league = leagueById(leagueId) || leagueById(77);
-  const { matches, loading, error, lastUpdated, fetchMatches } = useMatches(leagueId, demoMode);
+  const { matches, legacyMatches, loading, error, lastUpdated, fetchMatches } = useMatches(leagueId, demoMode);
 
   const local = useLocalStore(inRoom ? [] : matches, pushToast);
   const room = useRoomStore(inRoom ? session : null, matches, pushToast);
@@ -425,7 +425,12 @@ export default function WC2026App({ onExit } = {}) {
     return m;
   }, [player]);
 
-  const matchById = useMemo(() => new Map(matches.map((m) => [m.id, m])), [matches]);
+  // Gộp thêm legacyMatches (chỉ tên đội, nguồn football-data cũ) để dự đoán ĐẶT TRƯỚC khi đổi
+  // sang FotMob vẫn tra ra được tên/cờ đội — 2 hệ id không trùng nên gộp trực tiếp an toàn.
+  const matchById = useMemo(
+    () => new Map([...legacyMatches, ...matches].map((m) => [m.id, m])),
+    [matches, legacyMatches]
+  );
 
 
   /* ----- guards ----- */
@@ -589,6 +594,7 @@ export default function WC2026App({ onExit } = {}) {
               <PredictionsTab
                 player={player}
                 matchById={matchById}
+                matches={matches}
                 onGoSchedule={() => setTab("schedule")}
                 betsByMatch={inRoom ? room.betsByMatch : null}
               />

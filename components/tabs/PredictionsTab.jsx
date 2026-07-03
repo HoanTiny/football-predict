@@ -20,6 +20,25 @@ const renderTeamFlag = (teamName) => {
   return <span className="text-xl shrink-0">{flagOf(teamName)}</span>;
 };
 
+/**
+ * Tra trận cho 1 dự đoán: ưu tiên khớp thẳng match_id; nếu không có (vd dự đoán đặt TRƯỚC khi
+ * đổi nguồn lịch trận, xem lib/predictMatches.js) thì tìm trận có giờ bóng lăn gần nhất với
+ * `kickoff` đã lưu lúc đặt cược (trong khoảng 3 phút) — vẫn ra đúng tên đội dù đổi hệ id.
+ */
+function resolveMatch(matchById, matches, p) {
+  const direct = matchById.get(String(p.matchId));
+  if (direct) return direct;
+  if (!p.kickoff || !matches?.length) return null;
+  const target = new Date(p.kickoff).getTime();
+  if (isNaN(target)) return null;
+  let best = null, bestDiff = Infinity;
+  for (const m of matches) {
+    const diff = Math.abs(new Date(m.utcDate).getTime() - target);
+    if (diff < bestDiff) { bestDiff = diff; best = m; }
+  }
+  return bestDiff <= 3 * 60000 ? best : null;
+}
+
 const STATUS_CONFIG = {
   pending:     { bg: "bg-white/[0.06] border-white/12",       label: "⏳ Chờ kết quả",  labelClass: "bg-white/15 text-white/85" },
   won_exact:   { bg: "bg-[#62F2C0]/5 border-[#62F2C0]/20",    label: "🎯 Đúng tỉ số",   labelClass: "bg-[#62F2C0]/15 text-[#62F2C0]" },
@@ -28,11 +47,11 @@ const STATUS_CONFIG = {
 };
 
 /** Dự đoán của cả phòng, nhóm theo trận — minh bạch ai cược gì, lúc nào. */
-function RoomPredictions({ betsByMatch, matchById }) {
+function RoomPredictions({ betsByMatch, matchById, matches }) {
   const matchGroups = [...betsByMatch.entries()]
     .map(([matchId, bets]) => ({
       matchId,
-      match: matchById.get(String(matchId)),
+      match: resolveMatch(matchById, matches, { matchId, kickoff: bets[0]?.kickoff }),
       bets: [...bets].sort((a, b) => new Date(a.placedAt) - new Date(b.placedAt)),
     }))
     .sort((a, b) => new Date(b.match?.utcDate || 0) - new Date(a.match?.utcDate || 0));
@@ -141,7 +160,7 @@ function RoomPredictions({ betsByMatch, matchById }) {
 }
 
 /** TAB 2 — Dự đoán — Flat prediction rows (+ view cả phòng khi chơi theo phòng) */
-export default function PredictionsTab({ player, matchById, onGoSchedule, betsByMatch }) {
+export default function PredictionsTab({ player, matchById, matches, onGoSchedule, betsByMatch }) {
   const inRoom = !!betsByMatch;
   const [view, setView] = useState("mine"); // "mine" | "room"
 
@@ -183,7 +202,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
           </div>
           {viewToggle}
         </div>
-        <RoomPredictions betsByMatch={betsByMatch} matchById={matchById} />
+        <RoomPredictions betsByMatch={betsByMatch} matchById={matchById} matches={matches} />
       </div>
     );
   }
@@ -235,7 +254,7 @@ export default function PredictionsTab({ player, matchById, onGoSchedule, betsBy
 
       <div className="space-y-2.5">
         {[...player.predictions].reverse().map((p, idx) => {
-          const m = matchById.get(String(p.matchId));
+          const m = resolveMatch(matchById, matches, p);
           const home = m?.homeTeam?.name || "?";
           const away = m?.awayTeam?.name || "?";
           const sc = STATUS_CONFIG[p.status] || STATUS_CONFIG.pending;
