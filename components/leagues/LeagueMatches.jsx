@@ -32,6 +32,41 @@ const BigCrest = ({ id, name }) => {
   return <img src={url} alt={name} onError={() => setErr(true)} className="w-14 h-14 object-contain shrink-0" />;
 };
 
+/** Trận ĐANG DIỄN RA — ưu tiên hiện thay cho đếm ngược khi giải có trận live. */
+function LiveMatchFeatured({ match, league, onSelect }) {
+  return (
+    <button
+      onClick={() => onSelect(match)}
+      className="w-full text-left rounded-[28px] p-6 bg-[#ff5a5a]/10 border border-[#ff5a5a]/30 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_32px_rgba(0,0,0,0.25)] hover:bg-[#ff5a5a]/15 transition-colors cursor-pointer"
+    >
+      <div className="flex items-center justify-between text-xs font-bold text-white/70 mb-4">
+        <span className="truncate">{match.home.name}</span>
+        <span className="truncate text-right">{match.away.name}</span>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+          <BigCrest id={match.home.id} name={match.home.name} />
+        </div>
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          <span className="flex items-center gap-1 text-[10px] font-extrabold text-[#ff8a8a] uppercase tracking-widest">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a5a] animate-pulse" />
+            {match.liveTime || match.statusShort || "LIVE"}
+          </span>
+          <div className="flex items-center gap-2 font-mono tabular-nums">
+            <span className="text-3xl font-black text-white">{match.home.score}</span>
+            <span className="text-lg font-black text-white/40">-</span>
+            <span className="text-3xl font-black text-white">{match.away.score}</span>
+          </div>
+          <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{league.name}</span>
+        </div>
+        <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+          <BigCrest id={match.away.id} name={match.away.name} />
+        </div>
+      </div>
+    </button>
+  );
+}
+
 /** Đếm ngược tới trận SẮP TỚI GẦN NHẤT của giải (không phụ thuộc tab đang chọn). */
 function NextMatchCountdown({ match, league, onSelect }) {
   const [left, setLeft] = useState(null);
@@ -160,14 +195,21 @@ export default function LeagueMatches({ league, onSelect }) {
 
   const ordered = showAll ? fullSeasonOrdered : quickFiltered;
 
-  // Trận sắp tới GẦN NHẤT của giải (bất kể đang chọn tab nào) — hiện đếm ngược phía trên danh sách.
-  const nextMatch = useMemo(() => {
+  // Trận ĐANG ĐÁ của giải (nếu có) — ưu tiên hiện thay cho đếm ngược trận sắp tới.
+  const liveMatch = useMemo(() => {
     if (!data) return null;
+    return data.matches.find((m) => m.started && !m.finished && !m.cancelled) || null;
+  }, [data]);
+
+  // Trận sắp tới GẦN NHẤT của giải (bất kể đang chọn tab nào) — hiện đếm ngược phía trên danh sách,
+  // CHỈ khi giải không có trận nào đang đá (live luôn ưu tiên hơn).
+  const nextMatch = useMemo(() => {
+    if (!data || liveMatch) return null;
     const upcoming = data.matches
       .filter((m) => new Date(m.utcTime).getTime() > Date.now())
       .sort((a, b) => new Date(a.utcTime) - new Date(b.utcTime));
     return upcoming[0] || null;
-  }, [data]);
+  }, [data, liveMatch]);
 
   const byDate = useMemo(() => {
     const groups = [];
@@ -210,7 +252,11 @@ export default function LeagueMatches({ league, onSelect }) {
 
   return (
     <div className="space-y-5">
-      {nextMatch && <NextMatchCountdown match={nextMatch} league={league} onSelect={onSelect} />}
+      {liveMatch ? (
+        <LiveMatchFeatured match={liveMatch} league={league} onSelect={onSelect} />
+      ) : (
+        nextMatch && <NextMatchCountdown match={nextMatch} league={league} onSelect={onSelect} />
+      )}
       {!showAll && (
         <div className="flex items-center justify-center">
           <div className="flex items-center gap-1 p-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
