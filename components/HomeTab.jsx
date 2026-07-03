@@ -131,19 +131,37 @@ export default function HomeTab() {
   useEffect(() => {
     if (view === "upcoming") return;
     let alive = true;
-    setLoading(true);
-    setError(false);
-    fetch(`/api/schedule?date=${singleKey}`)
-      .then((r) => r.json())
-      .then((j) => {
-        if (!alive) return;
-        if (j.error) setError(true);
-        else setData(j);
-      })
-      .catch(() => alive && setError(true))
-      .finally(() => alive && setLoading(false));
+    const load = (silent) => {
+      if (!silent) {
+        setLoading(true);
+        setError(false);
+      }
+      fetch(`/api/schedule?date=${singleKey}`)
+        .then((r) => r.json())
+        .then((j) => {
+          if (!alive) return;
+          if (j.error) setError(true);
+          else {
+            setData(j);
+            setError(false);
+          }
+        })
+        .catch(() => alive && setError(true))
+        .finally(() => alive && setLoading(false));
+    };
+    load(false);
+    // Tự làm mới định kỳ để tỉ số/phút trận đang live không bị đứng yên trên màn hình.
+    const iv = setInterval(() => load(true), 20000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
     return () => {
       alive = false;
+      clearInterval(iv);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
   }, [view, singleKey]);
 

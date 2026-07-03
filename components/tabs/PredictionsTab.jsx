@@ -339,7 +339,7 @@ export default function PredictionsTab({ player, matchById, matches, onGoSchedul
 
               {/* Meta row — date / placed time / actual score */}
               <div className="flex justify-center items-center gap-x-2 gap-y-0.5 text-[10px] text-white/50 font-medium flex-wrap">
-                <span>{m ? `${vnDateHeader(m.utcDate)} · ${vnTime(m.utcDate)}` : `— (id: ${p.matchId}, kickoff: ${p.kickoff || "none"})`}</span>
+                <span>{m ? `${vnDateHeader(m.utcDate)} · ${vnTime(m.utcDate)}` : "—"}</span>
                 {p.placedAt && (
                   <>
                     <span className="opacity-60">•</span>
