@@ -608,7 +608,13 @@ export default function WC2026App({ onExit } = {}) {
         leagueName={league.name}
       />
 
-      <main className={`${fullWidth ? "max-w-[1600px]" : "max-w-[1280px]"} mx-auto px-4 pt-[72px] pb-6`} key={effectiveTab}>
+      <main
+        className={`${fullWidth ? "max-w-[1600px]" : "max-w-[1280px]"} mx-auto px-4 pb-6`}
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 80px)",
+        }}
+        key={effectiveTab}
+      >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Main content column */}
           <div className={`${fullWidth ? "lg:col-span-12" : "lg:col-span-8"} space-y-6 tab-fade`}>
