@@ -1,6 +1,6 @@
-# 🏟️ Tiny Football 2026™ — Predict & Win
+# 🏟️ Tiny Sports 2026™ — Predict & Win
 
-Ứng dụng dự đoán tỉ số các trận đấu chính thức của giải vô địch bóng đá thế giới **Tiny Football 2026™** (FIFA World Cup 2026™). Tích lũy chips, đua top bảng xếp hạng cùng bạn bè và khẳng định vị thế "Nhà tiên tri bóng đá"!
+Ứng dụng dự đoán tỉ số các trận đấu chính thức của giải vô địch bóng đá thế giới **Tiny Sports 2026™** (FIFA World Cup 2026™). Tích lũy chips, đua top bảng xếp hạng cùng bạn bè và khẳng định vị thế "Nhà tiên tri bóng đá"!
 
 ---
 

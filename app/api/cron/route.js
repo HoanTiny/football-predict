@@ -226,7 +226,9 @@ export async function GET(request) {
     const h = m.score?.fullTime?.home ?? 0;
     const a = m.score?.fullTime?.away ?? 0;
     const elapsedMin = Math.max(0, Math.floor((now - new Date(m.utcDate).getTime()) / 60000));
-    let minute = Math.min(90, elapsedMin);
+    // Trần 120 (90 chính thức + 30 hiệp phụ) — trước đây trần cứng ở 90 nên sang hiệp phụ đồng
+    // hồ bị "kẹt" ở 90' dù trận vẫn đang đá tiếp tới phút 91-120.
+    let minute = Math.min(120, elapsedMin);
     let halftime = false;
     let scorerFields = {};
     try {
@@ -241,32 +243,28 @@ export async function GET(request) {
         // Chỉ lấy phần SỐ Ở ĐẦU chuỗi (vd "45+2" -> 45) — trước đây strip hết ký tự không phải
         // số làm dính liền số bù giờ ("45+2" -> "452"), ra phút sai lệch hẳn.
         const parsedMinute = parseInt(String(liveMinuteRaw || "").match(/^\d+/)?.[0] || "", 10);
-        if (!isNaN(parsedMinute)) minute = Math.min(90, parsedMinute);
+        if (!isNaN(parsedMinute)) minute = Math.min(120, parsedMinute);
       }
-      // Phút có thể ở dạng "45+2" (bù giờ) — quy đổi thành số để so sánh "mới nhất" chính xác,
-      // KHÔNG dựa vào thứ tự phần tử trong mảng events (đã có lần events không đúng thứ tự thời
-      // gian, khiến "phần tử cuối" lại là bàn CŨ hơn một bàn khác).
+      // Phút có thể ở dạng "45+2" (bù giờ) — quy đổi thành số để sắp xếp theo đúng thời gian
+      // diễn ra, KHÔNG dựa vào thứ tự phần tử trong mảng events (đã có lần events không đúng
+      // thứ tự thời gian).
       const minuteValue = (min) => {
         const m2 = String(min ?? "").match(/(\d+)(?:\+(\d+))?/);
         return m2 ? Number(m2[1]) + (m2[2] ? Number(m2[2]) / 100 : 0) : -1;
       };
       const goals = (detail?.events || []).filter((e) => e.type === "Goal");
-      // Lấy bàn MỚI NHẤT của MỖI đội riêng — để hiện đủ cả 2 cầu thủ khi cả 2 đội đều đã ghi bàn,
-      // thay vì chỉ 1 bàn gần nhất chung cho toàn trận (bỏ sót đội kia nếu họ ghi bàn sớm hơn).
-      const latestOf = (isHome) => {
-        const list = goals.filter((g) => g.isHome === isHome);
-        if (!list.length) return null;
-        return list.reduce((best, g) => (minuteValue(g.minute) > minuteValue(best.minute) ? g : best));
-      };
-      const homeGoal = latestOf(true);
-      const awayGoal = latestOf(false);
+      // Lấy TẤT CẢ bàn thắng của MỖI đội (không chỉ bàn mới nhất) — 1 đội có thể đã ghi 2+ bàn,
+      // trước đây chỉ hiện 1 cầu thủ/đội nên mất tên các bàn còn lại.
+      const scorersOf = (isHome) =>
+        goals
+          .filter((g) => g.isHome === isHome)
+          .sort((a, b) => minuteValue(a.minute) - minuteValue(b.minute))
+          .map((g) => `${g.player || "?"}${g.minute != null ? ` ${g.minute}'` : ""}`);
+      const homeScorers = scorersOf(true);
+      const awayScorers = scorersOf(false);
       scorerFields = {
-        ...(homeGoal
-          ? { homeScorer: homeGoal.player || "", homeScorerMinute: homeGoal.minute != null ? String(homeGoal.minute) : "" }
-          : {}),
-        ...(awayGoal
-          ? { awayScorer: awayGoal.player || "", awayScorerMinute: awayGoal.minute != null ? String(awayGoal.minute) : "" }
-          : {}),
+        ...(homeScorers.length ? { homeScorers: homeScorers.join(" · ") } : {}),
+        ...(awayScorers.length ? { awayScorers: awayScorers.join(" · ") } : {}),
       };
     } catch {
       // Không chặn luồng chính — thiếu scorer/phút thật thì dùng phút ước lượng, không có scorer.

@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const alt = "Tiny Football — Predict & Win · FIFA World Cup 2026";
+export const alt = "Tiny Sports — Predict & Win · FIFA World Cup 2026";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -102,7 +102,7 @@ export default async function OpengraphImage() {
               letterSpacing: -2,
             }}
           >
-            TINY FOOTBALL
+            TINY SPORTS
           </div>
           <div
             style={{

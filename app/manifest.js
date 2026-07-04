@@ -2,8 +2,8 @@
 // Cho phép cài "Thêm vào màn hình chính" và chạy full-screen như app native.
 export default function manifest() {
   return {
-    name: "Tiny Football — Predict & Win",
-    short_name: "Tiny Football",
+    name: "Tiny Sports — Predict & Win",
+    short_name: "Tiny Sports",
     description:
       "Dự đoán tỉ số bóng đá, tích điểm, leo BXH toàn cầu cùng bạn bè.",
     start_url: "/",

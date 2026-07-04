@@ -65,22 +65,15 @@ object LiveMatchNotifier {
     }
 
     /**
-     * So với bàn thắng gần nhất đã báo cho trận này (lưu trên máy) để chỉ phát âm thanh ĐÚNG 1
-     * lần khi có bàn MỚI (của MỘT trong hai đội) — tick tiếp theo cùng cặp bàn thắng đó (chữ ký
-     * không đổi) vẫn im lặng.
+     * So với danh sách bàn thắng gần nhất đã báo cho trận này (lưu trên máy) để chỉ phát âm
+     * thanh ĐÚNG 1 lần khi có bàn MỚI (thêm 1 tên vào danh sách của 1 trong 2 đội) — tick tiếp
+     * theo cùng danh sách đó (chữ ký không đổi) vẫn im lặng.
      */
-    private fun isNewGoal(
-        context: Context,
-        matchId: String,
-        homeScorer: String?,
-        homeScorerMinute: String?,
-        awayScorer: String?,
-        awayScorerMinute: String?
-    ): Boolean {
-        if (homeScorer == null && awayScorer == null) return false
+    private fun isNewGoal(context: Context, matchId: String, homeScorers: String?, awayScorers: String?): Boolean {
+        if (homeScorers == null && awayScorers == null) return false
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val key = "goal_$matchId"
-        val signature = "${homeScorer ?: ""}|${homeScorerMinute ?: ""}||${awayScorer ?: ""}|${awayScorerMinute ?: ""}"
+        val signature = "${homeScorers ?: ""}||${awayScorers ?: ""}"
         val last = prefs.getString(key, null)
         if (last == signature) return false
         prefs.edit().putString(key, signature).apply()
@@ -112,9 +105,9 @@ object LiveMatchNotifier {
 
     /**
      * data (từ FCM, mọi field là String): matchId, home, away, homeScore, awayScore,
-     * minute ("0".."90"), status ("LIVE" | "HALFTIME" | "FINISHED"), homeLogo?, awayLogo? (URL),
-     * homeScorer?/homeScorerMinute?, awayScorer?/awayScorerMinute? (người ghi bàn gần nhất của
-     * TỪNG đội — có thể có cả 2 nếu cả 2 đội đều đã ghi bàn).
+     * minute ("0".."120", >90 = hiệp phụ), status ("LIVE" | "HALFTIME" | "FINISHED"), homeLogo?,
+     * awayLogo? (URL), homeScorers?/awayScorers? (TẤT CẢ bàn thắng của từng đội, đã format sẵn
+     * "Tên phút'" và nối bằng " · " — có thể nhiều bàn/đội).
      */
     fun showOrUpdate(context: Context, data: Map<String, String>) {
         val matchId = data["matchId"] ?: return
@@ -122,13 +115,12 @@ object LiveMatchNotifier {
         val away = data["away"] ?: "?"
         val homeScore = data["homeScore"] ?: "0"
         val awayScore = data["awayScore"] ?: "0"
-        val minute = (data["minute"] ?: "0").toIntOrNull()?.coerceIn(0, 90) ?: 0
+        // Trần 120 (90 chính thức + hiệp phụ) — trước đây trần 90 khiến hiệp phụ hiện "kẹt" ở 90'.
+        val minute = (data["minute"] ?: "0").toIntOrNull()?.coerceIn(0, 120) ?: 0
         val finished = data["status"] == "FINISHED"
         val halftime = data["status"] == "HALFTIME"
-        val homeScorer = data["homeScorer"]?.takeIf { it.isNotBlank() }
-        val homeScorerMinute = data["homeScorerMinute"]?.takeIf { it.isNotBlank() }
-        val awayScorer = data["awayScorer"]?.takeIf { it.isNotBlank() }
-        val awayScorerMinute = data["awayScorerMinute"]?.takeIf { it.isNotBlank() }
+        val homeScorers = data["homeScorers"]?.takeIf { it.isNotBlank() }
+        val awayScorers = data["awayScorers"]?.takeIf { it.isNotBlank() }
 
         ensureChannel(context)
 
@@ -177,13 +169,8 @@ object LiveMatchNotifier {
                 }
             )
 
-            fun scorerLine(scorer: String?, scorerMinute: String?): String {
-                if (scorer == null) return ""
-                val minuteSuffix = if (scorerMinute != null) " $scorerMinute'" else ""
-                return "⚽ $scorer$minuteSuffix"
-            }
-            setTextViewText(R.id.home_scorer_text, scorerLine(homeScorer, homeScorerMinute))
-            setTextViewText(R.id.away_scorer_text, scorerLine(awayScorer, awayScorerMinute))
+            setTextViewText(R.id.home_scorer_text, homeScorers?.let { "⚽ $it" } ?: "")
+            setTextViewText(R.id.away_scorer_text, awayScorers?.let { "⚽ $it" } ?: "")
 
             loadBitmap(data["homeLogo"])?.let { setImageViewBitmap(R.id.home_crest, it) }
             loadBitmap(data["awayLogo"])?.let { setImageViewBitmap(R.id.away_crest, it) }
@@ -192,11 +179,14 @@ object LiveMatchNotifier {
                 setViewVisibility(R.id.progress_bar, View.GONE)
             } else {
                 setViewVisibility(R.id.progress_bar, View.VISIBLE)
-                setProgressBar(R.id.progress_bar, 90, minute, false)
+                // Hiệp phụ (>90') thì đổi thang đo thanh tiến trình sang 120 — giữ thang 90 cho
+                // trận đá chính thức để thanh vẫn đầy đúng lúc kết thúc 90 phút bình thường.
+                val progressMax = if (minute > 90) 120 else 90
+                setProgressBar(R.id.progress_bar, progressMax, minute, false)
             }
         }
 
-        val newGoal = isNewGoal(context, matchId, homeScorer, homeScorerMinute, awayScorer, awayScorerMinute)
+        val newGoal = isNewGoal(context, matchId, homeScorers, awayScorers)
         val channelId = if (newGoal) CHANNEL_ID_GOAL else CHANNEL_ID
 
         val builder = NotificationCompat.Builder(context, channelId)

@@ -896,7 +896,7 @@ export default function StreamScreen() {
 
       {/* Compact footer watermark */}
       <footer className="w-full py-3 text-center text-[8px] font-extrabold tracking-[0.3em] text-slate-600 select-none">
-        TINY FOOTBALL Predictor Overlay
+        TINY SPORTS Predictor Overlay
       </footer>
     </div>
   );

@@ -379,7 +379,7 @@ export default function WC2026App({ onExit } = {}) {
   // WebView Android cũ. Trả về: "shared" | "copied" | "cancelled" | "failed".
   const shareRoom = async (code) => {
     const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
-    const title = "Tiny Football";
+    const title = "Tiny Sports";
     const text = `Vào phòng ${code} dự đoán ${league.name} cùng mình nhé! 🏆`;
 
     if (isNativeApp()) {

@@ -1,4 +1,4 @@
-// Service worker tối thiểu cho PWA Tiny Football.
+// Service worker tối thiểu cho PWA Tiny Sports.
 // Mục tiêu: cài được lên màn hình chính + offline cơ bản cho app shell.
 // LƯU Ý: KHÔNG cache /api/* để tỉ số trận luôn lấy mới (live/realtime).
 
@@ -39,7 +39,7 @@ self.addEventListener("push", (event) => {
   } catch {
     data = { body: event.data ? event.data.text() : "" };
   }
-  const title = data.title || "Tiny Football";
+  const title = data.title || "Tiny Sports";
   const options = {
     body: data.body || "",
     icon: data.icon || "/icon-192.png",

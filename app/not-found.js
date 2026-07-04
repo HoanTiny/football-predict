@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Không tìm thấy trang — Tiny Football" };
+export const metadata = { title: "Không tìm thấy trang — Tiny Sports" };
 
 export default function NotFound() {
   return (

@@ -51,7 +51,7 @@ export default function ConfigScreen({ onSave, onDemo, onExit }) {
               ⚽
             </div>
             <div className="text-[10px] font-bold tracking-[0.3em] uppercase text-gradient mb-1" style={{ fontFamily: "var(--font-jakarta)" }}>
-              Tiny Football
+              Tiny Sports
             </div>
             <h1
               className="text-4xl font-black text-white"

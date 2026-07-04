@@ -1,6 +1,6 @@
 {
   "appId": "vn.tinyfootball.app",
-  "appName": "Tiny Football",
+  "appName": "Tiny Sports",
   "webDir": "public",
   "server": {
     "url": "https://football-predict-ecru.vercel.app",

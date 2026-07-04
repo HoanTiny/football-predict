@@ -141,7 +141,7 @@ export default function RoomScreen({
 
         // session === null → cần xác nhận email trước khi đăng nhập được
         setError(
-          "✅ Đăng ký thành công! Tiny Football đã gửi email xác nhận tới " +
+          "✅ Đăng ký thành công! Tiny Sports đã gửi email xác nhận tới " +
             email.trim() +
             ". Hãy mở email và nhấn link xác nhận, sau đó quay lại đăng nhập. " +
             "(Kiểm tra cả thư mục Spam nếu không thấy.)",
@@ -244,13 +244,13 @@ export default function RoomScreen({
 
           <img
             src="/logo.png"
-            alt="Tiny Football"
+            alt="Tiny Sports"
             className="h-44 w-auto object-contain z-10 drop-shadow-[0_8px_24px_rgba(245,197,24,0.35)]"
           />
         </div>
 
         <div className="text-[10px] font-extrabold tracking-[0.25em] uppercase text-[#62F2C0] mb-1">
-          Tiny Football 2026™
+          Tiny Sports 2026™
         </div>
         <h1 className="text-2xl font-extrabold text-white mb-6 uppercase tracking-wider font-oswald bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
           {titles[view]}

@@ -20,7 +20,7 @@ const inter = Inter({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const TITLE = "Tiny Football — Dự đoán World Cup 2026";
+const TITLE = "Tiny Sports — Dự đoán World Cup 2026";
 const DESC =
   "Dự đoán tỉ số World Cup 2026, tích điểm, leo bảng xếp hạng và đấu cùng bạn bè theo phòng. Chat trực tiếp, sơ đồ knockout, thống kê realtime.";
 
@@ -28,11 +28,11 @@ export const metadata = {
   metadataBase: new URL(siteUrl),
   title: TITLE,
   description: DESC,
-  applicationName: "Tiny Football",
+  applicationName: "Tiny Sports",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Tiny Football",
+    title: "Tiny Sports",
   },
   icons: {
     icon: "/football.png",
@@ -40,7 +40,7 @@ export const metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "Tiny Football",
+    siteName: "Tiny Sports",
     title: TITLE,
     description: DESC,
     locale: "vi_VN",

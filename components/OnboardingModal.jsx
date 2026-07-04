@@ -22,7 +22,7 @@ export default function OnboardingModal({ onSubmit }) {
         {/* Title */}
         <div className="relative z-10 mb-6 space-y-1">
           <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#334BFF]">
-            Tiny Football 2026™
+            Tiny Sports 2026™
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight uppercase font-oswald">
             DỰ ĐOÁN & CHINH PHỤC

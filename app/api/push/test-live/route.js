@@ -14,10 +14,11 @@ const DEMO_AWAY_ID = 5788; // Thái Lan
 // Cách gọi (dán thẳng vào trình duyệt):
 //   /api/push/test-live?secret=<CRON_SECRET>                            → tick "đang đá" phút 23
 //   /api/push/test-live?secret=<CRON_SECRET>&minute=88                   → tuỳ chỉnh phút
+//   /api/push/test-live?secret=<CRON_SECRET>&minute=105                  → test hiệp phụ (phút > 90)
 //   /api/push/test-live?secret=<CRON_SECRET>&status=FINISHED             → test tự đóng khi kết thúc
 //   /api/push/test-live?secret=<CRON_SECRET>&status=HALFTIME             → test hiện "Nghỉ giữa hiệp"
-//   /api/push/test-live?secret=<CRON_SECRET>&homeScorer=Công+Phượng&homeScorerMinute=45 → đội nhà ghi bàn
-//   /api/push/test-live?secret=<CRON_SECRET>&awayScorer=Messi&awayScorerMinute=60 → đội khách ghi bàn (test cả 2 đội cùng lúc)
+//   /api/push/test-live?secret=<CRON_SECRET>&homeScorers=Công+Phượng+12'  → đội nhà ghi bàn
+//   /api/push/test-live?secret=<CRON_SECRET>&homeScorers=Messi+29'·L.+Martínez+92'&awayScorers=Sidny+103' → test nhiều bàn/đội (dùng "·" nối các bàn)
 //
 // Chấp nhận secret qua query param (không chỉ header Bearer) để test thẳng bằng URL trên
 // trình duyệt cho tiện — đây là route test, rủi ro thấp (chỉ bắn thông báo tỉ số giả).
@@ -49,17 +50,11 @@ export async function GET(request) {
     awayId,
     homeLogo: searchParams.get("homeLogo") || teamLogo(homeId),
     awayLogo: searchParams.get("awayLogo") || teamLogo(awayId),
-    // Mặc định có sẵn bàn thắng giả của đội nhà để test hiển thị người ghi bàn ngay — truyền
-    // &homeScorer= rỗng nếu muốn test trường hợp đội nhà KHÔNG ghi bàn. Muốn test CẢ 2 đội cùng
-    // ghi bàn thì truyền thêm &awayScorer=...&awayScorerMinute=....
-    homeScorer: searchParams.has("homeScorer") ? searchParams.get("homeScorer") : "Nguyễn Văn Toàn",
-    homeScorerMinute: searchParams.get("homeScorerMinute") || "12",
-    ...(searchParams.get("awayScorer")
-      ? {
-          awayScorer: searchParams.get("awayScorer"),
-          awayScorerMinute: searchParams.get("awayScorerMinute") || "",
-        }
-      : {}),
+    // Mặc định có sẵn 1 bàn thắng giả của đội nhà để test hiển thị người ghi bàn ngay — truyền
+    // &homeScorers= rỗng nếu muốn test trường hợp đội nhà KHÔNG ghi bàn. Mỗi field là 1 chuỗi đã
+    // format sẵn "Tên phút'" (nối nhiều bàn bằng " · ") — giống hệt shape cron/route.js gửi thật.
+    homeScorers: searchParams.has("homeScorers") ? searchParams.get("homeScorers") : "Nguyễn Văn Toàn 12'",
+    ...(searchParams.get("awayScorers") ? { awayScorers: searchParams.get("awayScorers") } : {}),
   };
 
   await sendFcmDataToAll(data);

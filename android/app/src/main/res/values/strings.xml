@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Tiny Football</string>
-    <string name="title_activity_main">Tiny Football</string>
+    <string name="app_name">Tiny Sports</string>
+    <string name="title_activity_main">Tiny Sports</string>
     <string name="package_name">vn.tinyfootball.app</string>
     <string name="custom_url_scheme">vn.tinyfootball.app</string>
 </resources>

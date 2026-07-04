@@ -19,7 +19,7 @@ export async function GET(request) {
     );
   }
   await sendToAll({
-    title: "🔔 Tiny Football — Test",
+    title: "🔔 Tiny Sports — Test",
     body: "Thông báo thử thành công! Push đang hoạt động.",
     url: "/",
     tag: "test",

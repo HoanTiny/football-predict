@@ -551,7 +551,7 @@ export default function ScheduleTab({
 
           <div className="relative z-10 space-y-2.5 max-w-xl">
             <span className="text-[10px] font-bold text-[#334BFF] uppercase tracking-[0.2em]">
-              TINY FOOTBALL 2026™
+              TINY SPORTS 2026™
             </span>
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">
               Dự đoán. Tranh tài. Bứt phá.

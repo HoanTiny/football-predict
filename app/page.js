@@ -21,7 +21,7 @@ const AppShell = dynamic(() => import("@/components/AppShell"), {
     >
       <div style={{ fontSize: 48 }}>⚽</div>
       <div style={{ fontSize: 14, letterSpacing: "0.2em", textTransform: "uppercase" }}>
-        Tiny Football 2026™
+        Tiny Sports 2026™
       </div>
     </div>
   ),
