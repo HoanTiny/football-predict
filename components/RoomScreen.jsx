@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase, supabaseReady } from "@/lib/supabase";
 import { createRoom, joinRoom } from "@/lib/roomApi";
 import { LEAGUES } from "@/lib/leagues";
+import { signInWithGoogle } from "@/lib/googleAuth";
 
 /** FIFA 2026 × Premium Room Screen with Supabase Auth integration */
 export default function RoomScreen({
@@ -159,18 +160,13 @@ export default function RoomScreen({
     setBusy(true);
     setError(null);
     try {
-      const { error: authErr } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo:
-            window.location.origin +
-            window.location.pathname +
-            (initialCode ? `?room=${initialCode}` : ""),
-        },
-      });
-      if (authErr) throw authErr;
+      await signInWithGoogle({ extraQuery: initialCode ? `?room=${initialCode}` : "" });
     } catch (err) {
       setError(err.message || "Không thể đăng nhập Google.");
+    } finally {
+      // Trên app native, sign-in thật sự hoàn tất SAU khi trình duyệt trong-app đóng lại (deep
+      // link callback) — không đợi ở đây được, effect theo dõi `session` bên dưới sẽ tự chuyển
+      // màn hình khi đăng nhập xong. Bỏ trạng thái busy ngay để không kẹt nút.
       setBusy(false);
     }
   };
@@ -224,7 +220,8 @@ export default function RoomScreen({
       {onExit && view === "menu" && (
         <button
           onClick={onExit}
-          className="fixed top-4 left-4 z-20 flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-white transition-colors cursor-pointer"
+          className="fixed left-4 z-20 flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-white transition-colors cursor-pointer"
+          style={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)" }}
         >
           ← Trang chủ bóng đá
         </button>

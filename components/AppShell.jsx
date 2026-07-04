@@ -10,7 +10,10 @@
 import { useEffect, useState } from "react";
 import { LEAGUES, leagueById, leagueLogo } from "@/lib/leagues";
 import { useFavTeams } from "@/hooks/useFavTeams";
+import { useAuthSession } from "@/hooks/useAuthSession";
 import { isNativeApp } from "@/lib/platform";
+import { supabase } from "@/lib/supabase";
+import { handleGoogleAuthCallback } from "@/lib/googleAuth";
 import HomeTab from "./HomeTab";
 import LeagueView from "./leagues/LeagueView";
 import BracketTab from "./tabs/BracketTab";
@@ -19,6 +22,7 @@ import SearchLeagues from "./SearchLeagues";
 import MyTeamsView from "./MyTeamsView";
 import NewsView from "./NewsView";
 import MatchDetailSheet from "./leagues/MatchDetailSheet";
+import AuthModal from "./AuthModal";
 
 const LS_TOP_TAB = "wc2026_top_tab";
 
@@ -93,6 +97,9 @@ export default function AppShell() {
   };
 
   const { teams: favTeams } = useFavTeams();
+  const { session } = useAuthSession();
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Giải đang xem (null nếu đang ở Trang chủ)
   const league = selection.startsWith("league:") ? leagueById(selection.slice(7)) : null;
@@ -105,7 +112,8 @@ export default function AppShell() {
     let listenerHandle;
     (async () => {
       const { App } = await import("@capacitor/app");
-      listenerHandle = await App.addListener("appUrlOpen", ({ url }) => {
+      listenerHandle = await App.addListener("appUrlOpen", async ({ url }) => {
+        if (await handleGoogleAuthCallback(url)) return;
         try {
           const parsed = new URL(url);
           if (parsed.hostname !== "match") return;
@@ -186,7 +194,53 @@ export default function AppShell() {
             </span>
           </div>
 
-          {/* Phải: nút chọn nội dung (dropdown kiểu Apple Sports) */}
+          {/* Phải: tài khoản + nút chọn nội dung (dropdown kiểu Apple Sports) */}
+          <div className="flex items-center gap-2 shrink-0">
+          <div className="relative shrink-0">
+            <button
+              onClick={() => (session ? setAccountMenuOpen((o) => !o) : setAuthModalOpen(true))}
+              title={session ? session.user.email : "Đăng nhập"}
+              aria-haspopup={session ? "menu" : undefined}
+              aria-expanded={session ? accountMenuOpen : undefined}
+              className={`w-10 h-10 rounded-full flex items-center justify-center border backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] transition-colors cursor-pointer ${
+                accountMenuOpen ? "bg-white/30 border-white/40" : "bg-white/15 border-white/25 hover:bg-white/25"
+              }`}
+            >
+              {session ? (
+                <span className="text-xs font-black text-white uppercase">
+                  {session.user.email?.slice(0, 1) || "?"}
+                </span>
+              ) : (
+                <span className="text-base">👤</span>
+              )}
+            </button>
+
+            {accountMenuOpen && session && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setAccountMenuOpen(false)} />
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-64 z-50 rounded-3xl border border-white/20 shadow-2xl p-1.5 origin-top-right backdrop-blur-2xl bg-[#1c2064]/85"
+                >
+                  <div className="px-3 py-2.5 text-[10px] text-slate-300 font-semibold truncate">
+                    Tài khoản: <strong className="text-white font-mono">{session.user.email}</strong>
+                  </div>
+                  <div className="my-1 border-t border-white/10" />
+                  <button
+                    role="menuitem"
+                    onClick={async () => {
+                      setAccountMenuOpen(false);
+                      await supabase.auth.signOut();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-bold text-red-400 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <span className="w-6 text-center">🚪</span> Đăng xuất
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="relative shrink-0">
             <button
               onClick={() => setPickerOpen((o) => !o)}
@@ -305,8 +359,11 @@ export default function AppShell() {
               </>
             )}
           </div>
+          </div>
         </div>
       </header>
+
+      {authModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} />}
 
       <main className="max-w-[1280px] mx-auto px-4 py-5">
         {league ? (

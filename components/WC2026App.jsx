@@ -135,6 +135,9 @@ export default function WC2026App({ onExit } = {}) {
         setActiveCodeRaw(null);
         setModeRaw(null);
         setForceRoomPicker(false);
+        // Đăng xuất xong thì về thẳng trang lịch (trang chính) thay vì kẹt lại màn hình phòng
+        // của Game Dự đoán — trước đây phải tự bấm "← Trang chủ bóng đá" mới thoát ra được.
+        onExit?.();
       } else if (event === "SIGNED_IN" && s?.user?.id) {
         syncRooms(s.user.id);
       }

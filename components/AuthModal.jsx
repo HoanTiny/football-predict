@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { signInWithGoogle } from "@/lib/googleAuth";
+import { useAuthSession } from "@/hooks/useAuthSession";
 
 /**
  * Modal đăng nhập/đăng ký DÙNG CHUNG (cùng tài khoản Supabase với game Dự đoán) — dùng ở khu
@@ -13,6 +15,15 @@ export default function AuthModal({ onClose }) {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+
+  // Đăng nhập Google trên app native hoàn tất SAU khi trình duyệt trong-app đóng lại (không có
+  // reload trang như trên web để "tự làm mới" modal) — tự đóng modal ngay khi phiên xuất hiện.
+  const { session } = useAuthSession();
+  const hadSession = useRef(Boolean(session));
+  useEffect(() => {
+    if (session && !hadSession.current) onClose();
+    hadSession.current = Boolean(session);
+  }, [session, onClose]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,13 +71,12 @@ export default function AuthModal({ onClose }) {
     setBusy(true);
     setError(null);
     try {
-      const { error: authErr } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: window.location.origin + window.location.pathname },
-      });
-      if (authErr) throw authErr;
+      await signInWithGoogle();
     } catch (err) {
       setError(err.message || "Không thể đăng nhập Google.");
+    } finally {
+      // Trên app native, đăng nhập hoàn tất sau khi trình duyệt trong-app đóng lại (deep link) —
+      // không đợi ở đây được; onClose() được gọi từ nơi khác khi phiên đăng nhập xuất hiện.
       setBusy(false);
     }
   };
