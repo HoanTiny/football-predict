@@ -23,6 +23,8 @@ import MyTeamsView from "./MyTeamsView";
 import NewsView from "./NewsView";
 import MatchDetailSheet from "./leagues/MatchDetailSheet";
 import AuthModal from "./AuthModal";
+import Icon from "./Icon";
+import CalendarProfileView from "./CalendarProfileView";
 
 const LS_TOP_TAB = "wc2026_top_tab";
 
@@ -98,8 +100,30 @@ export default function AppShell() {
 
   const { teams: favTeams } = useFavTeams();
   const { session } = useAuthSession();
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  useEffect(() => {
+    const updateAvatar = () => {
+      const userId = session?.user?.id || "guest";
+      try {
+        const raw = localStorage.getItem("global_profile_" + userId);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          setAvatarUrl(parsed?.avatar || null);
+          return;
+        }
+      } catch {}
+      setAvatarUrl(null);
+    };
+    updateAvatar();
+    window.addEventListener("storage", updateAvatar);
+    window.addEventListener("profile-update", updateAvatar);
+    return () => {
+      window.removeEventListener("storage", updateAvatar);
+      window.removeEventListener("profile-update", updateAvatar);
+    };
+  }, [session]);
 
   // Giải đang xem (null nếu đang ở Trang chủ)
   const league = selection.startsWith("league:") ? leagueById(selection.slice(7)) : null;
@@ -194,53 +218,7 @@ export default function AppShell() {
             </span>
           </div>
 
-          {/* Phải: tài khoản + nút chọn nội dung (dropdown kiểu Apple Sports) */}
-          <div className="flex items-center gap-2 shrink-0">
-          <div className="relative shrink-0">
-            <button
-              onClick={() => (session ? setAccountMenuOpen((o) => !o) : setAuthModalOpen(true))}
-              title={session ? session.user.email : "Đăng nhập"}
-              aria-haspopup={session ? "menu" : undefined}
-              aria-expanded={session ? accountMenuOpen : undefined}
-              className={`w-10 h-10 rounded-full flex items-center justify-center border backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] transition-colors cursor-pointer ${
-                accountMenuOpen ? "bg-white/30 border-white/40" : "bg-white/15 border-white/25 hover:bg-white/25"
-              }`}
-            >
-              {session ? (
-                <span className="text-xs font-black text-white uppercase">
-                  {session.user.email?.slice(0, 1) || "?"}
-                </span>
-              ) : (
-                <span className="text-base">👤</span>
-              )}
-            </button>
-
-            {accountMenuOpen && session && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setAccountMenuOpen(false)} />
-                <div
-                  role="menu"
-                  className="absolute right-0 mt-2 w-64 z-50 rounded-3xl border border-white/20 shadow-2xl p-1.5 origin-top-right backdrop-blur-2xl bg-[#1c2064]/85"
-                >
-                  <div className="px-3 py-2.5 text-[10px] text-slate-300 font-semibold truncate">
-                    Tài khoản: <strong className="text-white font-mono">{session.user.email}</strong>
-                  </div>
-                  <div className="my-1 border-t border-white/10" />
-                  <button
-                    role="menuitem"
-                    onClick={async () => {
-                      setAccountMenuOpen(false);
-                      await supabase.auth.signOut();
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-bold text-red-400 hover:bg-white/10 transition-colors cursor-pointer"
-                  >
-                    <span className="w-6 text-center">🚪</span> Đăng xuất
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-
+          {/* Phải: nút chọn nội dung (dropdown kiểu Apple Sports) — gộp luôn tài khoản ở đầu */}
           <div className="relative shrink-0">
             <button
               onClick={() => setPickerOpen((o) => !o)}
@@ -267,6 +245,43 @@ export default function AppShell() {
                   role="menu"
                   className="absolute right-0 mt-2 w-72 z-50 rounded-3xl border border-white/20 shadow-2xl p-1.5 origin-top-right backdrop-blur-2xl bg-[#1c2064]/85 max-h-[70vh] overflow-y-auto"
                 >
+                  {/* Hàng tài khoản: avatar bên trái + Sửa/Đăng nhập bên phải */}
+                  <div className="flex items-center justify-between px-3 py-2.5 mb-1">
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setPickerOpen(false);
+                        session ? setSelection("profile") : setAuthModalOpen(true);
+                      }}
+                      title={session ? session.user.email : "Đăng nhập"}
+                      className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center border border-white/20 bg-white/10 hover:bg-white/15 transition-colors cursor-pointer shrink-0"
+                    >
+                      {session ? (
+                        avatarUrl ? (
+                          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-sm font-black text-white uppercase">
+                            {session.user.email?.slice(0, 1) || "?"}
+                          </span>
+                        )
+                      ) : (
+                        <Icon name="user" className="w-5 h-5 text-white/70" />
+                      )}
+                    </button>
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setPickerOpen(false);
+                        session ? setSelection("profile") : setAuthModalOpen(true);
+                      }}
+                      className="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <Icon name={session ? "settings" : "user"} className="w-4 h-4" />
+                      {session ? "Sửa" : "Đăng nhập"}
+                    </button>
+                  </div>
+                  <div className="my-1.5 border-t border-white/10" />
+
                   <button
                     role="menuitem"
                     onClick={() => setSelection("search")}
@@ -355,10 +370,39 @@ export default function AppShell() {
                     <span className="w-6 text-center">🎮</span> Game Dự đoán
                     <span className="ml-auto text-slate-400 text-xs">→</span>
                   </button>
+
+                  {session && (
+                    <>
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setPickerOpen(false);
+                          window.location.hash = "profile";
+                          setSelection("predict");
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                      >
+                        <Icon name="gem" className="w-4 h-4 shrink-0 text-[#62F2C0]" />
+                        Hồ sơ game dự đoán
+                      </button>
+
+                      <div className="my-1.5 border-t border-white/10" />
+                      <button
+                        role="menuitem"
+                        onClick={async () => {
+                          setPickerOpen(false);
+                          await supabase.auth.signOut();
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-bold text-[#ff8a8a] hover:bg-[#ff5a5a]/15 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <Icon name="logout" className="w-4 h-4 shrink-0" />
+                        Đăng xuất
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             )}
-          </div>
           </div>
         </div>
       </header>
@@ -377,6 +421,11 @@ export default function AppShell() {
           <MyTeamsView onClose={() => setSelection("home")} />
         ) : selection === "news" ? (
           <NewsView onClose={() => setSelection("home")} />
+        ) : selection === "profile" ? (
+          <CalendarProfileView
+            onClose={() => setSelection("home")}
+            authSession={session}
+          />
         ) : (
           <HomeTab />
         )}

@@ -130,5 +130,5 @@ export function useLocalStore(matches, pushToast) {
     result.toasts.forEach((t) => pushToast(t.msg, t.type));
   }, [matches, player, updatePlayer, pushToast]);
 
-  return { player, createPlayer, placeBet, placeChampionBet, reset };
+  return { player, createPlayer, placeBet, placeChampionBet, reset, updatePlayer };
 }

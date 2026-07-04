@@ -82,6 +82,29 @@ export function useRoomStore(session, matches, pushToast) {
 
   const me = useMemo(() => players.find((p) => p.id === playerId) || null, [players, playerId]);
 
+  // Quản lý thông tin ảnh đại diện / giải đấu yêu thích cục bộ cho room mode
+  const [localProfile, setLocalProfile] = useState(() => {
+    if (typeof window === "undefined" || !playerId) return { avatar: null, followedLeagues: [] };
+    try {
+      const raw = localStorage.getItem("room_profile_" + playerId);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") return parsed;
+      }
+    } catch {}
+    return { avatar: null, followedLeagues: [] };
+  });
+
+  const updatePlayer = useCallback((updater) => {
+    setLocalProfile((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
+      if (typeof window !== "undefined" && playerId) {
+        localStorage.setItem("room_profile_" + playerId, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, [playerId]);
+
   // Quy về cùng shape với chế độ solo để các component dùng chung
   const player = useMemo(() => {
     if (!me) return null;
@@ -90,8 +113,10 @@ export function useRoomStore(session, matches, pushToast) {
       chips: me.chips,
       predictions: predictions.filter((r) => r.player_id === me.id).map(mapPrediction),
       championPicks: me.champion_picks || [],
+      avatar: localProfile.avatar || null,
+      followedLeagues: localProfile.followedLeagues || [],
     };
-  }, [me, predictions]);
+  }, [me, predictions, localProfile]);
 
   const placeBet = useCallback(
     async (bet) => {
@@ -212,5 +237,6 @@ export function useRoomStore(session, matches, pushToast) {
     betsByMatch,
     leaderboard,
     champions,
+    updatePlayer,
   };
 }

@@ -288,36 +288,44 @@ export async function GET(request) {
     );
   }
 
-  // Kết thúc → từng người cược biết thắng/thua kèo
+  // Kết thúc → tick FCM đóng notification (mọi người theo dõi/đã cược) + thông báo thắng/thua
+  // kèo (chỉ người đã cược).
   for (const m of finishedMatches) {
     const list = bettors.get(m.id) || [];
-    if (!list.length) continue;
     const h = m.score?.fullTime?.home ?? 0;
     const a = m.score?.fullTime?.away ?? 0;
-    const label = `${m.homeTeam?.name} ${h}-${a} ${m.awayTeam?.name}`;
     const finishedUserIds = [...new Set(list.map((b) => b.userId))];
     const finishedFollowerIds = [
       ...(followers.get(String(m.homeTeam?.id)) || []),
       ...(followers.get(String(m.awayTeam?.id)) || []),
     ];
+    const closeRecipients = [...new Set([...finishedUserIds, ...finishedFollowerIds])];
     // Tick live-update LẦN CUỐI với status FINISHED → native tự đóng notification đang chạy
-    // (gồm cả người chỉ follow đội, không cược, để họ không bị kẹt notification "đang đá" mãi).
-    tasks.push(
-      sendFcmDataToUserIds([...new Set([...finishedUserIds, ...finishedFollowerIds])], {
-        liveMatch: "1",
-        matchId: String(m.id),
-        home: m.homeTeam?.name || "?",
-        away: m.awayTeam?.name || "?",
-        homeScore: String(h),
-        awayScore: String(a),
-        minute: "90",
-        status: "FINISHED",
-        ...(m.homeTeam?.id ? { homeId: String(m.homeTeam.id) } : {}),
-        ...(m.awayTeam?.id ? { awayId: String(m.awayTeam.id) } : {}),
-        ...(teamLogo(m.homeTeam?.id) ? { homeLogo: teamLogo(m.homeTeam.id) } : {}),
-        ...(teamLogo(m.awayTeam?.id) ? { awayLogo: teamLogo(m.awayTeam.id) } : {}),
-      })
-    );
+    // (gồm cả người chỉ follow đội, không cược). QUAN TRỌNG: gửi tick này TRƯỚC khi kiểm tra
+    // "có ai cược không" — trước đây `if (!list.length) continue` nằm phía trên nên trận không
+    // ai cược (chỉ có người follow) sẽ bị bỏ qua toàn bộ, khiến notification của người follow bị
+    // kẹt mãi ở phút cuối cùng nhận được (vd "120'") thay vì báo "Kết thúc".
+    if (closeRecipients.length) {
+      tasks.push(
+        sendFcmDataToUserIds(closeRecipients, {
+          liveMatch: "1",
+          matchId: String(m.id),
+          home: m.homeTeam?.name || "?",
+          away: m.awayTeam?.name || "?",
+          homeScore: String(h),
+          awayScore: String(a),
+          minute: "90",
+          status: "FINISHED",
+          ...(m.homeTeam?.id ? { homeId: String(m.homeTeam.id) } : {}),
+          ...(m.awayTeam?.id ? { awayId: String(m.awayTeam.id) } : {}),
+          ...(teamLogo(m.homeTeam?.id) ? { homeLogo: teamLogo(m.homeTeam.id) } : {}),
+          ...(teamLogo(m.awayTeam?.id) ? { awayLogo: teamLogo(m.awayTeam.id) } : {}),
+        })
+      );
+    }
+
+    if (!list.length) continue;
+    const label = `${m.homeTeam?.name} ${h}-${a} ${m.awayTeam?.name}`;
     for (const b of list) {
       const { status, profitMult } = evaluateBet(b, h, a, { homeTeam: m.homeTeam?.name, awayTeam: m.awayTeam?.name });
       let body;

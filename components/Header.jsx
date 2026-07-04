@@ -153,8 +153,12 @@ export default function Header({
                     : "border-white/15 hover:border-white/30 hover:bg-white/[0.16]"
                 }`}
               >
-                <div className="flex w-6 h-6 rounded-full bg-gradient-to-tr from-[#334bff] to-[#62F2C0] border border-white/20 items-center justify-center text-[10px] font-black text-white uppercase select-none shadow-[0_2px_8px_rgba(98,242,192,0.2)]">
-                  {initial}
+                <div className="flex w-6 h-6 rounded-full border border-white/20 items-center justify-center overflow-hidden bg-gradient-to-tr from-[#334bff] to-[#62F2C0] text-[10px] font-black text-white uppercase select-none shadow-[0_2px_8px_rgba(98,242,192,0.2)]">
+                  {player.avatar ? (
+                    <img src={player.avatar} alt={player.playerName} className="w-full h-full object-cover" />
+                  ) : (
+                    initial
+                  )}
                 </div>
                 <div className="hidden sm:flex md:hidden lg:flex items-center gap-1 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-[10px] font-bold text-[#62F2C0] tabular-nums">
                   <Icon name="gem" className="w-3 h-3 text-[#62F2C0] drop-shadow-[0_0_4px_rgba(98,242,192,0.4)]" />
@@ -190,8 +194,12 @@ export default function Header({
                     {/* Profile summary */}
                     <div className="px-3 py-3 border-b border-white/10 mb-1.5 bg-white/5 rounded-xl">
                       <div className="text-xs font-bold text-white flex items-center gap-2">
-                        <div className="w-5 h-5 rounded bg-gradient-to-tr from-[#334bff] to-[#62F2C0] flex items-center justify-center text-[10px] font-black text-white">
-                          {initial}
+                        <div className="w-5 h-5 rounded overflow-hidden flex items-center justify-center text-[10px] font-black text-white bg-gradient-to-tr from-[#334bff] to-[#62F2C0] select-none">
+                          {player.avatar ? (
+                            <img src={player.avatar} alt={player.playerName} className="w-full h-full object-cover" />
+                          ) : (
+                            initial
+                          )}
                         </div>
                         <span className="truncate">{player.playerName}</span>
                       </div>
@@ -303,6 +311,23 @@ export default function Header({
                       <Icon name="tv" className="w-4 h-4 shrink-0 text-[#62F2C0]" />
                       Stream / OBS
                     </a>
+
+                    {/* Profile */}
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        onTabChange("profile");
+                        setMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                        tab === "profile"
+                          ? "bg-white/10 text-white shadow-sm"
+                          : "text-white/70 hover:text-white hover:bg-white/5"
+                      }`}
+                    >
+                      <Icon name="user" className="w-4 h-4 shrink-0 text-white/60" />
+                      Trang cá nhân
+                    </button>
 
                     {/* Statistics */}
                     <button

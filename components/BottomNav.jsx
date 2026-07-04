@@ -18,6 +18,7 @@ export default function BottomNav({ tab, onTabChange, leagueId }) {
   ];
 
   const moreTabs = [
+    { key: "profile",     label: "Hồ sơ", icon: "user" },
     ...(isWorldCup ? [{ key: "bracket", label: "Sơ đồ", icon: "bracket" }] : []),
     { key: "statistics",  label: "Thống kê", icon: "activity" },
     ...(isWorldCup ? [{ key: "champion", label: "Vô địch", icon: "trophy" }] : []),

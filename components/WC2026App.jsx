@@ -21,7 +21,7 @@ import { registerNativePush, reassociateNativePushUser } from "@/lib/pushNative"
 import { isNativeApp } from "@/lib/platform";
 
 /** Các tab hợp lệ — dùng để sync tab hiện tại với URL hash (#predictions, #leaderboard…). */
-const VALID_TABS = ["schedule", "groups", "bracket", "predictions", "leaderboard", "statistics", "champion", "settings"];
+const VALID_TABS = ["schedule", "groups", "bracket", "predictions", "leaderboard", "statistics", "champion", "settings", "profile"];
 
 /** Đọc tab từ URL hash, fallback về "schedule" nếu hash không hợp lệ. */
 function tabFromHash() {
@@ -79,6 +79,7 @@ import ChampionTab from "./tabs/ChampionTab";
 import SettingsTab from "./tabs/SettingsTab";
 import StatisticsTab from "./tabs/StatisticsTab";
 import LeaderboardSidebar from "./LeaderboardSidebar";
+import ProfileTab from "./tabs/ProfileTab";
 
 export default function WC2026App({ onExit } = {}) {
   const [authSession, setAuthSession] = useState(null);
@@ -666,6 +667,13 @@ export default function WC2026App({ onExit } = {}) {
                 roomName={inRoom ? session.roomName : null}
                 onRenameRoom={renameRoom}
                 onLeaveRoom={leaveRoom}
+                authSession={authSession}
+              />
+            )}
+            {effectiveTab === "profile" && (
+              <ProfileTab
+                player={player}
+                updatePlayer={store.updatePlayer}
                 authSession={authSession}
               />
             )}
