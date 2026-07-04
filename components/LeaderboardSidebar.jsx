@@ -19,8 +19,6 @@ export default function LeaderboardSidebar({ player, matches, roomLeaderboard })
         };
       })
       .sort((a, b) => b.chips - a.chips);
-    // player & matches là trigger tính lại khi dữ liệu localStorage thay đổi
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player, matches]);
 
   const leaderboard = roomLeaderboard || localLeaderboard;
@@ -28,10 +26,10 @@ export default function LeaderboardSidebar({ player, matches, roomLeaderboard })
 
   return (
     <div
-      className="glass rounded-2xl p-5 border border-white/8 space-y-4"
+      className="rounded-[28px] p-5 border border-white/10 space-y-4"
       style={{ background: "rgba(11, 23, 53, 0.45)", backdropFilter: "blur(16px)" }}
     >
-      <div>
+      <div className="select-none">
         <h3 className="text-[10px] font-bold tracking-[0.2em] text-[#334BFF] uppercase mb-0.5">
           BẢNG XẾP HẠNG
         </h3>
@@ -40,55 +38,55 @@ export default function LeaderboardSidebar({ player, matches, roomLeaderboard })
         </h4>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {/* Table Header */}
-        <div className="grid grid-cols-12 px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        <div className="grid grid-cols-12 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest select-none">
           <span className="col-span-2">#</span>
           <span className="col-span-5">Player</span>
           <span className="col-span-2 text-center">Acc</span>
           <span className="col-span-3 text-right">Chips</span>
         </div>
 
-        {/* Players rows */}
-        <div className="space-y-1 max-h-[420px] overflow-y-auto pr-1 scrollbar-thin">
+        {/* Players rows list container */}
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden divide-y divide-white/5 max-h-[420px] overflow-y-auto scrollbar-thin">
           {list.map((p, idx) => {
             const rank = idx + 1;
             const isMe = p.name === player.playerName;
             
             // Rank badge style
             const getRankBadgeClass = () => {
-              if (rank === 1) return "bg-[#334BFF]/25 text-[#7b8fff] border border-[#334BFF]/45";
-              if (rank === 2) return "bg-slate-400/15 text-slate-300 border border-slate-400/30";
-              if (rank === 3) return "bg-amber-700/15 text-amber-500 border border-amber-700/30";
-              return "bg-slate-800/20 text-slate-400 border border-slate-800/30";
+              if (rank === 1) return "bg-[#F5C518]/15 text-[#F5C518] border border-[#F5C518]/30";
+              if (rank === 2) return "bg-slate-450/15 text-slate-300 border border-slate-450/25";
+              if (rank === 3) return "bg-orange-500/15 text-orange-400 border border-orange-500/25";
+              return "bg-white/5 text-white/40 border border-white/10";
             };
 
             return (
               <div
                 key={p.name}
-                className={`grid grid-cols-12 items-center px-3 py-2 rounded-lg text-xs transition-all ${
-                  isMe ? "bg-[#334BFF]/10 border border-[#334BFF]/30" : "bg-[#0B1735]/40 border border-white/5"
+                className={`grid grid-cols-12 items-center px-3 py-2.5 text-xs transition-all duration-150 ${
+                  isMe ? "bg-[#334BFF]/10 text-white font-bold" : "text-white/80 hover:bg-white/[0.03]"
                 }`}
               >
                 {/* Rank */}
-                <div className="col-span-2 flex">
-                  <span className={`w-5 h-5 flex items-center justify-center rounded-md text-[10px] font-bold ${getRankBadgeClass()}`}>
+                <div className="col-span-2 flex select-none">
+                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-extrabold ${getRankBadgeClass()}`}>
                     {rank}
                   </span>
                 </div>
 
                 {/* Name */}
-                <span className={`col-span-5 truncate font-semibold text-white/90 ${isMe ? "text-[#62F2C0]" : ""}`}>
-                  {p.name} {isMe && <span className="text-[9px] text-[#62F2C0] opacity-80">(bạn)</span>}
+                <span className={`col-span-5 truncate ${isMe ? "text-[#62F2C0]" : "text-white/95"}`}>
+                  {p.name} {isMe && <span className="text-[9px] text-[#62F2C0] opacity-80 font-normal">(bạn)</span>}
                 </span>
 
                 {/* Accuracy */}
-                <span className="col-span-2 text-center text-slate-400 font-medium">
+                <span className="col-span-2 text-center text-slate-400 font-medium select-none">
                   {p.winRate}%
                 </span>
 
                 {/* Points */}
-                <span className="col-span-3 text-right font-bold text-white tabular-nums">
+                <span className="col-span-3 text-right font-extrabold text-white tabular-nums">
                   💎{fmt(p.chips)}
                 </span>
               </div>
@@ -98,7 +96,7 @@ export default function LeaderboardSidebar({ player, matches, roomLeaderboard })
       </div>
 
       {leaderboard.length === 0 && (
-        <div className="text-center py-6 text-slate-500 text-xs">
+        <div className="text-center py-6 text-slate-500 text-xs select-none">
           Chưa có dữ liệu xếp hạng.
         </div>
       )}

@@ -622,6 +622,7 @@ export default function WC2026App({ onExit } = {}) {
                 onBet={handleBet}
                 betsByMatch={inRoom ? room.betsByMatch : null}
                 onTabChange={setTab}
+                leagueName={league?.name || "World Cup 2026"}
               />
             )}
             {effectiveTab === "groups" && (

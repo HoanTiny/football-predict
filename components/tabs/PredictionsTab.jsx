@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { flagOf, flagImgOf, fmt, betLabel } from "@/lib/constants";
 import { vnTime, vnDateHeader, vnShortDateTime } from "@/lib/time";
+import { getTeamGroup } from "@/lib/standings";
 
 const renderTeamFlag = (teamName) => {
   const imgUrl = flagImgOf(teamName);
   if (imgUrl) {
     return (
-      <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-white/10">
+      <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-slate-900/50">
         <img
           src={imgUrl}
           alt={teamName}
@@ -17,8 +18,13 @@ const renderTeamFlag = (teamName) => {
       </div>
     );
   }
-  return <span className="text-xl shrink-0">{flagOf(teamName)}</span>;
+  return (
+    <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow bg-slate-900/50 text-[13px] leading-none">
+      {flagOf(teamName)}
+    </div>
+  );
 };
+
 
 // Tỉ số dùng quyết toán của 1 trận, ĐÚNG công thức lib/settlement.js (knockout dùng 90',
 // vòng bảng dùng fullTime) — để so khớp ngược với p.finalScore đã lưu lúc quyết toán.
@@ -107,25 +113,43 @@ function RoomPredictions({ betsByMatch, matchById, matches }) {
         // Trận còn đặt cược được → ẩn dự đoán + chip của người khác để tránh đoán theo.
         const matchOpen =
           !match || match.status === "SCHEDULED" || match.status === "TIMED";
+        const groupLetter = match?.homeTeam ? getTeamGroup(match.homeTeam.name) : null;
+
         return (
-          <div key={matchId} className="rounded-2xl border border-white/15 bg-white/[0.08] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] overflow-hidden">
-            {/* Match header */}
-            <div className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-white/[0.06] border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-xs text-white">{home}</span>
+          <div key={matchId} className="match-card overflow-hidden w-full flex flex-col transition-all duration-200">
+            {/* Match header — styled like mini matchup */}
+            <div className="flex items-center justify-between gap-3 px-4 py-2 bg-white/[0.04] border-b border-white/5">
+              {/* Team 1 */}
+              <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
+                <span className="font-bold text-xs text-white truncate text-right">
+                  {home}
+                </span>
                 {renderTeamFlag(home)}
               </div>
-              <span className="text-[10px] text-white/50 font-semibold px-1">
-                {match ? `${vnDateHeader(match.utcDate)} · ${vnTime(match.utcDate)}` : "vs"}
-              </span>
-              <div className="flex items-center gap-2">
+
+              {/* Match info/score in middle */}
+              <div className="flex flex-col items-center shrink-0">
+                <span className="text-[9px] text-[#7b8fff] font-bold uppercase tracking-wider">
+                  {match?.stage === "GROUP_STAGE" && groupLetter
+                    ? `Bảng ${groupLetter}`
+                    : match?.stage || "—"}
+                </span>
+                <span className="text-[9px] text-white/50 font-semibold tabular-nums mt-0.5">
+                  {match ? `${vnTime(match.utcDate)} · ${vnDateHeader(match.utcDate)}` : "vs"}
+                </span>
+              </div>
+
+              {/* Team 2 */}
+              <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
                 {renderTeamFlag(away)}
-                <span className="font-bold text-xs text-white">{away}</span>
+                <span className="font-bold text-xs text-white truncate text-left">
+                  {away}
+                </span>
               </div>
             </div>
 
             {matchOpen && (
-              <div className="flex items-center gap-1.5 text-[10px] text-amber-400/90 bg-amber-400/[0.06] border-b border-amber-400/15 px-4 py-1.5">
+              <div className="flex items-center gap-1.5 text-[10px] text-amber-400/90 bg-amber-400/[0.06] border-b border-amber-400/10 px-4 py-1.5">
                 <span>🔒</span>
                 <span>Dự đoán của người khác được ẩn đến khi khóa cược (bóng lăn).</span>
               </div>
@@ -292,66 +316,89 @@ export default function PredictionsTab({ player, matchById, matches, onGoSchedul
           const sc = STATUS_CONFIG[p.status] || STATUS_CONFIG.pending;
 
           const isWin = p.payout > 0;
+          const groupLetter = m?.homeTeam ? getTeamGroup(m.homeTeam.name) : null;
 
           return (
             <div
               key={p.matchId + "_" + idx}
-              className={`rounded-xl px-3.5 py-3 flex flex-col gap-2.5 border ${sc.bg}`}
+              className={`match-card relative px-4 py-3.5 flex flex-col justify-between border ${sc.bg} transition-all duration-200`}
+              style={{ minHeight: 96 }}
             >
-              {/* Top row — status badge (left) + wager/payout (right). Own row so it never overflows on mobile. */}
-              <div className="flex items-center justify-between gap-2">
-                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 ${sc.labelClass}`}>
-                  {sc.label}
+              {/* Top Metadata Row (Symmetrical with MatchCard) */}
+              <div className="flex items-center justify-between text-[9px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-1.5 mb-2.5">
+                <span className="text-[#7b8fff]">
+                  {m?.stage === "GROUP_STAGE" && groupLetter
+                    ? `Bảng ${groupLetter}`
+                    : m?.stage || "—"}
+                  {m?.matchday ? ` · Lượt ${m.matchday}` : ""}
                 </span>
-                <div className="flex items-center gap-1.5 font-bold text-xs shrink-0">
-                  <span className="text-white/75 font-semibold tabular-nums">💎{fmt(p.wager)}</span>
-                  {p.status !== "pending" && p.payout !== 0 && (
-                    <span className={`tabular-nums ${isWin ? "text-[#62F2C0]" : "text-[#ff5a5a]"}`}>
-                      ({isWin ? "+" : ""}{fmt(p.payout)})
-                    </span>
+                <span className="flex items-center gap-1.5">
+                  <span>{m ? `${vnDateHeader(m.utcDate)} · ${vnTime(m.utcDate)}` : "—"}</span>
+                  {m?.venue && (
+                    <>
+                      <span>•</span>
+                      <span className="text-slate-400 max-w-[120px] truncate">
+                        {m.venue}
+                      </span>
+                    </>
                   )}
-                </div>
+                </span>
               </div>
 
-              {/* Match row — symmetric, teams truncate instead of pushing content off-screen */}
-              <div className="flex items-center justify-center gap-2.5">
+              {/* Symmetrical Matchup Row */}
+              <div className="flex items-center justify-between gap-4 flex-grow mb-2.5">
                 {/* Team 1 */}
-                <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-                  <span className="font-bold text-sm text-white truncate text-right">
+                <div className="flex-1 flex items-center justify-end gap-2.5 text-right min-w-0">
+                  <span className="font-bold text-xs text-white truncate">
                     {home}
                   </span>
                   {renderTeamFlag(home)}
                 </div>
 
                 {/* Predicted score capsule */}
-                <div className="score-capsule px-3 py-1 text-sm font-bold shrink-0 min-w-[56px] text-center tabular-nums bg-white/5 border border-white/10 text-white">
-                  {betLabel(p)}
+                <div className="flex flex-col items-center shrink-0">
+                  <div className="score-capsule px-3 py-1.5 text-xs font-bold min-w-[56px] text-center tabular-nums bg-[#334BFF]/10 border border-[#334BFF]/25 text-white">
+                    {betLabel(p)}
+                  </div>
+                  {p.finalScore && (
+                    <span className="text-[9px] font-extrabold text-[#62F2C0] tracking-wider mt-0.5 uppercase">
+                      Thật: {p.finalScore}
+                    </span>
+                  )}
                 </div>
 
                 {/* Team 2 */}
-                <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
+                <div className="flex-1 flex items-center justify-start gap-2.5 text-left min-w-0">
                   {renderTeamFlag(away)}
-                  <span className="font-bold text-sm text-white truncate text-left">
+                  <span className="font-bold text-xs text-white truncate">
                     {away}
                   </span>
                 </div>
               </div>
 
-              {/* Meta row — date / placed time / actual score */}
-              <div className="flex justify-center items-center gap-x-2 gap-y-0.5 text-[10px] text-white/50 font-medium flex-wrap">
-                <span>{m ? `${vnDateHeader(m.utcDate)} · ${vnTime(m.utcDate)}` : "—"}</span>
-                {p.placedAt && (
-                  <>
-                    <span className="opacity-60">•</span>
-                    <span title="Thời gian đặt cược">🕐 Cược lúc {vnShortDateTime(p.placedAt)}</span>
-                  </>
-                )}
-                {p.finalScore && (
-                  <>
-                    <span className="opacity-60">•</span>
-                    <span>Tỉ số thật: <strong className="text-white">{p.finalScore}</strong></span>
-                  </>
-                )}
+              {/* Bottom status row */}
+              <div className="flex items-start justify-between mt-1 pt-2 border-t border-white/5 gap-2">
+                {/* Left Area: Status and Placed time */}
+                <div className="flex flex-col items-start gap-0.5 min-w-0 shrink-0">
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 ${sc.labelClass}`}>
+                    {sc.label}
+                  </span>
+                  {p.placedAt && (
+                    <span className="text-[9px] text-slate-400 font-semibold tabular-nums mt-0.5">
+                      🕐 Cược lúc {vnShortDateTime(p.placedAt)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Right Area: Wager/Payout details formatted like MatchCard tag */}
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] text-white/80 font-bold shrink-0">
+                  <span>Cược: 💎{fmt(p.wager)}</span>
+                  {p.status !== "pending" && p.payout !== 0 && (
+                    <span className={`font-black ml-1 ${isWin ? "text-[#62F2C0]" : "text-[#ff5a5a]"}`}>
+                      ({isWin ? "+" : ""}{fmt(p.payout)})
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );

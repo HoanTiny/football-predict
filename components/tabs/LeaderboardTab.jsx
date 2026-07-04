@@ -217,7 +217,7 @@ export default function LeaderboardTab({ player, matches, roomLeaderboard }) {
       {rest.length > 0 && (
         <div className="space-y-2 pt-2">
           {/* Column headers */}
-          <div className="grid grid-cols-12 px-4 py-1 text-[9px] font-bold text-white/50 uppercase tracking-widest">
+          <div className="grid grid-cols-12 px-4 py-1 text-[9px] font-bold text-white/50 uppercase tracking-widest select-none">
             <div className="col-span-1">#</div>
             <div className="col-span-6">Người chơi</div>
             <div className="col-span-2 text-center">Dự đoán</div>
@@ -225,25 +225,26 @@ export default function LeaderboardTab({ player, matches, roomLeaderboard }) {
             <div className="col-span-2 text-right">Chips</div>
           </div>
 
-          <div className="space-y-1.5">
+          {/* Grouped list container */}
+          <div className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden divide-y divide-white/5">
             {rest.map((p, idx) => {
               const rank = idx + 4;
               const isMe = p.name === player.playerName;
               return (
                 <div
                   key={p.name}
-                  className={`grid grid-cols-12 items-center px-4 py-2.5 rounded-xl border text-xs transition-all duration-200 hover:translate-x-1 ${
+                  className={`grid grid-cols-12 items-center px-4 py-3.5 text-xs transition-all duration-150 ${
                     isMe
-                      ? "bg-white/15 border-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
-                      : "bg-white/[0.06] border-white/10 hover:bg-white/[0.12]"
-                  } backdrop-blur-xl`}
+                      ? "bg-[#334BFF]/10 text-white font-bold"
+                      : "hover:bg-white/[0.03]"
+                  }`}
                 >
-                  <div className="col-span-1 font-black text-white/50">
+                  <div className="col-span-1 font-black text-white/40 select-none">
                     {rank}
                   </div>
                   <div className="col-span-6 flex items-center gap-2.5 min-w-0">
                     <span
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 border ${
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 border select-none ${
                         isMe
                           ? "bg-white/20 border-white/30 text-white"
                           : "bg-white/10 border-white/15 text-white/70"
@@ -251,17 +252,17 @@ export default function LeaderboardTab({ player, matches, roomLeaderboard }) {
                     >
                       {p.name.split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                     </span>
-                    <span className={`font-bold truncate text-white ${isMe ? "text-[#8fffc9]" : ""}`}>
-                      {p.name} {isMe && <span className="text-[9px] text-[#8fffc9] opacity-80 font-normal">(bạn)</span>}
+                    <span className={`font-semibold truncate text-white ${isMe ? "text-[#62F2C0]" : ""}`}>
+                      {p.name} {isMe && <span className="text-[9px] text-[#62F2C0] opacity-80 font-normal">(bạn)</span>}
                     </span>
                   </div>
-                  <div className="col-span-2 text-center text-white/60 font-semibold">
+                  <div className="col-span-2 text-center text-white/60 font-semibold select-none">
                     {p.total}
                   </div>
-                  <div className="col-span-1 text-center text-white/60 font-semibold">
+                  <div className="col-span-1 text-center text-white/60 font-semibold select-none">
                     {p.winRate}%
                   </div>
-                  <div className="col-span-2 text-right font-extrabold text-[#8fffc9] tabular-nums">
+                  <div className="col-span-2 text-right font-extrabold text-[#62F2C0] tabular-nums">
                     💎 {fmt(p.chips)}
                   </div>
                 </div>
