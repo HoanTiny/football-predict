@@ -243,15 +243,31 @@ export async function GET(request) {
         const parsedMinute = parseInt(String(liveMinuteRaw || "").match(/^\d+/)?.[0] || "", 10);
         if (!isNaN(parsedMinute)) minute = Math.min(90, parsedMinute);
       }
+      // Phút có thể ở dạng "45+2" (bù giờ) — quy đổi thành số để so sánh "mới nhất" chính xác,
+      // KHÔNG dựa vào thứ tự phần tử trong mảng events (đã có lần events không đúng thứ tự thời
+      // gian, khiến "phần tử cuối" lại là bàn CŨ hơn một bàn khác).
+      const minuteValue = (min) => {
+        const m2 = String(min ?? "").match(/(\d+)(?:\+(\d+))?/);
+        return m2 ? Number(m2[1]) + (m2[2] ? Number(m2[2]) / 100 : 0) : -1;
+      };
       const goals = (detail?.events || []).filter((e) => e.type === "Goal");
-      if (goals.length) {
-        // events đã sắp theo thứ tự diễn ra → phần tử cuối là bàn MỚI NHẤT.
-        const latest = goals[goals.length - 1];
-        scorerFields = {
-          scorer: latest.player || "",
-          scorerMinute: latest.minute != null ? String(latest.minute) : "",
-        };
-      }
+      // Lấy bàn MỚI NHẤT của MỖI đội riêng — để hiện đủ cả 2 cầu thủ khi cả 2 đội đều đã ghi bàn,
+      // thay vì chỉ 1 bàn gần nhất chung cho toàn trận (bỏ sót đội kia nếu họ ghi bàn sớm hơn).
+      const latestOf = (isHome) => {
+        const list = goals.filter((g) => g.isHome === isHome);
+        if (!list.length) return null;
+        return list.reduce((best, g) => (minuteValue(g.minute) > minuteValue(best.minute) ? g : best));
+      };
+      const homeGoal = latestOf(true);
+      const awayGoal = latestOf(false);
+      scorerFields = {
+        ...(homeGoal
+          ? { homeScorer: homeGoal.player || "", homeScorerMinute: homeGoal.minute != null ? String(homeGoal.minute) : "" }
+          : {}),
+        ...(awayGoal
+          ? { awayScorer: awayGoal.player || "", awayScorerMinute: awayGoal.minute != null ? String(awayGoal.minute) : "" }
+          : {}),
+      };
     } catch {
       // Không chặn luồng chính — thiếu scorer/phút thật thì dùng phút ước lượng, không có scorer.
     }

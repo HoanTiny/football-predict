@@ -16,7 +16,8 @@ const DEMO_AWAY_ID = 5788; // Thái Lan
 //   /api/push/test-live?secret=<CRON_SECRET>&minute=88                   → tuỳ chỉnh phút
 //   /api/push/test-live?secret=<CRON_SECRET>&status=FINISHED             → test tự đóng khi kết thúc
 //   /api/push/test-live?secret=<CRON_SECRET>&status=HALFTIME             → test hiện "Nghỉ giữa hiệp"
-//   /api/push/test-live?secret=<CRON_SECRET>&scorer=Công+Phượng&scorerMinute=45 → test có người ghi bàn
+//   /api/push/test-live?secret=<CRON_SECRET>&homeScorer=Công+Phượng&homeScorerMinute=45 → đội nhà ghi bàn
+//   /api/push/test-live?secret=<CRON_SECRET>&awayScorer=Messi&awayScorerMinute=60 → đội khách ghi bàn (test cả 2 đội cùng lúc)
 //
 // Chấp nhận secret qua query param (không chỉ header Bearer) để test thẳng bằng URL trên
 // trình duyệt cho tiện — đây là route test, rủi ro thấp (chỉ bắn thông báo tỉ số giả).
@@ -48,10 +49,17 @@ export async function GET(request) {
     awayId,
     homeLogo: searchParams.get("homeLogo") || teamLogo(homeId),
     awayLogo: searchParams.get("awayLogo") || teamLogo(awayId),
-    // Mặc định có sẵn 1 bàn thắng giả để test hiển thị người ghi bàn ngay — truyền
-    // &scorer= rỗng nếu muốn test trường hợp KHÔNG có ai ghi bàn.
-    scorer: searchParams.has("scorer") ? searchParams.get("scorer") : "Nguyễn Văn Toàn",
-    scorerMinute: searchParams.get("scorerMinute") || "12",
+    // Mặc định có sẵn bàn thắng giả của đội nhà để test hiển thị người ghi bàn ngay — truyền
+    // &homeScorer= rỗng nếu muốn test trường hợp đội nhà KHÔNG ghi bàn. Muốn test CẢ 2 đội cùng
+    // ghi bàn thì truyền thêm &awayScorer=...&awayScorerMinute=....
+    homeScorer: searchParams.has("homeScorer") ? searchParams.get("homeScorer") : "Nguyễn Văn Toàn",
+    homeScorerMinute: searchParams.get("homeScorerMinute") || "12",
+    ...(searchParams.get("awayScorer")
+      ? {
+          awayScorer: searchParams.get("awayScorer"),
+          awayScorerMinute: searchParams.get("awayScorerMinute") || "",
+        }
+      : {}),
   };
 
   await sendFcmDataToAll(data);

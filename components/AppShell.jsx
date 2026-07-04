@@ -180,9 +180,9 @@ export default function AppShell() {
                 </svg>
               </button>
             )}
-            <img src="/logo.png" alt="Tiny Football" className="h-7 w-auto object-contain" />
+            <img src="/logo.png" alt="Tiny Sports" className="h-10 w-auto object-contain" />
             <span className="hidden sm:inline text-xs font-extrabold tracking-[0.15em] uppercase text-white">
-              Tiny Football
+              Tiny Sports
             </span>
           </div>
 
