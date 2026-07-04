@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background>
-        <inset android:drawable="@color/ic_launcher_background" android:inset="16.7%" />
+        <!-- Nền sân bóng PHỦ ĐỦ khung 108dp — không inset (khác foreground, chỉ foreground mới
+             cần chừa safe-zone). Inset ở đây từng làm ảnh nền bị co lại, lộ viền trống. -->
+        <bitmap android:src="@mipmap/ic_launcher_background" android:gravity="fill" />
     </background>
     <foreground>
         <inset android:drawable="@mipmap/ic_launcher_foreground" android:inset="16.7%" />
