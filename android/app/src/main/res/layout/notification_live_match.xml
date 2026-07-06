@@ -119,7 +119,7 @@
             android:layout_weight="1"
             android:gravity="start"
             android:textSize="10sp"
-            android:maxLines="1"
+            android:maxLines="5"
             android:ellipsize="end"
             android:textColor="?android:attr/textColorSecondary" />
 
@@ -130,7 +130,7 @@
             android:layout_weight="1"
             android:gravity="end"
             android:textSize="10sp"
-            android:maxLines="1"
+            android:maxLines="5"
             android:ellipsize="end"
             android:textColor="?android:attr/textColorSecondary" />
     </LinearLayout>

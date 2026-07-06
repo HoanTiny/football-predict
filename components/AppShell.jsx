@@ -14,6 +14,7 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import { isNativeApp } from "@/lib/platform";
 import { supabase } from "@/lib/supabase";
 import { handleGoogleAuthCallback } from "@/lib/googleAuth";
+import { registerNativePush, reassociateNativePushUser } from "@/lib/pushNative";
 import HomeTab from "./HomeTab";
 import LeagueView from "./leagues/LeagueView";
 import BracketTab from "./tabs/BracketTab";
@@ -170,6 +171,14 @@ export default function AppShell() {
     })();
     return () => listenerHandle?.remove();
   }, []);
+
+  // Đăng ký push native (Capacitor/FCM) khi khởi động hoặc thay đổi trạng thái đăng nhập
+  useEffect(() => {
+    if (isNativeApp()) {
+      registerNativePush(session?.access_token);
+      reassociateNativePushUser(session?.access_token);
+    }
+  }, [session]);
 
   const deepLinkOverlay = deepLinkMatch && (
     <MatchDetailSheet

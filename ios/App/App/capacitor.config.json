@@ -1,0 +1,42 @@
+{
+	"appId": "vn.tinyfootball.app",
+	"appName": "Tiny Sports",
+	"webDir": "public",
+	"server": {
+		"url": "https://football-predict-ecru.vercel.app",
+		"androidScheme": "https",
+		"cleartext": false,
+		"allowNavigation": [
+			"*.supabase.co",
+			"*.vercel.app",
+			"fotmob.com",
+			"*.fotmob.com"
+		]
+	},
+	"backgroundColor": "#262a7c",
+	"android": {
+		"backgroundColor": "#262a7c",
+		"appendUserAgent": "TinyFootballNativeApp"
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 1200,
+			"launchAutoHide": true,
+			"backgroundColor": "#262a7c",
+			"androidSplashResourceName": "splash",
+			"androidScaleType": "CENTER_CROP",
+			"showSpinner": false,
+			"splashFullScreen": false,
+			"splashImmersive": false
+		},
+		"StatusBar": {
+			"style": "DARK",
+			"backgroundColor": "#262a7c",
+			"overlaysWebView": false
+		},
+		"App": {
+			"launchUrl": "https://football-predict-ecru.vercel.app"
+		}
+	},
+	"packageClassList": []
+}

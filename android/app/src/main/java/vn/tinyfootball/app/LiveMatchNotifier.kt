@@ -80,6 +80,14 @@ object LiveMatchNotifier {
         return true
     }
 
+    /** Định dạng danh sách người ghi bàn: tách bằng dấu · và hiển thị mỗi người một dòng kèm emoji quả bóng */
+    private fun formatScorers(scorers: String?): String? {
+        if (scorers.isNullOrBlank()) return null
+        return scorers.split(Regex("\\s*·\\s*"))
+            .filter { it.isNotBlank() }
+            .joinToString("\n") { "⚽ ${it.trim()}" }
+    }
+
     /** ID ổn định theo matchId — cùng 1 trận luôn UPDATE, không tạo notification mới mỗi lần. */
     private fun notificationId(matchId: String): Int = matchId.hashCode()
 
@@ -118,6 +126,13 @@ object LiveMatchNotifier {
         // Trần 120 (90 chính thức + hiệp phụ) — trước đây trần 90 khiến hiệp phụ hiện "kẹt" ở 90'.
         val minute = (data["minute"] ?: "0").toIntOrNull()?.coerceIn(0, 120) ?: 0
         val finished = data["status"] == "FINISHED"
+        if (finished) {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.cancel(notificationId(matchId))
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().remove("goal_$matchId").apply()
+            return
+        }
         val halftime = data["status"] == "HALFTIME"
         val homeScorers = data["homeScorers"]?.takeIf { it.isNotBlank() }
         val awayScorers = data["awayScorers"]?.takeIf { it.isNotBlank() }
@@ -169,8 +184,8 @@ object LiveMatchNotifier {
                 }
             )
 
-            setTextViewText(R.id.home_scorer_text, homeScorers?.let { "⚽ $it" } ?: "")
-            setTextViewText(R.id.away_scorer_text, awayScorers?.let { "⚽ $it" } ?: "")
+            setTextViewText(R.id.home_scorer_text, formatScorers(homeScorers) ?: "")
+            setTextViewText(R.id.away_scorer_text, formatScorers(awayScorers) ?: "")
 
             loadBitmap(data["homeLogo"])?.let { setImageViewBitmap(R.id.home_crest, it) }
             loadBitmap(data["awayLogo"])?.let { setImageViewBitmap(R.id.away_crest, it) }

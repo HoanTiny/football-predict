@@ -5,6 +5,7 @@ import { LEAGUES, teamLogo } from "@/lib/leagues";
 import { useFavTeams } from "@/hooks/useFavTeams";
 import Icon from "@/components/Icon";
 import AuthModal from "@/components/AuthModal";
+import PushToggle from "@/components/PushToggle";
 
 // 8 high-end sports-themed preset SVGs as data URLs
 const PRESET_AVATARS = [
@@ -297,6 +298,14 @@ export default function CalendarProfileView({ onClose, authSession }) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Thông báo (Push Toggle) */}
+      <div className="bg-white/[0.08] border border-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-[28px] p-5 space-y-4">
+        <h3 className="text-[10px] font-bold tracking-[0.2em] text-[#334BFF] uppercase">
+          THÔNG BÁO
+        </h3>
+        <PushToggle authSession={authSession} />
       </div>
 
       {/* Preset Avatar Selector Modal / Overlay */}
