@@ -126,27 +126,23 @@ object LiveMatchNotifier {
         // Trần 120 (90 chính thức + hiệp phụ) — trước đây trần 90 khiến hiệp phụ hiện "kẹt" ở 90'.
         val minute = (data["minute"] ?: "0").toIntOrNull()?.coerceIn(0, 120) ?: 0
         val finished = data["status"] == "FINISHED"
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val closedKey = "closed_$matchId"
         if (finished) {
+            // Đóng hẳn notification + ghi cờ "đã đóng" để chặn tick LIVE tới muộn (server cache
+            // lệch giữa các instance có thể bắn tick "đang đá" cũ SAU tick FINISHED — nếu không
+            // chặn, notification vừa tắt bị mở lại rồi kẹt mãi ở phút cuối).
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.cancel(notificationId(matchId))
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().remove("goal_$matchId").apply()
+            prefs.edit().remove("goal_$matchId").putBoolean(closedKey, true).apply()
+            return
+        }
+        if (prefs.getBoolean(closedKey, false)) {
             return
         }
         val halftime = data["status"] == "HALFTIME"
         val homeScorers = data["homeScorers"]?.takeIf { it.isNotBlank() }
         val awayScorers = data["awayScorers"]?.takeIf { it.isNotBlank() }
-
-        // Chốt chặn phía máy: sau khi trận đã nhận tick FINISHED, BỎ QUA mọi tick LIVE tới muộn
-        // của cùng trận đó (server cache lệch giữa các instance có thể bắn tick "đang đá" cũ sau
-        // khi trận đã đóng) — tránh mở lại notification vừa tắt rồi kẹt mãi ở phút cuối.
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val closedKey = "closed_$matchId"
-        if (finished) {
-            prefs.edit().putBoolean(closedKey, true).apply()
-        } else if (prefs.getBoolean(closedKey, false)) {
-            return
-        }
 
         ensureChannel(context)
 
