@@ -137,6 +137,17 @@ object LiveMatchNotifier {
         val homeScorers = data["homeScorers"]?.takeIf { it.isNotBlank() }
         val awayScorers = data["awayScorers"]?.takeIf { it.isNotBlank() }
 
+        // Chốt chặn phía máy: sau khi trận đã nhận tick FINISHED, BỎ QUA mọi tick LIVE tới muộn
+        // của cùng trận đó (server cache lệch giữa các instance có thể bắn tick "đang đá" cũ sau
+        // khi trận đã đóng) — tránh mở lại notification vừa tắt rồi kẹt mãi ở phút cuối.
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val closedKey = "closed_$matchId"
+        if (finished) {
+            prefs.edit().putBoolean(closedKey, true).apply()
+        } else if (prefs.getBoolean(closedKey, false)) {
+            return
+        }
+
         ensureChannel(context)
 
         // Deep link vào thẳng modal chi tiết trận (tab "Diễn biến") thay vì chỉ mở app ở màn

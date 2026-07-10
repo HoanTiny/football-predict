@@ -133,7 +133,12 @@ export async function GET(request) {
     }
 
     // --- Đang đá: tick live-update (cho app native — kiểu iOS Live Activity) ---
-    if (isLive(m.status) && home != null && away != null) {
+    // Đối chiếu với match_state (nguồn chung, luôn tươi) trước khi tin status "đang đá":
+    // lịch trận lấy từ cache 5 phút RIÊNG của từng serverless instance, nên sau khi 1 instance
+    // đã gửi tick FINISHED, instance khác (cache cũ) vẫn có thể thấy trận "đang đá" và bắn thêm
+    // tick LIVE — mở LẠI notification vừa đóng, kẹt vĩnh viễn ở phút cuối (vd "97'") vì tick
+    // FINISHED không bao giờ gửi lần hai (finished_notified đã true).
+    if (isLive(m.status) && home != null && away != null && !finishedNotified && p?.status !== "FINISHED") {
       liveMatches.push(m);
     }
 
